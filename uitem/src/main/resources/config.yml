@@ -1,0 +1,41 @@
+# ╔══════════════════════════════════════════╗
+# ║       UItem - Main Configuration         ║
+# ╚══════════════════════════════════════════╝
+
+# Ngôn ngữ prefix trong chat
+prefix: "<gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <dark_gray>│ "
+
+# Tự động lưu items khi chỉnh sửa qua GUI
+auto-save: true
+
+# Cho phép dùng MiniMessage trong display name và lore
+minimessage-support: true
+
+# Integration settings
+integration:
+  # Ưu tiên dùng Oraxen hay ItemsAdder khi cả 2 đều có
+  # Giá trị: "oraxen", "itemsadder"
+  priority: "oraxen"
+
+  # Tự động detect plugins
+  auto-detect: true
+
+# Debug mode - log thêm thông tin
+debug: false
+
+# Resource pack engine
+resourcepack:
+  auto-generate: true
+  auto-apply: false
+  kick-on-fail: true
+  kick-message: "Không tải được resource packs, vui lòng vào lại\nUnable to load resource packs, please rejoin"
+  url: ""
+  source-texture-folder: "textures"
+  pack-format: 34
+  namespace: "uitem"
+  base-model-folder: "assets/minecraft/models/item"
+  model-folder: "assets/uitem/models/item"
+  texture-folder: "assets/uitem/textures/item"
+  output-zip: "UItem-ResourcePack.zip"
+  cmd:
+    storage-file: "custom_model_data.yml"
