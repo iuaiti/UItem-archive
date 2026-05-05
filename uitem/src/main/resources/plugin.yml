@@ -31,6 +31,9 @@ permissions:
   uitem.reload:
     description: Allow reloading plugin
     default: op
+  uitem.search:
+    description: Allow using the item search GUI
+    default: op
 
 # =============================================================
 # UItem Public API

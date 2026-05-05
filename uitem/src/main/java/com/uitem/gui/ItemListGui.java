@@ -13,6 +13,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
+import com.uitem.search.SearchManager;
 import java.util.Comparator;
 import java.util.List;
 
@@ -23,7 +24,7 @@ import java.util.List;
 public class ItemListGui extends AbstractGui {
 
     private int page;
-    private static final int ITEMS_PER_PAGE = 28; // 4 hàng × 7 cột
+    private static final int DEFAULT_ITEMS_PER_PAGE = 28; // fallback if config missing
     private static final int[] ITEM_SLOTS = {
             10, 11, 12, 13, 14, 15, 16,
             19, 20, 21, 22, 23, 24, 25,
@@ -55,12 +56,54 @@ public class ItemListGui extends AbstractGui {
                         "<yellow>Trang: <white>" + (page + 1)
                 )));
 
+        // Search button (if enabled)
+        if (plugin.getConfig().getBoolean("gui.search.enabled", true)) {
+            if (player.hasPermission("uitem.search")) {
+                setItem(48, createItem(Material.MAGENTA_GLAZED_TERRACOTTA,
+                        "<aqua><bold>Tìm kiếm Item</bold>",
+                        List.of(
+                                "<gray>Nhập từ khóa để lọc danh sách",
+                                "<gray>Nhập 'clear' để xóa bộ lọc"
+                        )), event -> {
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                    plugin.getChatInputManager().requestInput(player,
+                            "<yellow>Nhập từ khóa tìm kiếm (<gray>hoặc 'clear' để xóa):",
+                            input -> {
+                                SearchManager sm = plugin.getSearchManager();
+                                if (input.equalsIgnoreCase("clear")) {
+                                    sm.clearQuery(player);
+                                } else {
+                                    sm.setQuery(player, input);
+                                }
+                                new ItemListGui(plugin, player, page).open();
+                            });
+                });
+            } else {
+                player.sendMessage(TextUtil.error("Bạn không có quyền sử dụng tìm kiếm (uitem.search)."));
+            }
+        }
+
         // Lấy danh sách items
         UItemManager manager = plugin.getItemManager();
         List<UItemData> allItems = new ArrayList<>(manager.getAllItems().values());
         allItems.sort(Comparator.comparing(UItemData::getId, String.CASE_INSENSITIVE_ORDER));
 
-        int totalPages = Math.max(1, (int) Math.ceil((double) allItems.size() / ITEMS_PER_PAGE));
+        // Determine items per page from config
+        int itemsPerPage = plugin.getConfig().getInt("gui.items-per-page", DEFAULT_ITEMS_PER_PAGE);
+
+        // Apply search filter if present
+        SearchManager searchMgr = plugin.getSearchManager();
+        String query = searchMgr.getQuery(player);
+        if (query != null && !query.isBlank()) {
+            String lower = query.toLowerCase();
+            allItems.removeIf(data -> {
+                if (data.getId().toLowerCase().contains(lower)) return false;
+                String disp = data.getDisplayName();
+                return disp == null || !disp.toLowerCase().contains(lower);
+            });
+        }
+
+        int totalPages = Math.max(1, (int) Math.ceil((double) allItems.size() / itemsPerPage));
         if (page >= totalPages) {
             page = totalPages - 1;
         }
@@ -69,7 +112,7 @@ public class ItemListGui extends AbstractGui {
         }
 
         // Hiển thị items cho trang hiện tại
-        int startIndex = page * ITEMS_PER_PAGE;
+        int startIndex = page * itemsPerPage;
         for (int i = 0; i < ITEM_SLOTS.length; i++) {
             int dataIndex = startIndex + i;
             if (dataIndex < allItems.size()) {

@@ -12,6 +12,17 @@ auto-save: true
 minimessage-support: true
 
 # Integration settings
+
+# GUI search configuration
+gui:
+  search:
+    enabled: true  # Toggle search button in item list GUI
+  items-per-page: 28  # Number of items displayed per page (default matches current hard‑coded value)
+
+# Permissions
+permissions:
+  search: "uitem.search"  # Permission required to use the search feature
+
 integration:
   # Ưu tiên dùng Oraxen hay ItemsAdder khi cả 2 đều có
   # Giá trị: "oraxen", "itemsadder"

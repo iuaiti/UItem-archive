@@ -30,6 +30,7 @@ public final class UItemPlugin extends JavaPlugin {
     private ChatInputManager chatInputManager;
     private GuiListener guiListener;
     private ResourcePackManager resourcePackManager;
+    private com.uitem.search.SearchManager searchManager;
 
     @Override
     public void onEnable() {
@@ -47,6 +48,7 @@ public final class UItemPlugin extends JavaPlugin {
         this.chatInputManager = new ChatInputManager(this);
         this.guiListener = new GuiListener();
         this.resourcePackManager = new ResourcePackManager(this, this.itemManager);
+        this.searchManager = new com.uitem.search.SearchManager();
 
         storageManager.loadAll(itemManager);
         integrationManager.detectIntegrations();
@@ -181,6 +183,10 @@ public final class UItemPlugin extends JavaPlugin {
     }
 
     public ResourcePackManager getResourcePackManager() {
-        return resourcePackManager;
+    return resourcePackManager;
+}
+
+    public com.uitem.search.SearchManager getSearchManager() {
+        return searchManager;
     }
 }
