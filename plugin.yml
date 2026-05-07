@@ -1,0 +1,17 @@
+name: uitem
+main: com.example.uitem.UitemPlugin
+version: 1.0-SNAPSHOT
+api-version: 1.21
+author: YourName
+description: A plugin for custom items and GUI crafting.
+commands:
+  crafting:
+    description: Opens the crafting GUI.
+    usage: /<command>
+  admin:
+    description: Opens the admin GUI.
+    usage: /<command>
+permissions:
+  uitem.admin:
+    description: Allows access to admin commands.
+    default: op

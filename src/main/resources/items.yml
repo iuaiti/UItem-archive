@@ -1,0 +1,15 @@
+# Example items configuration
+items:
+  # Example item UUID: 123e4567-e89b-12d3-a456-426614174000
+  123e4567-e89b-12d3-a456-426614174000:
+    id: 123e4567-e89b-12d3-a456-426614174000
+    material: DIAMOND_SWORD
+    name: '&eExcalibur'
+    lore:
+      - '&7A legendary sword'
+      - '&7Only the worthy can wield it'
+    custom_model_data: 123
+    rarity: LEGENDARY
+    glow: true
+    # Recipe is optional and would be defined here in a real implementation
+    # For simplicity, we omit the recipe structure in this example.
