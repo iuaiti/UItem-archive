@@ -2,7 +2,6 @@ package com.example.uitem.manager;
 
 import com.example.uitem.UitemPlugin;
 import com.example.uitem.model.CustomItem;
-import com.example.uitem.model.Recipe;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -16,7 +15,7 @@ import java.util.HashMap;
 public class RecipeManager {
 
     private final UitemPlugin plugin;
-    private final Map<String, Recipe> recipes = new HashMap<>(); // recipe key -> Recipe
+    private final Map<String, CustomItem.Recipe> recipes = new HashMap<>(); // recipe key -> Recipe
 
     public RecipeManager(UitemPlugin plugin) {
         this.plugin = plugin;
@@ -43,7 +42,7 @@ public class RecipeManager {
      */
     public ItemStack findMatchingRecipe(ItemStack[] matrix) {
         // We'll check both shaped and shapeless recipes from our recipe list.
-        for (Recipe recipe : recipes.values()) {
+        for (CustomItem.Recipe recipe : recipes.values()) {
             if (recipe.isShaped()) {
                 if (matchesShapedRecipe(matrix, recipe)) {
                     return recipe.getResult().clone();
@@ -57,7 +56,7 @@ public class RecipeManager {
         return null;
     }
 
-    private boolean matchesShapedRecipe(ItemStack[] matrix, Recipe recipe) {
+    private boolean matchesShapedRecipe(ItemStack[] matrix, CustomItem.Recipe recipe) {
         // This is a simplified version. In a real plugin, you would compare the shape and ingredients.
         // For brevity, we assume the recipe is for a specific item and we just check if the matrix matches a known pattern.
         // Since we don't have a complex recipe structure in the CustomItem.Recipe (we used a placeholder),
@@ -66,13 +65,13 @@ public class RecipeManager {
         return false;
     }
 
-    private boolean matchesShapelessRecipe(ItemStack[] matrix, Recipe recipe) {
+    private boolean matchesShapelessRecipe(ItemStack[] matrix, CustomItem.Recipe recipe) {
         // Similarly, placeholder.
         return false;
     }
 
     // Methods to add, remove, update recipes (for admin GUI)
-    public void addRecipe(String key, Recipe recipe) {
+    public void addRecipe(String key, CustomItem.Recipe recipe) {
         recipes.put(key, recipe);
     }
 
@@ -80,11 +79,11 @@ public class RecipeManager {
         recipes.remove(key);
     }
 
-    public Recipe getRecipe(String key) {
+    public CustomItem.Recipe getRecipe(String key) {
         return recipes.get(key);
     }
 
-    public List<Recipe> getAllRecipes() {
+    public List<CustomItem.Recipe> getAllRecipes() {
         return new ArrayList<>(recipes.values());
     }
 }

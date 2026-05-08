@@ -7,9 +7,11 @@ import com.example.uitem.model.CustomItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -109,16 +111,19 @@ public class CategoryGUI {
 
     private ItemStack createGlassPane() {
         ItemStack glass = new ItemStack(org.bukkit.Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta meta = glass.getItemMeta();
+        if (meta != null) {
+            meta.displayName(Component.text(" ")); // Empty name to make it less intrusive
+            glass.setItemMeta(meta);
+        }
         return glass;
     }
 
     private ItemStack createButtonItem(Material material, Component name, NamedTextColor color) {
         ItemStack item = new ItemStack(material);
-        // We don't have the Adventure API for setting display name on ItemStack directly in this context.
-        // We'll use the legacy method for simplicity.
-        org.bukkit.inventory.ItemMeta meta = item.getItemMeta();
+        ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(name));
+            meta.displayName(name);
             item.setItemMeta(meta);
         }
         return item;

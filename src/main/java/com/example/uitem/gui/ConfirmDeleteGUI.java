@@ -3,6 +3,7 @@ package com.example.uitem.gui;
 import com.example.uitem.UitemPlugin;
 import com.example.uitem.manager.ConfigManager;
 import com.example.uitem.model.CustomItem;
+import com.example.uitem.model.Category;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -10,6 +11,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+
+import java.util.UUID;
 
 /**
  * GUI for confirming deletion of an item.

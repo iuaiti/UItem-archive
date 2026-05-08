@@ -50,19 +50,19 @@ public class GUIListener implements Listener {
     }
 
     private boolean isMainMenu(Inventory inventory) {
-        return inventory.getTitle().equals("UITEM Main Menu");
+        return inventory.getName().equals("UITEM Main Menu");
     }
 
     private boolean isCategoryGUI(Inventory inventory) {
-        return inventory.getTitle().startsWith("Category: ");
+        return inventory.getName().startsWith("Category: ");
     }
 
     private boolean isCraftingGUI(Inventory inventory) {
-        return inventory.getTitle().equals("Crafting GUI");
+        return inventory.getName().equals("Crafting GUI");
     }
 
     private boolean isAdminGUI(Inventory inventory) {
-        return inventory.getTitle().equals("Admin Menu");
+        return inventory.getName().equals("Admin Menu");
     }
 
     private void handleMainMenuClick(InventoryClickEvent event, Player player) {

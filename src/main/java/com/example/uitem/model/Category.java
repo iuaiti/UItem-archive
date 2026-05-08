@@ -12,7 +12,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 /**
  * Represents a category for grouping custom items.
  */
-public class Category implements ConfigurationSerializable {
+public class Category {
 
     private String name;
     private Component displayName;
@@ -55,9 +55,11 @@ public class Category implements ConfigurationSerializable {
         items.remove(itemId);
     }
 
-    // ConfigurationSerializable implementation
-    @Override
-    public void serialize(ConfigurationSection section) {
+    /**
+     * Saves the category to a ConfigurationSection.
+     * @param section The section to populate
+     */
+    public void save(ConfigurationSection section) {
         section.set("name", name);
         section.set("display_name", LegacyComponentSerializer.legacySection().serialize(displayName));
         section.set("icon_item", iconItem.name());
@@ -68,7 +70,12 @@ public class Category implements ConfigurationSerializable {
         section.set("items", itemStrings);
     }
 
-    public static Category deserialize(ConfigurationSection section) {
+    /**
+     * Loads a Category from a ConfigurationSection.
+     * @param section The section to load from
+     * @return The loaded Category, or null if invalid
+     */
+    public static Category load(ConfigurationSection section) {
         if (section == null) return null;
 
         try {

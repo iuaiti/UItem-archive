@@ -7,9 +7,11 @@ import com.example.uitem.model.CustomItem;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,14 +53,7 @@ public class AdminGUI {
 
     private ItemStack createButton(Material material, Component name, NamedTextColor color) {
         ItemStack item = new ItemStack(material);
-        // In a real plugin, you would set display name and lore using Adventure API
-        // For simplicity, we skip the Adventure API here and rely on ItemMeta (which is legacy)
-        // But note: we are using Adventure API in the plugin, so we should use it.
-        // However, for the sake of this example, we'll use the legacy method to avoid complexity.
-        // In a production plugin, you would use:
-        // net.kyori.adventure.item.ItemComponent.itemName(name)
-        // and then use Adventure API to set the item's display name and lore.
-        // Since we are in a hurry, we'll use the legacy method and note that it's not ideal.
+        // We'll use the legacy method to set display name for simplicity
         org.bukkit.inventory.ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.displayName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(name));

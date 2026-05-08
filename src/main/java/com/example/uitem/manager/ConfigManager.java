@@ -8,7 +8,11 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.NamespacedKey;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.meta.ItemFlag;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -46,7 +50,7 @@ public class ConfigManager {
                 for (String key : section.getKeys(false)) {
                     ConfigurationSection itemSection = section.getConfigurationSection(key);
                     if (itemSection != null) {
-                        CustomItem item = CustomItem.deserialize(itemSection);
+                        CustomItem item = CustomItem.load(itemSection);
                         if (item != null) {
                             items.put(item.getId(), item);
                         }
@@ -63,7 +67,7 @@ public class ConfigManager {
         for (Map.Entry<UUID, CustomItem> entry : items.entrySet()) {
             CustomItem item = entry.getValue();
             ConfigurationSection itemSection = section.createSection(entry.getKey().toString());
-            item.serialize(itemSection);
+            item.save(itemSection);
         }
         try {
             itemsConfig.save(itemsFile);
@@ -86,7 +90,7 @@ public class ConfigManager {
                 for (String key : section.getKeys(false)) {
                     ConfigurationSection catSection = section.getConfigurationSection(key);
                     if (catSection != null) {
-                        Category category = Category.deserialize(catSection);
+                        Category category = Category.load(catSection);
                         if (category != null) {
                             categories.put(category.getName(), category);
                         }
@@ -103,7 +107,7 @@ public class ConfigManager {
         for (Map.Entry<String, Category> entry : categories.entrySet()) {
             Category category = entry.getValue();
             ConfigurationSection catSection = section.createSection(entry.getKey());
-            category.serialize(catSection);
+            category.save(catSection);
         }
         try {
             categoriesConfig.save(categoriesFile);
@@ -166,54 +170,18 @@ public class ConfigManager {
 
         // Set custom model data
         if (item.getCustomModelData() > 0) {
-            meta.getPersistentDataContainer().set(
-                new NamespacedKey(plugin, "custom_model_data"),
-                PersistentDataType.INTEGER,
-                item.getCustomModelData()
-            );
+            NamespacedKey key = new NamespacedKey(plugin, "custom_model_data");
+            PersistentDataContainer pdc = meta.getPersistentDataContainer();
+            pdc.set(key, PersistentDataType.INTEGER, item.getCustomModelData());
         }
 
         // Set rarity (using enchantment glow as example)
         if (item.isGlow()) {
-            meta.addEnchant(org.bukkit.enchantments.Enchantment.LUCK, 1, true);
-            meta.addItemFlags(org.bukkit.ItemFlag.HIDE_ENCHANTS);
+            meta.addEnchant(Enchantment.LURE, 1);
+            meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         }
 
         stack.setItemMeta(meta);
         return stack;
-    }
-
-    // Simple NamespacedKey implementation for persistence
-    private static class NamespacedKey {
-        private final String namespace;
-        private final String key;
-
-        public NamespacedKey(UitemPlugin plugin, String key) {
-            this.namespace = plugin.getDescription().getName().toLowerCase();
-            this.key = key;
-        }
-
-        public String getNamespace() {
-            return namespace;
-        }
-
-        public String getKey() {
-            return key;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            NamespacedKey that = (NamespacedKey) o;
-            return namespace.equals(that.namespace) && key.equals(that.key);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = namespace.hashCode();
-            result = 31 * result + key.hashCode();
-            return result;
-        }
     }
 }

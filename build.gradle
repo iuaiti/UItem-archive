@@ -12,10 +12,14 @@ java {
 
 repositories {
     maven { url 'https://repo.papermc.io/repository/maven-public/' }
+    mavenCentral()
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.21.0'
+    compileOnly 'io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT'
+    compileOnly 'net.kyori:adventure-api:4.13.0'
+    compileOnly 'net.kyori:adventure-platform:4.13.0'
+    compileOnly 'net.kyori:adventure-bukkit:4.13.0'
 }
 
 tasks.compileJava {
@@ -29,9 +33,7 @@ jar {
     from {
         configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
-    // Exclude unnecessary files
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
-    // Include plugin.yml
     from('src/main/resources') {
         include 'plugin.yml'
     }

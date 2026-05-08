@@ -13,7 +13,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 /**
  * Represents a custom item in the plugin.
  */
-public class CustomItem implements ConfigurationSerializable {
+public class CustomItem {
 
     private UUID id;
     private Material material;
@@ -81,9 +81,11 @@ public class CustomItem implements ConfigurationSerializable {
         return stack;
     }
 
-    // ConfigurationSerializable implementation
-    @Override
-    public void serialize(ConfigurationSection section) {
+    /**
+     * Saves the item to a ConfigurationSection.
+     * @param section The section to populate
+     */
+    public void save(ConfigurationSection section) {
         section.set("id", id.toString());
         section.set("material", material.name());
         section.set("name", LegacyComponentSerializer.legacySection().serialize(name));
@@ -97,11 +99,16 @@ public class CustomItem implements ConfigurationSerializable {
         section.set("glow", glow);
         if (recipe != null) {
             ConfigurationSection recipeSection = section.createSection("recipe");
-            recipe.serialize(recipeSection);
+            recipe.save(recipeSection);
         }
     }
 
-    public static CustomItem deserialize(ConfigurationSection section) {
+    /**
+     * Loads a CustomItem from a ConfigurationSection.
+     * @param section The section to load from
+     * @return The loaded CustomItem, or null if invalid
+     */
+    public static CustomItem load(ConfigurationSection section) {
         if (section == null) return null;
 
         try {
@@ -118,7 +125,7 @@ public class CustomItem implements ConfigurationSerializable {
             boolean glow = section.getBoolean("glow", false);
             Recipe recipe = null;
             if (section.isConfigurationSection("recipe")) {
-                recipe = Recipe.deserialize(section.getConfigurationSection("recipe"));
+                recipe = Recipe.load(section.getConfigurationSection("recipe"));
             }
 
             return new CustomItem(id, material, name, lore, customModelData, rarity, glow, recipe);
@@ -139,14 +146,15 @@ public class CustomItem implements ConfigurationSerializable {
      * Simple recipe representation.
      * In a full plugin, you would have a more complex recipe structure.
      */
-    public static class Recipe implements ConfigurationSerializable {
+    public static class Recipe {
+
         private boolean shaped;
         private List<Character> shape; // For shaped: 3x3 grid of characters (or null for shapeless)
-        private Map<Character, ItemStack> ingredientMap; // For shaped: char to ItemStack
+        private java.util.Map<Character, ItemStack> ingredientMap; // For shaped: char to ItemStack
         private List<ItemStack> ingredients; // For shapeless: list of ItemStack
         private ItemStack result;
 
-        public Recipe(boolean shaped, List<Character> shape, Map<Character, ItemStack> ingredientMap,
+        public Recipe(boolean shaped, List<Character> shape, java.util.Map<Character, ItemStack> ingredientMap,
                       List<ItemStack> ingredients, ItemStack result) {
             this.shaped = shaped;
             this.shape = shape;
@@ -158,12 +166,15 @@ public class CustomItem implements ConfigurationSerializable {
         // Getters
         public boolean isShaped() { return shaped; }
         public List<Character> getShape() { return shape; }
-        public Map<Character, ItemStack> getIngredientMap() { return ingredientMap; }
+        public java.util.Map<Character, ItemStack> getIngredientMap() { return ingredientMap; }
         public List<ItemStack> getIngredients() { return ingredients; }
         public ItemStack getResult() { return result; }
 
-        @Override
-        public void serialize(ConfigurationSection section) {
+        /**
+         * Saves the recipe to a ConfigurationSection.
+         * @param section The section to populate
+         */
+        public void save(ConfigurationSection section) {
             section.set("shaped", shaped);
             if (shaped) {
                 List<String> shapeStrings = new ArrayList<>();
@@ -173,7 +184,7 @@ public class CustomItem implements ConfigurationSerializable {
                 section.set("shape", shapeStrings);
                 // Serialize ingredient map
                 ConfigurationSection ingSection = section.createSection("ingredients");
-                for (Map.Entry<Character, ItemStack> entry : ingredientMap.entrySet()) {
+                for (java.util.Map.Entry<Character, ItemStack> entry : ingredientMap.entrySet()) {
                     ConfigurationSection is = ingSection.createSection(entry.getKey().toString());
                     // Serialize ItemStack (simplified: we assume we have a way to serialize ItemStack)
                     // In a real plugin, you would use a proper ItemStack serialization.
@@ -190,9 +201,14 @@ public class CustomItem implements ConfigurationSerializable {
             // Serialize result ItemStack (placeholder)
         }
 
-        public static Recipe deserialize(ConfigurationSection section) {
+        /**
+         * Loads a Recipe from a ConfigurationSection.
+         * @param section The section to load from
+         * @return The loaded Recipe, or null if invalid
+         */
+        public static Recipe load(ConfigurationSection section) {
             // Placeholder implementation
-            return new Recipe(false, null, null, new ArrayList<>(), new ItemStack(Material.AIR));
+            return new Recipe(false, null, new java.util.HashMap<>(), new java.util.ArrayList<>(), new ItemStack(Material.AIR));
         }
     }
 }
