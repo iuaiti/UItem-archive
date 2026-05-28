@@ -23,7 +23,7 @@ public class ItemEditorGui extends AbstractGui {
 
     public ItemEditorGui(UItemPlugin plugin, Player player, UItemData data) {
         super(plugin, player, 54,
-                "<gradient:#ff6b6b:#ffd93d>Chỉnh sửa: </gradient><white>" + data.getId());
+                "<gradient:#ff6b6b:#ffd93d>Edit: </gradient><white>" + data.getId());
         this.data = data;
     }
 
@@ -35,14 +35,14 @@ public class ItemEditorGui extends AbstractGui {
         ItemStack preview = plugin.getItemManager().buildItemStack(data);
         setItem(4, preview);
 
-        // === Material (slot 10) - Mở Material Picker ===
+        // === Material (slot 10) - Open Material Picker ===
         setItem(10, createItem(Material.CRAFTING_TABLE,
                 "<gold><bold>Material</bold>",
                 List.of(
-                        "<gray>Hiện tại: <white>" + data.getMaterial().name(),
+                        "<gray>Current: <white>" + (data.getMaterial() != null ? data.getMaterial().name() : "STONE"),
                         "",
-                        "<yellow>Click để mở danh sách material",
-                        "<gray>Xem tất cả blocks, items, tools, armor..."
+                        "<yellow>Click to open material list",
+                        "<gray>View all blocks, items, tools, armor..."
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new MaterialPickerGui(plugin, player, data, null).open();
@@ -52,19 +52,19 @@ public class ItemEditorGui extends AbstractGui {
         setItem(11, createItem(Material.NAME_TAG,
                 "<gold><bold>Display Name</bold>",
                 List.of(
-                        "<gray>Hiện tại: " + (data.getDisplayName() != null ? data.getDisplayName() : "<gray>Chưa đặt"),
+                        "<gray>Current: " + (data.getDisplayName() != null ? data.getDisplayName() : "<gray>Not set"),
                         "",
-                        "<yellow>Click để thay đổi tên",
-                        "<gray>Hỗ trợ MiniMessage format",
-                        "<gray>Ví dụ: <red>Ruby <gold>Sword"
+                        "<yellow>Click to change name",
+                        "<gray>Supports MiniMessage format",
+                        "<gray>Example: <red>Ruby <gold>Sword"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Nhập tên hiển thị <gray>(hỗ trợ MiniMessage):",
+                    "<yellow>Enter display name <gray>(supports MiniMessage):",
                     input -> {
                         data.setDisplayName(input);
                         saveAndReopen();
-                        player.sendMessage(TextUtil.success("Đã đổi tên thành: " + input));
+                        player.sendMessage(TextUtil.success("Renamed to: " + input));
                     });
         });
 
@@ -72,10 +72,10 @@ public class ItemEditorGui extends AbstractGui {
         setItem(12, createItem(Material.WRITABLE_BOOK,
                 "<gold><bold>Lore</bold>",
                 List.of(
-                        "<gray>Số dòng: <white>" + data.getLore().size(),
+                        "<gray>Lines: <white>" + data.getLore().size(),
                         "",
-                        "<yellow>Click để chỉnh sửa lore",
-                        "<gray>Mở Lore Editor GUI"
+                        "<yellow>Click to edit lore",
+                        "<gray>Open Lore Editor GUI"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new LoreEditorGui(plugin, player, data).open();
@@ -85,11 +85,11 @@ public class ItemEditorGui extends AbstractGui {
         setItem(13, createItem(Material.ENCHANTING_TABLE,
                 "<gold><bold>Enchantments</bold>",
                 List.of(
-                        "<gray>Số enchant: <white>" + data.getEnchantments().size(),
+                        "<gray>Enchantments: <white>" + data.getEnchantments().size(),
                         "",
                         enchantmentSummary(),
                         "",
-                        "<yellow>Click để chỉnh sửa enchantments"
+                        "<yellow>Click to edit enchantments"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new EnchantmentGui(plugin, player, data).open();
@@ -99,11 +99,11 @@ public class ItemEditorGui extends AbstractGui {
         setItem(14, createItem(Material.WHITE_BANNER,
                 "<gold><bold>Item Flags</bold>",
                 List.of(
-                        "<gray>Số flags: <white>" + data.getFlags().size(),
+                        "<gray>Flags: <white>" + data.getFlags().size(),
                         "",
                         flagsSummary(),
                         "",
-                        "<yellow>Click để chỉnh sửa flags"
+                        "<yellow>Click to edit flags"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new FlagGui(plugin, player, data).open();
@@ -113,14 +113,14 @@ public class ItemEditorGui extends AbstractGui {
         setItem(15, createItem(Material.PAINTING,
                 "<gold><bold>Custom Model Data</bold>",
                 List.of(
-                        "<gray>Hiện tại: <white>" + (data.getCustomModelData() > 0 ? data.getCustomModelData() : "Không"),
+                        "<gray>Current: <white>" + (data.getCustomModelData() > 0 ? data.getCustomModelData() : "None"),
                         "",
-                        "<yellow>Click để thay đổi",
-                        "<gray>Nhập số (-1 để tắt)"
+                        "<yellow>Click to change",
+                        "<gray>Enter number (-1 to disable)"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Nhập số Custom Model Data <gray>(-1 để tắt):",
+                    "<yellow>Enter Custom Model Data number <gray>(-1 to disable):",
                     input -> {
                         try {
                             int cmd = Integer.parseInt(input.trim());
@@ -128,7 +128,7 @@ public class ItemEditorGui extends AbstractGui {
                             saveAndReopen();
                             player.sendMessage(TextUtil.success("Custom Model Data = " + cmd));
                         } catch (NumberFormatException e) {
-                            player.sendMessage(TextUtil.error("Số không hợp lệ!"));
+                            player.sendMessage(TextUtil.error("Invalid number!"));
                             new ItemEditorGui(plugin, player, data).open();
                         }
                     });
@@ -139,9 +139,9 @@ public class ItemEditorGui extends AbstractGui {
                 data.isUnbreakable() ? Material.BEDROCK : Material.COBBLESTONE,
                 "<gold><bold>Unbreakable</bold>",
                 List.of(
-                        "<gray>Hiện tại: " + (data.isUnbreakable() ? "<green>BẬT" : "<red>TẮT"),
+                        "<gray>Current: " + (data.isUnbreakable() ? "<green>ON" : "<red>OFF"),
                         "",
-                        "<yellow>Click để bật/tắt"
+                        "<yellow>Click to toggle"
                 )), event -> {
             data.setUnbreakable(!data.isUnbreakable());
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f,
@@ -154,10 +154,10 @@ public class ItemEditorGui extends AbstractGui {
                 data.isGlowing() ? Material.GLOWSTONE : Material.STONE,
                 "<gold><bold>Glowing</bold>",
                 List.of(
-                        "<gray>Hiện tại: " + (data.isGlowing() ? "<green>BẬT" : "<red>TẮT"),
+                        "<gray>Current: " + (data.isGlowing() ? "<green>ON" : "<red>OFF"),
                         "",
-                        "<yellow>Click để bật/tắt",
-                        "<gray>Thêm hiệu ứng sáng cho item"
+                        "<yellow>Click to toggle",
+                        "<gray>Add glowing effect to item"
                 )), event -> {
             data.setGlowing(!data.isGlowing());
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f,
@@ -169,22 +169,22 @@ public class ItemEditorGui extends AbstractGui {
         setItem(20, createItem(Material.IRON_SWORD,
                 "<gold><bold>Attributes</bold>",
                 List.of(
-                        "<gray>Số attributes: <white>" + data.getAttributes().size(),
+                        "<gray>Attributes: <white>" + data.getAttributes().size(),
                         "",
-                        "<yellow>Click để thêm attribute",
+                        "<yellow>Click to add attribute",
                         "<gray>Format: attribute amount operation slot",
-                        "<gray>VD: generic_attack_damage 15 ADD_NUMBER HAND"
+                        "<gray>Example: generic_attack_damage 15 ADD_NUMBER HAND"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Nhập attribute <gray>(format: attribute amount operation slot)\n" +
-                            "<gray>VD: generic_attack_damage 15 ADD_NUMBER HAND\n" +
-                            "<gray>Nhập 'clear' để xóa tất cả attributes:",
+                    "<yellow>Enter attribute <gray>(format: attribute amount operation slot)\n" +
+                            "<gray>Example: generic_attack_damage 15 ADD_NUMBER HAND\n" +
+                            "<gray>Type 'clear' to remove all attributes:",
                     input -> {
                         if (input.equalsIgnoreCase("clear")) {
                             data.getAttributes().clear();
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Đã xóa tất cả attributes!"));
+                            player.sendMessage(TextUtil.success("Removed all attributes!"));
                             return;
                         }
                         String[] parts = input.trim().split("\\s+");
@@ -200,9 +200,9 @@ public class ItemEditorGui extends AbstractGui {
                             String slot = parts[3].toUpperCase();
                             data.getAttributes().add(new UItemData.AttributeData(attr, amount, operation, slot));
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Đã thêm attribute " + attr + "!"));
+                            player.sendMessage(TextUtil.success("Added attribute " + attr + "!"));
                         } catch (Exception e) {
-                            player.sendMessage(TextUtil.error("Lỗi: " + e.getMessage()));
+                            player.sendMessage(TextUtil.error("Error: " + e.getMessage()));
                             new ItemEditorGui(plugin, player, data).open();
                         }
                     });
@@ -210,38 +210,38 @@ public class ItemEditorGui extends AbstractGui {
 
         // === Rarity (slot 21) ===
         String currentRarity = data.getRarity();
-        String rarityDisplay = currentRarity != null ? currentRarity : "Không";
+        String rarityDisplay = currentRarity != null ? currentRarity : "None";
         setItem(21, createItem(Material.NETHER_STAR,
                 "<gold><bold>Rarity</bold>",
                 List.of(
-                        "<gray>Hiện tại: " + (currentRarity != null ? RarityConfig.getRarityColor(currentRarity) + currentRarity : "<gray>Không"),
+                        "<gray>Current: " + (currentRarity != null ? RarityConfig.getRarityColor(currentRarity) + currentRarity : "<gray>None"),
                         "",
-                        "<yellow>Click để chọn rarity",
+                        "<yellow>Click to choose rarity",
                         "<gray>COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, ULTRA"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             player.closeInventory();
-            StringBuilder msg = new StringBuilder("<gold>Các rarity có sẵn:<dark_gray> ");
+            StringBuilder msg = new StringBuilder("<gold>Available rarities:<dark_gray> ");
             for (String r : RarityConfig.getKeys()) {
                 msg.append("\n").append(RarityConfig.getRarityColor(r)).append("▸ ").append(r);
             }
-            msg.append("\n\n<yellow>Nhập tên rarity (hoặc 'none' để bỏ):");
+            msg.append("\n\n<yellow>Enter rarity name (or 'none' to remove):");
             plugin.getChatInputManager().requestInput(player,
                     msg.toString(),
                     input -> {
                         if (input.equalsIgnoreCase("none")) {
                             data.setRarity(null);
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Đã bỏ rarity!"));
+                            player.sendMessage(TextUtil.success("Removed rarity!"));
                             return;
                         }
                         String upper = input.toUpperCase().trim();
                         if (RarityConfig.getKeys().contains(upper)) {
                             data.setRarity(upper);
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Đã đặt rarity = " + upper));
+                            player.sendMessage(TextUtil.success("Set rarity = " + upper));
                         } else {
-                            player.sendMessage(TextUtil.error("Rarity '" + input + "' không tồn tại!"));
+                            player.sendMessage(TextUtil.error("Rarity '" + input + "' does not exist!"));
                             new ItemEditorGui(plugin, player, data).open();
                         }
                     });
@@ -252,28 +252,28 @@ public class ItemEditorGui extends AbstractGui {
         setItem(22, createItem(Material.BLAZE_POWDER,
                 "<gold><bold>⚡ Passives</bold>",
                 List.of(
-                        "<gray>Số passive: <white>" + passiveCount,
+                        "<gray>Passives: <white>" + passiveCount,
                         "",
-                        "<yellow>Click để quản lý passives",
-                        "<gray>Thêm/sửa/xóa kỹ năng passive",
+                        "<yellow>Click to manage passives",
+                        "<gray>Add/edit/remove passive skills",
                         "<gray>Trigger: HIT, DAMAGED, HOLD, EQUIP, BREAK_BLOCK, KILL"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new PassiveEditorGui(plugin, player, data).open();
         });
 
-        // === Oraxen ID (slot 23) - chỉ hiện nếu Oraxen có ===
+        // === Oraxen ID (slot 23) - only show if Oraxen is present ===
         if (plugin.getIntegrationManager().hasOraxen()) {
             setItem(23, createItem(Material.DIAMOND,
                     "<aqua><bold>Oraxen ID</bold>",
                     List.of(
-                            "<gray>Hiện tại: <white>" + (data.getOraxenId() != null ? data.getOraxenId() : "Không"),
+                            "<gray>Current: <white>" + (data.getOraxenId() != null ? data.getOraxenId() : "None"),
                             "",
-                            "<yellow>Click để đặt Oraxen item ID",
-                            "<gray>Dùng item từ Oraxen làm base"
+                            "<yellow>Click to set Oraxen item ID",
+                            "<gray>Use item from Oraxen as base"
                     )), event -> {
                 plugin.getChatInputManager().requestInput(player,
-                        "<yellow>Nhập Oraxen item ID <gray>(hoặc 'none' để xóa):",
+                        "<yellow>Enter Oraxen item ID <gray>(or 'none' to remove):",
                         input -> {
                             if (input.equalsIgnoreCase("none")) {
                                 data.setOraxenId(null);
@@ -285,18 +285,18 @@ public class ItemEditorGui extends AbstractGui {
             });
         }
 
-        // === ItemsAdder ID (slot 24) - chỉ hiện nếu ItemsAdder có ===
+        // === ItemsAdder ID (slot 24) - only show if ItemsAdder is present ===
         if (plugin.getIntegrationManager().hasItemsAdder()) {
             setItem(24, createItem(Material.EMERALD,
                     "<green><bold>ItemsAdder ID</bold>",
                     List.of(
-                            "<gray>Hiện tại: <white>" + (data.getItemsAdderId() != null ? data.getItemsAdderId() : "Không"),
+                            "<gray>Current: <white>" + (data.getItemsAdderId() != null ? data.getItemsAdderId() : "None"),
                             "",
-                            "<yellow>Click để đặt ItemsAdder item ID",
-                            "<gray>Dùng item từ ItemsAdder làm base"
+                            "<yellow>Click to set ItemsAdder item ID",
+                            "<gray>Use item from ItemsAdder as base"
                     )), event -> {
                 plugin.getChatInputManager().requestInput(player,
-                        "<yellow>Nhập ItemsAdder namespaced ID <gray>(hoặc 'none' để xóa):",
+                        "<yellow>Enter ItemsAdder namespaced ID <gray>(or 'none' to remove):",
                         input -> {
                             if (input.equalsIgnoreCase("none")) {
                                 data.setItemsAdderId(null);
@@ -308,35 +308,50 @@ public class ItemEditorGui extends AbstractGui {
             });
         }
 
-        // === Nút quay lại (slot 46) ===
+        // === Recipe (slot 25) - Open Recipe Editor ===
+        boolean hasRecipe = plugin.getRecipeManager().hasRecipe(data.getId());
+        setItem(25, createItem(
+                hasRecipe ? Material.CRAFTING_TABLE : Material.FURNACE,
+                "<gold><bold>Crafting Recipe</bold>",
+                List.of(
+                        hasRecipe ? "<green>Has recipe" : "<red>No recipe",
+                        "",
+                        "<yellow>Click to edit recipe",
+                        "<gray>Set shaped/shapeless crafting recipe"
+                )), event -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            new RecipeEditorGui(plugin, player, data).open();
+        });
+
+        // === Back button (slot 46) ===
         setItem(46, createBackButton(), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new ItemListGui(plugin, player).open();
         });
 
-        // === Nút SAVE (slot 49) ===
+        // === SAVE button (slot 49) ===
         setItem(49, createItem(Material.EMERALD,
-                "<green><bold>💾 LƯU</bold>",
+                "<green><bold>💾 SAVE</bold>",
                 List.of(
-                        "<gray>Lưu tất cả thay đổi vào file",
+                        "<gray>Save all changes to file",
                         "",
-                        "<yellow>Click để lưu"
+                        "<yellow>Click to save"
                 )), event -> {
             plugin.getItemManager().registerItem(data);
             plugin.getResourcePackManager().syncCmdsToLiveItems();
             plugin.getStorageManager().saveAllNow(plugin.getItemManager());
-            player.sendMessage(TextUtil.success("Đã lưu item '" + data.getId() + "'!"));
+            player.sendMessage(TextUtil.success("Saved item '" + data.getId() + "'!"));
             player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.0f);
             refresh();
         });
 
-        // === Nút DELETE (slot 52) ===
+        // === DELETE button (slot 52) ===
         setItem(52, createItem(Material.BARRIER,
-                "<red><bold>🗑 XÓA</bold>",
+                "<red><bold>🗑 DELETE</bold>",
                 List.of(
-                        "<gray>Xóa item này",
+                        "<gray>Delete this item",
                         "",
-                        "<red>⚠ Click để xóa"
+                        "<red>⚠ Click to delete"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 0.5f);
             new ConfirmDeleteGui(plugin, player, data, 0).open();
@@ -358,12 +373,12 @@ public class ItemEditorGui extends AbstractGui {
     }
 
     private String enchantmentSummary() {
-        if (data.getEnchantments().isEmpty()) return "<gray>Không có enchantment";
+        if (data.getEnchantments().isEmpty()) return "<gray>No enchantments";
         StringBuilder sb = new StringBuilder();
         int count = 0;
         for (var entry : data.getEnchantments().entrySet()) {
             if (count >= 3) {
-                sb.append("<gray> (+").append(data.getEnchantments().size() - 3).append(" nữa)");
+                sb.append("<gray> (+").append(data.getEnchantments().size() - 3).append(" more)");
                 break;
             }
             if (count > 0) sb.append("<gray>, ");
@@ -374,12 +389,12 @@ public class ItemEditorGui extends AbstractGui {
     }
 
     private String flagsSummary() {
-        if (data.getFlags().isEmpty()) return "<gray>Không có flag";
+        if (data.getFlags().isEmpty()) return "<gray>No flags";
         StringBuilder sb = new StringBuilder();
         int count = 0;
         for (String flag : data.getFlags()) {
             if (count >= 3) {
-                sb.append("<gray> (+").append(data.getFlags().size() - 3).append(" nữa)");
+                sb.append("<gray> (+").append(data.getFlags().size() - 3).append(" more)");
                 break;
             }
             if (count > 0) sb.append("<gray>, ");

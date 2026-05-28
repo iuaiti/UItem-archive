@@ -48,11 +48,11 @@ public class EnchantmentGui extends AbstractGui {
         setItem(4, createItem(Material.ENCHANTING_TABLE,
                 "<light_purple><bold>Enchantment Editor</bold>",
                 List.of(
-                        "<gray>Chỉnh sửa enchantments cho item",
+                        "<gray>Edit enchantments for this item",
                         "",
-                        "<yellow>Click trái: <white>Tăng level",
-                        "<yellow>Click phải: <white>Giảm level",
-                        "<yellow>Shift+Click: <white>Xóa hoàn toàn"
+                        "<yellow>Left click: <white>Increase level",
+                        "<yellow>Right click: <white>Decrease level",
+                        "<yellow>Shift+Click: <white>Remove entirely"
                 )));
 
         List<Enchantment> enchants = plugin.getItemManager().getCommonEnchantments();
@@ -85,14 +85,14 @@ public class EnchantmentGui extends AbstractGui {
                 lore.add("<dark_gray>Key: " + enchKey);
                 lore.add("");
                 if (hasEnchant) {
-                    lore.add("<green>✔ Đã thêm - Level " + currentLevel);
+                    lore.add("<green>✔ Added - Level " + currentLevel);
                 } else {
-                    lore.add("<red>✘ Chưa thêm");
+                    lore.add("<red>✘ Not added");
                 }
                 lore.add("");
-                lore.add("<yellow>Click trái: <white>Tăng level");
-                lore.add("<yellow>Click phải: <white>Giảm level");
-                lore.add("<yellow>Shift+Click: <white>Xóa");
+                lore.add("<yellow>Left click: <white>Increase level");
+                lore.add("<yellow>Right click: <white>Decrease level");
+                lore.add("<yellow>Shift+Click: <white>Remove");
 
                 meta.lore(lore.stream().map(TextUtil::parse).toList());
                 item.setItemMeta(meta);

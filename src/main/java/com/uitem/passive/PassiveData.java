@@ -1,5 +1,6 @@
 package com.uitem.passive;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class PassiveData {
@@ -52,6 +53,6 @@ public class PassiveData {
     }
 
     public PassiveData copy() {
-        return new PassiveData(type, trigger, conditions != null ? Map.copyOf(conditions) : null, cooldown);
+        return new PassiveData(type, trigger, conditions != null ? new LinkedHashMap<>(conditions) : null, cooldown);
     }
 }

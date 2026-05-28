@@ -37,7 +37,7 @@ public class ResourcePackServer {
         server.start();
         running = true;
 
-        plugin.getLogger().info("[UItem] Resource pack server đang chạy tại http://0.0.0.0:" + port + "/" + plugin.getName().toLowerCase());
+        plugin.getLogger().info("[UItem] Resource pack server running at http://0.0.0.0:" + port + "/" + plugin.getName().toLowerCase());
     }
 
     public void stop() {
@@ -74,7 +74,7 @@ public class ResourcePackServer {
         public void handle(HttpExchange exchange) throws IOException {
             File packFile = plugin.getResourcePackManager().getLastZipFile();
             if (packFile == null || !packFile.exists()) {
-                String response = "Resource pack chưa được generate. Hãy dùng /uitem rp generate";
+                String response = "Resource pack has not been generated. Use /uitem rp generate";
                 exchange.sendResponseHeaders(503, response.getBytes().length);
                 try (OutputStream os = exchange.getResponseBody()) {
                     os.write(response.getBytes());

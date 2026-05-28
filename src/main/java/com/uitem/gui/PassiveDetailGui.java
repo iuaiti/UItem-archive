@@ -39,39 +39,39 @@ public class PassiveDetailGui extends AbstractGui {
         }
 
         setItem(4, createItem(Material.BLAZE_POWDER,
-                "<gold><bold>Chỉnh Sửa Passive</bold>",
-                List.of("<gray>Loại: <white>" + passive.getType(), "<gray>Trigger: <white>" + passive.getTrigger())));
+                "<gold><bold>Edit Passive</bold>",
+                List.of("<gray>Type: <white>" + passive.getType(), "<gray>Trigger: <white>" + passive.getTrigger())));
 
         setItem(10, createItem(Material.REPEATER,
-                "<gold><bold>Loại</bold>",
-                List.of("<gray>Hiện tại: <white>" + passive.getType(), "", "<yellow>Click để đổi")),
+                "<gold><bold>Type</bold>",
+                List.of("<gray>Current: <white>" + passive.getType(), "", "<yellow>Click to change")),
                 ev -> editField("type"));
 
         setItem(11, createItem(Material.COMPARATOR,
                 "<aqua><bold>Trigger</bold>",
-                List.of("<gray>Hiện tại: <white>" + passive.getTrigger(), "", "<yellow>Click để đổi")),
+                List.of("<gray>Current: <white>" + passive.getTrigger(), "", "<yellow>Click to change")),
                 ev -> editField("trigger"));
 
         setItem(12, createItem(Material.CLOCK,
                 "<yellow><bold>Cooldown</bold>",
-                List.of("<gray>Hiện tại: <white>" + passive.getCooldown() + "s", "", "<yellow>Click để đổi")),
+                List.of("<gray>Current: <white>" + passive.getCooldown() + "s", "", "<yellow>Click to change")),
                 ev -> editField("cooldown"));
 
         setItem(14, createItem(Material.TRIPWIRE_HOOK,
                 "<green><bold>Conditions</bold>",
-                List.of("<gray>" + (passive.getConditions() != null ? passive.getConditions().size() : 0) + " condition(s)", "", "<yellow>Click để quản lý")),
+                List.of("<gray>" + (passive.getConditions() != null ? passive.getConditions().size() : 0) + " condition(s)", "", "<yellow>Click to manage")),
                 ev -> manageConditions());
 
         setItem(15, createItem(Material.ENDER_PEARL,
                 "<light_purple><bold>Test Passive</bold>",
-                List.of("<gray>Kích hoạt passive ngay lập tức")),
+                List.of("<gray>Activate passive immediately")),
                 ev -> {
                     player.closeInventory();
                     Map<String, Object> ctx = new HashMap<>();
                     ctx.put("target", player);
                     PassiveManager pm = new PassiveManager(plugin, plugin.getItemManager());
                     pm.executePassives(player, data.getId(), passive.getTrigger(), ctx);
-                    player.sendMessage(TextUtil.success("Đã test passive " + passive.getType() + "!"));
+                    player.sendMessage(TextUtil.success("Tested passive " + passive.getType() + "!"));
                 });
 
         setItem(31, createBackButton(), ev -> new PassiveEditorGui(plugin, player, data).open());
@@ -102,10 +102,10 @@ public class PassiveDetailGui extends AbstractGui {
         player.closeInventory();
 
         String prompt = switch (field) {
-            case "type" -> "<yellow>Nhập loại passive:";
-            case "trigger" -> "<yellow>Nhập trigger (HIT/DAMAGED/HOLD/EQUIP/BREAK_BLOCK/KILL):";
-            case "cooldown" -> "<yellow>Nhập cooldown (giây, 0 = không cooldown):";
-            default -> "<yellow>Nhập giá trị:";
+            case "type" -> "<yellow>Enter passive type:";
+            case "trigger" -> "<yellow>Enter trigger (HIT/DAMAGED/HOLD/EQUIP/BREAK_BLOCK/KILL):";
+            case "cooldown" -> "<yellow>Enter cooldown (seconds, 0 = no cooldown):";
+            default -> "<yellow>Enter value:";
         };
 
         plugin.getChatInputManager().requestInput(player, prompt, input -> {
@@ -115,7 +115,7 @@ public class PassiveDetailGui extends AbstractGui {
                 case "trigger" -> passive.setTrigger(val.toUpperCase());
                 case "cooldown" -> {
                     try { passive.setCooldown(Integer.parseInt(val)); }
-                    catch (NumberFormatException e) { player.sendMessage(TextUtil.error("Số không hợp lệ!")); }
+                    catch (NumberFormatException e) { player.sendMessage(TextUtil.error("Invalid number!")); }
                 }
             }
             save();
@@ -150,7 +150,7 @@ public class PassiveDetailGui extends AbstractGui {
 
             setItem(4, createItem(Material.TRIPWIRE_HOOK,
                     "<green><bold>Conditions</bold>",
-                    List.of("<gray>Cho passive: <white>" + passive.getType())));
+                    List.of("<gray>For passive: <white>" + passive.getType())));
 
             String[] condTypes = {"chance", "health_below", "sneaking", "sprinting", "world", "biome", "time", "weather"};
             int[] slots = {10, 11, 12, 13, 14, 15, 16, 19};
@@ -161,11 +161,11 @@ public class PassiveDetailGui extends AbstractGui {
                 Object val = has ? passive.getConditions().get(key) : null;
 
                 List<String> lore = new ArrayList<>();
-                if (has) lore.add("<gray>Giá trị: <white>" + val);
-                else lore.add("<red>✘ Chưa đặt");
+                if (has) lore.add("<gray>Value: <white>" + val);
+                else lore.add("<red>✘ Not set");
                 lore.add("");
-                lore.add("<yellow>Click trái: Đặt/Sửa");
-                lore.add("<red>Click phải: Xóa");
+                lore.add("<yellow>Left click: Set/Edit");
+                lore.add("<red>Right click: Delete");
 
                 setItem(slots[i], createItem(
                         has ? Material.LIME_DYE : Material.RED_DYE,
@@ -189,19 +189,19 @@ public class PassiveDetailGui extends AbstractGui {
                                 }
                                 passive.getConditions().put(key, parsed);
                                 save();
-                                player.sendMessage(TextUtil.success("Đã đặt " + key + " = " + parsed));
+                                player.sendMessage(TextUtil.success("Set " + key + " = " + parsed));
                                 open();
                             });
                         });
             }
 
             setItem(49, createItem(Material.EMERALD,
-                    "<green><bold>Thêm condition tùy chỉnh</bold>",
-                    List.of("<gray>Thêm key-value bất kỳ")),
+                    "<green><bold>Add custom condition</bold>",
+                    List.of("<gray>Add any key-value pair")),
                     ev -> {
                         player.closeInventory();
                         plugin.getChatInputManager().requestInput(player,
-                                "<yellow>Nhập key=value (VD: my_custom_cond=hello):",
+                                "<yellow>Enter key=value (e.g. my_custom_cond=hello):",
                                 input -> {
                                     String[] parts = input.split("=", 2);
                                     if (parts.length == 2) {
@@ -210,7 +210,7 @@ public class PassiveDetailGui extends AbstractGui {
                                         }
                                         passive.getConditions().put(parts[0].trim(), parts[1].trim());
                                         save();
-                                        player.sendMessage(TextUtil.success("Đã thêm condition!"));
+                                        player.sendMessage(TextUtil.success("Added condition!"));
                                     }
                                     open();
                                 });
@@ -221,15 +221,15 @@ public class PassiveDetailGui extends AbstractGui {
 
         private String getPrompt(String key) {
             return switch (key) {
-                case "chance" -> "<yellow>Nhập chance (% từ 0-100):";
-                case "health_below" -> "<yellow>Nhập ngưỡng máu tối đa để kích hoạt:";
-                case "sneaking" -> "<yellow>Nhập true/false (yêu cầu đang ngồi/không ngồi):";
-                case "sprinting" -> "<yellow>Nhập true/false (yêu cầu đang chạy/không chạy):";
-                case "world" -> "<yellow>Nhập tên world:";
-                case "biome" -> "<yellow>Nhập tên biome (VD: plains, desert):";
-                case "time" -> "<yellow>Nhập thời gian (day/night/dawn/dusk):";
-                case "weather" -> "<yellow>Nhập thời tiết (clear/rain/thunder):";
-                default -> "<yellow>Nhập giá trị cho " + key + ":";
+                case "chance" -> "<yellow>Enter chance (% from 0-100):";
+                case "health_below" -> "<yellow>Enter max health threshold to activate:";
+                case "sneaking" -> "<yellow>Enter true/false (require sneaking/not sneaking):";
+                case "sprinting" -> "<yellow>Enter true/false (require sprinting/not sprinting):";
+                case "world" -> "<yellow>Enter world name:";
+                case "biome" -> "<yellow>Enter biome name (e.g. plains, desert):";
+                case "time" -> "<yellow>Enter time (day/night/dawn/dusk):";
+                case "weather" -> "<yellow>Enter weather (clear/rain/thunder):";
+                default -> "<yellow>Enter value for " + key + ":";
             };
         }
 

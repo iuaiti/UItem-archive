@@ -128,7 +128,7 @@ public class PassiveManager {
             String timeCondition = conds.get("time").toString().toLowerCase(Locale.ROOT);
             switch (timeCondition) {
                 case "day" -> { if (time < 0 || time > 12000) return false; }
-                case "night" -> { if (time >= 12000 && time <= 18000) return false; }
+                case "night" -> { if (time < 13000 || time > 23000) return false; }
                 case "dawn" -> { if (time < 22000 || time > 24000) return false; }
                 case "dusk" -> { if (time < 12000 || time > 14000) return false; }
             }

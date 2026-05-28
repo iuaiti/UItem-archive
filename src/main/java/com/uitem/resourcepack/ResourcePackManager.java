@@ -88,7 +88,7 @@ public class ResourcePackManager {
     public void reloadFromConfig(org.bukkit.configuration.file.FileConfiguration config) {
         readConfigFields(config);
         loadCmdConfig();
-        plugin.getLogger().info("[UItem] ResourcePackManager đã reload config.");
+        plugin.getLogger().info("[UItem] ResourcePackManager reloaded config.");
     }
 
     private void readConfigFields(org.bukkit.configuration.file.FileConfiguration config) {
@@ -136,7 +136,7 @@ public class ResourcePackManager {
                 try {
                     cmdConfigFile.createNewFile();
                 } catch (IOException e) {
-                    plugin.getLogger().warning("Không thể tạo file CMD config: " + e.getMessage());
+                    plugin.getLogger().warning("Could not create CMD config file: " + e.getMessage());
                 }
             }
             cmdConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(cmdConfigFile);
@@ -164,7 +164,7 @@ public class ResourcePackManager {
             try {
                 cmdConfig.save(cmdConfigFile);
             } catch (IOException e) {
-                plugin.getLogger().warning("Không thể lưu CMD config: " + e.getMessage());
+                plugin.getLogger().warning("Could not save CMD config: " + e.getMessage());
             }
         }
     }
@@ -298,7 +298,7 @@ public class ResourcePackManager {
         }
 
         generatePackMcmeta();
-        plugin.getLogger().info("[UItem] Resource pack đã được generate tại: " + rpDir.getAbsolutePath());
+        plugin.getLogger().info("[UItem] Resource pack generated at: " + rpDir.getAbsolutePath());
     }
 
     private void clearGeneratedPack() {
@@ -312,11 +312,11 @@ public class ResourcePackManager {
                         try {
                             Files.deleteIfExists(path);
                         } catch (IOException e) {
-                            plugin.getLogger().warning("Không thể xóa file cũ: " + path + " | " + e.getMessage());
+                            plugin.getLogger().warning("Could not delete old file: " + path + " | " + e.getMessage());
                         }
                     });
         } catch (IOException e) {
-            plugin.getLogger().warning("Không thể dọn resource pack cũ: " + e.getMessage());
+            plugin.getLogger().warning("Could not clean old resource pack: " + e.getMessage());
         }
     }
 
@@ -396,10 +396,10 @@ public class ResourcePackManager {
                 return;
             }
 
-            plugin.getLogger().warning("[UItem] Thiếu texture cho item: " + itemId + " (cần: " + source.toAbsolutePath() + "). Đang tạo placeholder.");
+            plugin.getLogger().warning("[UItem] Missing texture for item: " + itemId + " (needed: " + source.toAbsolutePath() + "). Generating placeholder.");
             generatePlaceholderTexture(target, itemId);
         } catch (IOException e) {
-            plugin.getLogger().warning("[UItem] Không thể copy/tạo texture cho item " + itemId + ": " + e.getMessage());
+            plugin.getLogger().warning("[UItem] Could not copy/generate texture for item " + itemId + ": " + e.getMessage());
         }
     }
 
@@ -445,7 +445,7 @@ public class ResourcePackManager {
 
         File zipFile = new File(plugin.getDataFolder(), outputZipName);
         if (zipFile.exists() && !zipFile.delete()) {
-            throw new IOException("Không thể xóa file zip cũ: " + zipFile.getAbsolutePath());
+            throw new IOException("Could not delete old zip file: " + zipFile.getAbsolutePath());
         }
 
         Path rpPath = rpDir.toPath();
@@ -470,7 +470,7 @@ public class ResourcePackManager {
 
         lastZipFile = zipFile;
         lastPackHash = calculateSHA1(zipFile);
-        plugin.getLogger().info("[UItem] Đã export resource pack: " + zipFile.getAbsolutePath());
+        plugin.getLogger().info("[UItem] Exported resource pack: " + zipFile.getAbsolutePath());
         return zipFile;
     }
 
@@ -479,7 +479,7 @@ public class ResourcePackManager {
      */
     public byte[] calculateSHA1(File file) throws IOException {
         if (file == null || !file.exists()) {
-            throw new IOException("File không tồn tại để tính SHA-1");
+            throw new IOException("File does not exist to calculate SHA-1");
         }
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
@@ -492,7 +492,7 @@ public class ResourcePackManager {
             }
             return digest.digest();
         } catch (NoSuchAlgorithmException e) {
-            throw new IOException("SHA-1 không khả dụng", e);
+            throw new IOException("SHA-1 not available", e);
         }
     }
 
@@ -530,7 +530,7 @@ public class ResourcePackManager {
     public void applyResourcePack(Player player, String url, String hashHex) {
         byte[] hash = parseHexHash(hashHex);
         if (hash == null && hashHex != null && !hashHex.isBlank()) {
-            plugin.getLogger().warning("[UItem] Hash không hợp lệ, sẽ dùng hash đã cache hoặc gửi pack không hash.");
+            plugin.getLogger().warning("[UItem] Invalid hash, will use cached hash or send pack without hash.");
         }
         applyResourcePack(player, url, hash);
     }
@@ -576,7 +576,7 @@ public class ResourcePackManager {
             }
             Files.writeString(file.toPath(), content, StandardCharsets.UTF_8);
         } catch (IOException e) {
-            plugin.getLogger().warning("Không thể ghi file: " + file.getAbsolutePath() + " | " + e.getMessage());
+            plugin.getLogger().warning("Could not write file: " + file.getAbsolutePath() + " | " + e.getMessage());
         }
     }
 

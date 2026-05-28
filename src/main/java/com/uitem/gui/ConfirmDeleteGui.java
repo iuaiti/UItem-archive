@@ -18,7 +18,7 @@ public class ConfirmDeleteGui extends AbstractGui {
     private final int returnPage;
 
     public ConfirmDeleteGui(UItemPlugin plugin, Player player, UItemData data, int returnPage) {
-        super(plugin, player, 27, "<red><bold>Xác nhận xóa item");
+        super(plugin, player, 27, "<red><bold>Confirm Delete Item");
         this.data = data;
         this.returnPage = returnPage;
     }
@@ -33,34 +33,34 @@ public class ConfirmDeleteGui extends AbstractGui {
         // Hiển thị item cần xóa ở giữa
         setItem(13, plugin.getItemManager().buildItemStack(data));
 
-        // Nút XÁC NHẬN (xanh lá)
+        // Confirm button (green)
         setItem(11, createItem(Material.LIME_WOOL,
-                "<green><bold>XÁC NHẬN XÓA",
+                "<green><bold>CONFIRM DELETE",
                 List.of(
-                        "<gray>Xóa item: <white>" + data.getId(),
+                        "<gray>Delete item: <white>" + data.getId(),
                         "",
-                        "<red>⚠ Hành động này không thể hoàn tác!"
+                        "<red>⚠ This action cannot be undone!"
                 )), event -> {
             // Dùng API để fire UItemDeleteEvent — plugin khác có thể cancel
             boolean deleted = com.uitem.api.UItemAPI.get()
                     .removeItem(data.getId(), player);
             if (!deleted) {
                 player.sendMessage(com.uitem.util.TextUtil.error(
-                        "Không thể xóa item '" + data.getId() + "' (bị chặn bởi plugin khác)."));
+                        "Cannot delete item '" + data.getId() + "' (blocked by another plugin)."));
                 new ItemListGui(plugin, player, returnPage).open();
                 return;
             }
             player.sendMessage(com.uitem.util.TextUtil.success(
-                    "Đã xóa item '" + data.getId() + "'!"));
+                    "Deleted item '" + data.getId() + "'!"));
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
             new ItemListGui(plugin, player, returnPage).open();
         });
 
-        // Nút HỦY (đỏ)
+        // Cancel button (red)
         setItem(15, createItem(Material.RED_WOOL,
-                "<red><bold>HỦY",
+                "<red><bold>CANCEL",
                 List.of(
-                        "<gray>Quay lại danh sách items"
+                        "<gray>Back to item list"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new ItemListGui(plugin, player, returnPage).open();

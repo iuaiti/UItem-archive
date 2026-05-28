@@ -3,8 +3,8 @@ items:
     material: DIAMOND_SWORD
     display-name: "<red><bold>Fire Blade"
     lore:
-      - "<gray>Một thanh kiếm lửa huyền thoại"
-      - "<gray>Thiêu đốt mọi kẻ thù"
+      - "<gray>A legendary fire blade"
+      - "<gray>Burns all enemies"
     enchantments:
       sharpness: 5
       fire_aspect: 2
@@ -38,7 +38,7 @@ items:
     material: NETHERITE_SWORD
     display-name: "<aqua><bold>Ice Ender"
     lore:
-      - "<gray>Băng giá vĩnh cửu"
+      - "<gray>Eternal frost"
     enchantments:
       sharpness: 7
       unbreaking: 5
@@ -71,7 +71,7 @@ items:
     material: BLAZE_ROD
     display-name: "<green><bold>Healing Staff"
     lore:
-      - "<gray>Quyền trượng hồi phục"
+      - "<gray>Healing staff"
     rarity: RARE
     passives:
       p0:

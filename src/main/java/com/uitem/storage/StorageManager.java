@@ -57,7 +57,7 @@ public class StorageManager {
         ConfigurationSection itemsSection = config.getConfigurationSection("items");
 
         if (itemsSection == null) {
-            plugin.getLogger().info("Không tìm thấy mục 'items' trong items.yml. Bắt đầu với 0 items.");
+            plugin.getLogger().info("No 'items' section found in items.yml. Starting with 0 items.");
             return;
         }
 
@@ -72,7 +72,7 @@ public class StorageManager {
                 try {
                     data.setMaterial(Material.valueOf(materialStr.toUpperCase(Locale.ROOT)));
                 } catch (IllegalArgumentException e) {
-                    plugin.getLogger().warning("Material không hợp lệ '" + materialStr + "' cho item '" + id + "'. Dùng STONE.");
+                    plugin.getLogger().warning("Invalid material '" + materialStr + "' for item '" + id + "'. Using STONE.");
                     data.setMaterial(Material.STONE);
                 }
 
@@ -139,10 +139,10 @@ public class StorageManager {
                 }
 
                 manager.registerItem(data);
-                plugin.getLogger().info("  Đã load item: " + id);
+                plugin.getLogger().info("  Loaded item: " + id);
 
             } catch (Exception e) {
-                plugin.getLogger().log(Level.WARNING, "Lỗi khi load item '" + id + "'", e);
+                plugin.getLogger().log(Level.WARNING, "Error loading item '" + id + "'", e);
             }
         }
     }
@@ -275,7 +275,7 @@ public class StorageManager {
             try {
                 config.save(itemsFile);
             } catch (IOException e) {
-                plugin.getLogger().log(Level.SEVERE, "Không thể lưu items.yml!", e);
+                plugin.getLogger().log(Level.SEVERE, "Could not save items.yml!", e);
             }
         }
     }
@@ -330,9 +330,9 @@ public class StorageManager {
         synchronized (fileLock) {
             try {
                 config.save(itemsFile);
-                plugin.getLogger().info("Đã tạo items.yml mẫu với 2 items demo.");
+                plugin.getLogger().info("Created sample items.yml with 2 demo items.");
             } catch (IOException e) {
-                plugin.getLogger().log(Level.SEVERE, "Không thể tạo items.yml!", e);
+                plugin.getLogger().log(Level.SEVERE, "Could not create items.yml!", e);
             }
         }
     }

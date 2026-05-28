@@ -51,7 +51,7 @@ public class MaterialPickerGui extends AbstractGui {
                 "PORTAL", "VOID_AIR", "CAVE_AIR", "BUBBLE_COLUMN", "KNOWLEDGE_BOOK",
                 "COMMAND_BLOCK_MINECART", "SPAWNER", "END_GATEWAY", "LIGHT",
                 "FARMLAND", "DIRT_PATH", "FROSTED_ICE", "PISTON_HEAD", "MOVING_PISTON",
-                "FIRE", "SOUL_FIRE", "NETHER_PORTAL", "END_PORTAL", "TRIPWIRE",
+                "FIRE", "SOUL_FIRE", "NETHER_PORTAL", "TRIPWIRE",
                 "BUDDING_AMETHYST", "REINFORCED_DEEPSLATE", "PETRIFIED_OAK_SLAB",
                 "PLAYER_HEAD", "PLAYER_WALL_HEAD", "DRAGON_HEAD", "DRAGON_WALL_HEAD",
                 "INFESTED_STONE", "INFESTED_COBBLESTONE", "INFESTED_STONE_BRICKS",
@@ -65,7 +65,7 @@ public class MaterialPickerGui extends AbstractGui {
 
     public MaterialPickerGui(UItemPlugin plugin, Player player, UItemData data,
                              Consumer<String> callback, int page, String filter, String category) {
-        super(plugin, player, 54, "<gold><bold>Chọn Material</bold>");
+        super(plugin, player, 54, "<gold><bold>Choose Material</bold>");
         this.data = data;
         this.callback = callback;
         this.page = page;
@@ -101,6 +101,7 @@ public class MaterialPickerGui extends AbstractGui {
         }
 
         List<Material> result = new ArrayList<>(all);
+        result.removeIf(m -> !m.isItem());
         result.removeIf(m -> m.name().endsWith("_WALL_HEAD"));
 
         if (filter != null && !filter.isBlank()) {
@@ -117,15 +118,15 @@ public class MaterialPickerGui extends AbstractGui {
         fillBorder(6);
 
         setItem(4, createItem(Material.COMPASS,
-                "<gold><bold>Chọn Material</bold>",
+                "<gold><bold>Choose Material</bold>",
                 List.of(
-                        "<gray>Danh mục: <white>" + category,
-                        "<gray>Tổng số: <white>" + materials.size(),
-                        filter != null ? "<gray>Lọc: <white>" + filter : ""
+                        "<gray>Category: <white>" + category,
+                        "<gray>Total: <white>" + materials.size(),
+                        filter != null ? "<gray>Filter: <white>" + filter : ""
                 )));
 
         String[] cats = {"all", "blocks", "items", "swords", "tools", "armor", "unobtainable"};
-        String[] display = {"<white>Tất cả", "<green>Khối", "<aqua>Item", "<red>Kiếm", "<gold>Công cụ", "<blue>Giáp", "<dark_red>Không lấy được"};
+        String[] display = {"<white>All", "<green>Blocks", "<aqua>Items", "<red>Swords", "<gold>Tools", "<blue>Armor", "<dark_red>Unobtainable"};
         int[] catSlots = {1, 2, 3, 5, 6, 7, 8};
 
         for (int i = 0; i < cats.length; i++) {
@@ -144,12 +145,12 @@ public class MaterialPickerGui extends AbstractGui {
         }
 
         setItem(53, createItem(Material.OAK_SIGN,
-                "<gold><bold>Tìm kiếm</bold>",
-                List.of(filter != null ? "<gray>Đang lọc: <white>" + filter : "<gray>Click để tìm material theo tên")),
+                "<gold><bold>Search</bold>",
+                List.of(filter != null ? "<gray>Filtering: <white>" + filter : "<gray>Click to search material by name")),
                 ev -> {
                     player.closeInventory();
                     plugin.getChatInputManager().requestInput(player,
-                            "<yellow>Nhập tên material cần tìm (Enter để xóa lọc):",
+                            "<yellow>Enter material name to search (Enter to clear filter):",
                             input -> {
                                 String f = input.trim();
                                 if (f.isEmpty()) f = null;
@@ -170,7 +171,7 @@ public class MaterialPickerGui extends AbstractGui {
             if (meta != null) {
                 meta.displayName(TextUtil.parse("<white>" + mat.name()));
                 meta.lore(List.of(
-                        TextUtil.parse("<gray>Click để chọn material này"),
+                        TextUtil.parse("<gray>Click to select this material"),
                         TextUtil.parse("<yellow>" + mat.name())
                 ));
                 item.setItemMeta(meta);
@@ -182,7 +183,7 @@ public class MaterialPickerGui extends AbstractGui {
                 plugin.getItemManager().registerItem(data);
                 plugin.getStorageManager().saveAll(plugin.getItemManager());
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.0f);
-                player.sendMessage(TextUtil.success("Đã đặt material = " + materialName));
+                player.sendMessage(TextUtil.success("Set material = " + materialName));
                 if (callback != null) callback.accept(materialName);
             });
         }

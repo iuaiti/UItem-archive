@@ -11,9 +11,12 @@ softdepend:
 commands:
   uitem:
     description: UItem main command
-    usage: /uitem|ui <give|editor|reload|list|rp>
+    usage: /uitem|ui <give|editor|reload|list|rp|craft>
     aliases: [ui]
     permission: uitem.admin
+  crafting:
+    description: Open the UItem crafting table
+    aliases: [craft]
 permissions:
   uitem.admin:
     description: Full access to UItem

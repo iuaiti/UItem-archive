@@ -43,7 +43,7 @@ public class ChatInputManager implements Listener {
 
         player.closeInventory();
         player.sendMessage(TextUtil.prefixed(prompt));
-        player.sendMessage(TextUtil.info("Nhập 'cancel' để hủy."));
+        player.sendMessage(TextUtil.info("Type 'cancel' to abort."));
     }
 
     /**
@@ -79,7 +79,7 @@ public class ChatInputManager implements Listener {
                 return;
             }
             if (input.equalsIgnoreCase("cancel")) {
-                player.sendMessage(TextUtil.info("Đã hủy."));
+                player.sendMessage(TextUtil.info("Cancelled."));
                 return;
             }
             request.callback().accept(input);

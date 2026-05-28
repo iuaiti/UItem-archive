@@ -46,7 +46,7 @@ public class FlagGui extends AbstractGui {
             boolean isEnabled = data.getFlags().contains(flagName);
 
             Material iconMat = isEnabled ? Material.LIME_DYE : Material.RED_DYE;
-            String statusText = isEnabled ? "<green>✔ BẬT" : "<red>✘ TẮT";
+            String statusText = isEnabled ? "<green>✔ ON" : "<red>✘ OFF";
 
             ItemStack item = new ItemStack(iconMat);
             ItemMeta meta = item.getItemMeta();
@@ -54,11 +54,11 @@ public class FlagGui extends AbstractGui {
                 meta.displayName(TextUtil.parse(
                         (isEnabled ? "<green>" : "<red>") + flagName));
                 meta.lore(List.of(
-                        TextUtil.parse("<gray>Trạng thái: " + statusText),
+                        TextUtil.parse("<gray>Status: " + statusText),
                         TextUtil.parse(""),
                         TextUtil.parse("<gray>" + getFlagDescription(flag)),
                         TextUtil.parse(""),
-                        TextUtil.parse("<yellow>Click để bật/tắt")
+                        TextUtil.parse("<yellow>Click to toggle")
                 ));
                 if (isEnabled) {
                     meta.setEnchantmentGlintOverride(true);
@@ -89,15 +89,15 @@ public class FlagGui extends AbstractGui {
 
     private String getFlagDescription(ItemFlag flag) {
         return switch (flag) {
-            case HIDE_ENCHANTS -> "Ẩn danh sách enchantments";
-            case HIDE_ATTRIBUTES -> "Ẩn thuộc tính (damage, speed...)";
-            case HIDE_UNBREAKABLE -> "Ẩn dòng Unbreakable";
-            case HIDE_DESTROYS -> "Ẩn danh sách block có thể phá";
-            case HIDE_PLACED_ON -> "Ẩn danh sách block có thể đặt lên";
-            case HIDE_ADDITIONAL_TOOLTIP -> "Ẩn tooltip phụ (potion, banner...)";
-            case HIDE_DYE -> "Ẩn màu nhuộm leather armor";
-            case HIDE_ARMOR_TRIM -> "Ẩn armor trim";
-            default -> "Không có mô tả";
+            case HIDE_ENCHANTS -> "Hide enchantments";
+            case HIDE_ATTRIBUTES -> "Hide attributes (damage, speed...)";
+            case HIDE_UNBREAKABLE -> "Hide Unbreakable line";
+            case HIDE_DESTROYS -> "Hide destroyable blocks list";
+            case HIDE_PLACED_ON -> "Hide placeable-on blocks list";
+            case HIDE_ADDITIONAL_TOOLTIP -> "Hide additional tooltip (potion, banner...)";
+            case HIDE_DYE -> "Hide leather armor dye color";
+            case HIDE_ARMOR_TRIM -> "Hide armor trim";
+            default -> "No description";
         };
     }
 }

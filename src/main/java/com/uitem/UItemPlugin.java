@@ -8,6 +8,7 @@ import com.uitem.integration.IntegrationManager;
 import com.uitem.listener.PassiveListener;
 import com.uitem.listener.UItemActionListener;
 import com.uitem.rarity.RarityConfig;
+import com.uitem.recipe.RecipeManager;
 import com.uitem.resourcepack.ResourcePackManager;
 import com.uitem.resourcepack.ResourcePackServer;
 import com.uitem.storage.StorageManager;
@@ -36,6 +37,7 @@ public final class UItemPlugin extends JavaPlugin {
     private com.uitem.search.SearchManager searchManager;
     private PassiveListener passiveListener;
     private ResourcePackServer packServer;
+    private RecipeManager recipeManager;
 
     @Override
     public void onEnable() {
@@ -59,6 +61,8 @@ public final class UItemPlugin extends JavaPlugin {
         integrationManager.detectIntegrations();
         resourcePackManager.syncCmdsToLiveItems();
 
+        this.recipeManager = new RecipeManager(this, this.itemManager);
+
         RarityConfig.load(this);
 
         this.passiveListener = new PassiveListener(this);
@@ -75,12 +79,18 @@ public final class UItemPlugin extends JavaPlugin {
         Objects.requireNonNull(getCommand("uitem")).setExecutor(command);
         Objects.requireNonNull(getCommand("uitem")).setTabCompleter(command);
 
+        com.uitem.command.CraftingCommand craftingCommand = new com.uitem.command.CraftingCommand(this);
+        org.bukkit.command.PluginCommand craftCmd = getCommand("crafting");
+        if (craftCmd != null) {
+            craftCmd.setExecutor(craftingCommand);
+        }
+
         // Khởi động resource pack server
         startPackServer();
 
         getLogger().info("=================================");
-        getLogger().info("  UItem v" + getDescription().getVersion() + " đã được bật!");
-        getLogger().info("  Đã load " + itemManager.getAllItems().size() + " custom items.");
+        getLogger().info("  UItem v" + getDescription().getVersion() + " enabled!");
+        getLogger().info("  Loaded " + itemManager.getAllItems().size() + " custom items.");
         getLogger().info("  Integrations: " + integrationManager.getStatus());
         getLogger().info("  Scheduler mode: " + (SchedulerUtil.isFolia() ? "Folia" : "Paper/Spigot"));
 
@@ -89,7 +99,7 @@ public final class UItemPlugin extends JavaPlugin {
             SchedulerUtil.runAsync(this, () -> {
                 try {
                     resourcePackManager.exportZip();
-                    getLogger().info("[UItem] Resource pack đã được export thành công.");
+                    getLogger().info("[UItem] Resource pack exported successfully.");
                     if (getConfig().getBoolean("resourcepack.auto-apply", true) && packServer != null && packServer.isRunning()) {
                         String url = packServer.getPackUrl();
                         byte[] hash = resourcePackManager.getLastPackHash();
@@ -100,7 +110,7 @@ public final class UItemPlugin extends JavaPlugin {
                         });
                     }
                 } catch (IOException e) {
-                    getLogger().warning("Không thể generate/export resource pack: " + e.getMessage());
+                    getLogger().warning("Could not generate/export resource pack: " + e.getMessage());
                 }
             });
         }
@@ -119,24 +129,27 @@ public final class UItemPlugin extends JavaPlugin {
         if (storageManager != null && itemManager != null) {
             storageManager.saveAllNow(itemManager);
         }
+        if (recipeManager != null) {
+            recipeManager.saveRecipes();
+        }
         UItemAPI.shutdown();
-        getLogger().info("UItem đã được tắt. Tất cả items đã được lưu.");
+        getLogger().info("UItem disabled. All items have been saved.");
         instance = null;
     }
 
     private void startPackServer() {
         if (!getConfig().getBoolean("resourcepack.auto-host", true)) {
-            getLogger().info("[UItem] Resource pack server bị tắt trong config.");
+            getLogger().info("[UItem] Resource pack server disabled in config.");
             return;
         }
         int port = getConfig().getInt("resourcepack.server-port", 9732);
         this.packServer = new ResourcePackServer(this);
         try {
             packServer.start(port);
-            getLogger().info("[UItem] Resource pack server đã khởi động tại port " + port);
+            getLogger().info("[UItem] Resource pack server started on port " + port);
         } catch (IOException e) {
-            getLogger().warning("[UItem] Không thể khởi động resource pack server: " + e.getMessage());
-            getLogger().warning("[UItem] Auto-apply resource pack sẽ không hoạt động. Hãy set resourcepack.url thủ công.");
+            getLogger().warning("[UItem] Could not start resource pack server: " + e.getMessage());
+            getLogger().warning("[UItem] Auto-apply resource pack will not work. Set resourcepack.url manually.");
             this.packServer = null;
         }
     }
@@ -169,7 +182,7 @@ public final class UItemPlugin extends JavaPlugin {
                 }
 
                 player.sendTitle(
-                        "Đang tải resource packs, vui lòng đợi",
+                        "Loading resource packs, please wait",
                         "Loading resource packs, please wait",
                         5, 60, 10
                 );
@@ -242,5 +255,9 @@ public final class UItemPlugin extends JavaPlugin {
 
     public ResourcePackServer getPackServer() {
         return packServer;
+    }
+
+    public RecipeManager getRecipeManager() {
+        return recipeManager;
     }
 }

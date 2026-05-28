@@ -38,14 +38,14 @@ public class IntegrationManager {
             try {
                 oraxenIntegration = new OraxenIntegration();
                 hasOraxen = true;
-                plugin.getLogger().info("[Integration] Đã phát hiện Oraxen! Tích hợp đã bật.");
+                plugin.getLogger().info("[Integration] Detected Oraxen! Integration enabled.");
             } catch (Exception e) {
                 hasOraxen = false;
-                plugin.getLogger().warning("[Integration] Phát hiện Oraxen nhưng không thể tích hợp: " + e.getMessage());
+                plugin.getLogger().warning("[Integration] Detected Oraxen but could not integrate: " + e.getMessage());
             }
         } else {
             hasOraxen = false;
-            plugin.getLogger().info("[Integration] Oraxen không tìm thấy.");
+            plugin.getLogger().info("[Integration] Oraxen not found.");
         }
 
         // Check ItemsAdder
@@ -54,14 +54,14 @@ public class IntegrationManager {
             try {
                 itemsAdderIntegration = new ItemsAdderIntegration();
                 hasItemsAdder = true;
-                plugin.getLogger().info("[Integration] Đã phát hiện ItemsAdder! Tích hợp đã bật.");
+                plugin.getLogger().info("[Integration] Detected ItemsAdder! Integration enabled.");
             } catch (Exception e) {
                 hasItemsAdder = false;
-                plugin.getLogger().warning("[Integration] Phát hiện ItemsAdder nhưng không thể tích hợp: " + e.getMessage());
+                plugin.getLogger().warning("[Integration] Detected ItemsAdder but could not integrate: " + e.getMessage());
             }
         } else {
             hasItemsAdder = false;
-            plugin.getLogger().info("[Integration] ItemsAdder không tìm thấy.");
+            plugin.getLogger().info("[Integration] ItemsAdder not found.");
         }
     }
 

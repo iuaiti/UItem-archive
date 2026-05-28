@@ -23,6 +23,10 @@ public class GuiListener implements Listener {
         if (holder instanceof AbstractGui gui) {
             event.setCancelled(true);
             gui.handleClick(event);
+        } else if (holder instanceof CraftingGui gui) {
+            gui.handleClick(event);
+        } else if (holder instanceof RecipeEditorGui gui) {
+            gui.handleClick(event);
         }
     }
 
@@ -31,6 +35,10 @@ public class GuiListener implements Listener {
         InventoryHolder holder = event.getView().getTopInventory().getHolder();
         if (holder instanceof AbstractGui) {
             event.setCancelled(true);
+        } else if (holder instanceof CraftingGui gui) {
+            gui.handleDrag(event);
+        } else if (holder instanceof RecipeEditorGui gui) {
+            gui.handleDrag(event);
         }
     }
 }

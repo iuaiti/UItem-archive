@@ -50,24 +50,24 @@ public class ItemListGui extends AbstractGui {
         setItem(4, createItem(Material.NETHER_STAR,
                 "<gradient:#ff6b6b:#ffd93d><bold>UItem Editor</bold></gradient>",
                 List.of(
-                        "<gray>Quản lý tất cả custom items",
+                        "<gray>Manage all custom items",
                         "",
-                        "<yellow>Tổng items: <white>" + plugin.getItemManager().getAllItems().size(),
-                        "<yellow>Trang: <white>" + (page + 1)
+                        "<yellow>Total items: <white>" + plugin.getItemManager().getAllItems().size(),
+                        "<yellow>Page: <white>" + (page + 1)
                 )));
 
         // Search button (if enabled)
         if (plugin.getConfig().getBoolean("gui.search.enabled", true)) {
             if (player.hasPermission("uitem.search")) {
                 setItem(48, createItem(Material.MAGENTA_GLAZED_TERRACOTTA,
-                        "<aqua><bold>Tìm kiếm Item</bold>",
+                        "<aqua><bold>Search Item</bold>",
                         List.of(
-                                "<gray>Nhập từ khóa để lọc danh sách",
-                                "<gray>Nhập 'clear' để xóa bộ lọc"
+                                "<gray>Enter keyword to filter list",
+                                "<gray>Type 'clear' to clear filter"
                         )), event -> {
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                     plugin.getChatInputManager().requestInput(player,
-                            "<yellow>Nhập từ khóa tìm kiếm (<gray>hoặc 'clear' để xóa):",
+                            "<yellow>Enter search keyword (<gray>or 'clear' to clear):",
                             input -> {
                                 SearchManager sm = plugin.getSearchManager();
                                 if (input.equalsIgnoreCase("clear")) {
@@ -79,7 +79,7 @@ public class ItemListGui extends AbstractGui {
                             });
                 });
             } else {
-                player.sendMessage(TextUtil.error("Bạn không có quyền sử dụng tìm kiếm (uitem.search)."));
+                player.sendMessage(TextUtil.error("You don't have permission to use search (uitem.search)."));
             }
         }
 
@@ -133,41 +133,41 @@ public class ItemListGui extends AbstractGui {
             }
         }
 
-        // Nút tạo mới
+        // Create new item button
         setItem(49, createItem(Material.EMERALD,
-                "<green><bold>+ Tạo Item Mới</bold>",
+                "<green><bold>+ Create New Item</bold>",
                 List.of(
-                        "<gray>Click để tạo custom item mới",
+                        "<gray>Click to create a new custom item",
                         "",
-                        "<yellow>Bạn sẽ được yêu cầu nhập ID"
+                        "<yellow>You will be prompted to enter an ID"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Nhập ID cho item mới <gray>(chỉ chữ cái, số, gạch dưới):",
+                    "<yellow>Enter ID for new item <gray>(letters, numbers, underscores only):",
                     input -> {
                         String id = input.toLowerCase().replaceAll("[^a-z0-9_]", "_");
                         if (id.isEmpty()) {
-                            player.sendMessage(TextUtil.error("ID không hợp lệ!"));
+                            player.sendMessage(TextUtil.error("Invalid ID!"));
                             new ItemListGui(plugin, player, page).open();
                             return;
                         }
                         if (manager.hasItem(id)) {
-                            player.sendMessage(TextUtil.error("Item '" + id + "' đã tồn tại!"));
+                            player.sendMessage(TextUtil.error("Item '" + id + "' already exists!"));
                             new ItemListGui(plugin, player, page).open();
                             return;
                         }
                         UItemData newData = new UItemData(id);
-                        // Dùng API để fire UItemCreateEvent
+                        // Use API to fire UItemCreateEvent
                         boolean created = com.uitem.api.UItemAPI.get()
                                 .registerItem(newData, player);
                         if (!created) {
                             player.sendMessage(com.uitem.util.TextUtil.error(
-                                    "Không thể tạo item '" + id + "' (bị chặn bởi plugin khác)."));
+                                    "Cannot create item '" + id + "' (blocked by another plugin)."));
                             new ItemListGui(plugin, player, page).open();
                             return;
                         }
                         plugin.getResourcePackManager().syncCmdsToLiveItems();
-                        player.sendMessage(TextUtil.success("Đã tạo item '" + id + "'!"));
+                        player.sendMessage(TextUtil.success("Created item '" + id + "'!"));
                         new ItemEditorGui(plugin, player, newData).open();
                     });
         });

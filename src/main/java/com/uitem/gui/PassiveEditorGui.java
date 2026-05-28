@@ -54,12 +54,12 @@ public class PassiveEditorGui extends AbstractGui {
         setItem(4, createItem(Material.BLAZE_POWDER,
                 "<gold><bold>Passive Editor</bold>",
                 List.of(
-                        "<gray>Quản lý kỹ năng passive cho item",
-                        "<gray>Hiện tại: <white>" + data.getPassives().size() + " passive(s)",
+                        "<gray>Manage passive abilities for this item",
+                        "<gray>Current: <white>" + data.getPassives().size() + " passive(s)",
                         "",
-                        "<yellow>Click trái: <white>Chỉnh sửa passive",
-                        "<red>Click phải: <white>Xóa passive",
-                        "<aqua>Click giữa: <white>Nhân đôi passive"
+                        "<yellow>Left click: <white>Edit passive",
+                        "<red>Right click: <white>Delete passive",
+                        "<aqua>Middle click: <white>Duplicate passive"
                 )));
 
         List<PassiveData> passives = data.getPassives();
@@ -92,8 +92,8 @@ public class PassiveEditorGui extends AbstractGui {
         }
 
         setItem(49, createItem(Material.EMERALD,
-                "<green><bold>+ Thêm Passive</bold>",
-                List.of("<gray>Click để thêm passive mới")), event -> {
+                "<green><bold>+ Add Passive</bold>",
+                List.of("<gray>Click to add a new passive")), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             promptNewPassiveType();
         });
@@ -130,9 +130,9 @@ public class PassiveEditorGui extends AbstractGui {
             }
         }
         lore.add("");
-        lore.add("<yellow>Click trái: Sửa");
-        lore.add("<red>Click phải: Xóa");
-        lore.add("<aqua>Click giữa: Nhân đôi");
+        lore.add("<yellow>Left click: Edit");
+        lore.add("<red>Right click: Delete");
+        lore.add("<aqua>Middle click: Duplicate");
         meta.lore(lore.stream().map(TextUtil::parse).toList());
         meta.setEnchantmentGlintOverride(true);
         item.setItemMeta(meta);
@@ -145,7 +145,7 @@ public class PassiveEditorGui extends AbstractGui {
 
     private void promptNewPassiveType() {
         player.closeInventory();
-        player.sendMessage(TextUtil.info("Chọn loại passive muốn thêm (gõ tên):"));
+        player.sendMessage(TextUtil.info("Choose a passive type to add (type name):"));
         player.sendMessage(TextUtil.parse("<dark_gray>╔══════════════════════════════════════╗"));
         StringBuilder line = new StringBuilder("<dark_gray>║ ");
         int count = 0;
@@ -162,11 +162,11 @@ public class PassiveEditorGui extends AbstractGui {
         player.sendMessage(TextUtil.parse("<dark_gray>╚══════════════════════════════════════╝"));
 
         plugin.getChatInputManager().requestInput(player,
-                "<yellow>Nhập loại passive:",
+                "<yellow>Enter passive type:",
                 input -> {
                     String type = input.trim().toUpperCase();
                     if (!ACTION_TYPES.contains(type)) {
-                        player.sendMessage(TextUtil.error("Loại passive '" + type + "' không hợp lệ!"));
+                        player.sendMessage(TextUtil.error("Passive type '" + type + "' is invalid!"));
                         open();
                         return;
                     }
@@ -176,7 +176,7 @@ public class PassiveEditorGui extends AbstractGui {
 
     private void promptTrigger(String type) {
         player.closeInventory();
-        player.sendMessage(TextUtil.info("Chọn trigger cho " + type + ":"));
+        player.sendMessage(TextUtil.info("Choose trigger for " + type + ":"));
         StringBuilder sb = new StringBuilder("<dark_gray>");
         for (String t : TRIGGERS) {
             sb.append("<aqua>").append(t).append(" <dark_gray>│ ");
@@ -184,18 +184,18 @@ public class PassiveEditorGui extends AbstractGui {
         player.sendMessage(TextUtil.parse(sb.toString()));
 
         plugin.getChatInputManager().requestInput(player,
-                "<yellow>Nhập trigger:",
+                "<yellow>Enter trigger:",
                 input -> {
                     String trigger = input.trim().toUpperCase();
                     if (!TRIGGERS.contains(trigger)) {
-                        player.sendMessage(TextUtil.error("Trigger không hợp lệ!"));
+                        player.sendMessage(TextUtil.error("Invalid trigger!"));
                         open();
                         return;
                     }
                     PassiveData pd = new PassiveData(type, trigger, new LinkedHashMap<>(), 0);
                     data.getPassives().add(pd);
                     save();
-                    player.sendMessage(TextUtil.success("Đã thêm passive " + type + " cho trigger " + trigger));
+                    player.sendMessage(TextUtil.success("Added passive " + type + " for trigger " + trigger));
                     editPassive(data.getPassives().size() - 1);
                 });
     }
