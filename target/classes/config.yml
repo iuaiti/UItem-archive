@@ -2,13 +2,13 @@
 # ║       UItem - Main Configuration         ║
 # ╚══════════════════════════════════════════╝
 
-# Ngôn ngữ prefix trong chat
+# Language prefix in chat
 prefix: "<gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <dark_gray>│ "
 
-# Tự động lưu items khi chỉnh sửa qua GUI
+# Auto-save items when editing via GUI
 auto-save: true
 
-# Cho phép dùng MiniMessage trong display name và lore
+# Allow MiniMessage in display name and lore
 minimessage-support: true
 
 # Integration settings
@@ -24,14 +24,14 @@ permissions:
   search: "uitem.search"  # Permission required to use the search feature
 
 integration:
-  # Ưu tiên dùng Oraxen hay ItemsAdder khi cả 2 đều có
-  # Giá trị: "oraxen", "itemsadder"
+  # Priority when both Oraxen and ItemsAdder are present
+  # Values: "oraxen", "itemsadder"
   priority: "oraxen"
 
-  # Tự động detect plugins
+  # Auto-detect plugins
   auto-detect: true
 
-# Debug mode - log thêm thông tin
+# Debug mode - log additional information
 debug: false
 
 # Resource pack engine

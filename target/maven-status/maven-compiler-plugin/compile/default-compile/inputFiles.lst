@@ -29,9 +29,11 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/api/events/UItemPickupEvent.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/api/package-info.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/chat/ChatInputManager.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/command/CraftingCommand.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/command/UItemCommand.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/AbstractGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ConfirmDeleteGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/CraftingGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/EnchantmentGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/FlagGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/GuiListener.java
@@ -41,6 +43,7 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/MaterialPickerGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PassiveDetailGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PassiveEditorGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/RecipeEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/integration/IntegrationManager.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/integration/ItemsAdderIntegration.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/integration/OraxenIntegration.java
@@ -50,6 +53,8 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/passive/PassiveManager.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/passive/PassiveTrigger.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/rarity/RarityConfig.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/recipe/RecipeManager.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/recipe/UItemRecipe.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/resourcepack/ResourcePackManager.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/resourcepack/ResourcePackServer.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/search/SearchManager.java

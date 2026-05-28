@@ -1,11 +1,14 @@
 com/uitem/command/UItemCommand$GiveTarget.class
 com/uitem/resourcepack/ResourcePackServer.class
+com/uitem/recipe/UItemRecipe$Ingredient.class
 com/uitem/integration/IntegrationManager.class
 com/uitem/integration/ItemsAdderIntegration.class
 com/uitem/rarity/RarityConfig.class
+com/uitem/recipe/RecipeManager.class
 com/uitem/api/UItemAPI.class
 com/uitem/gui/AbstractGui.class
 com/uitem/gui/PassiveDetailGui$ConditionEditorGui.class
+com/uitem/gui/RecipeEditorGui.class
 com/uitem/resourcepack/ResourcePackServer$PackHandler.class
 com/uitem/integration/OraxenIntegration.class
 com/uitem/UItemPlugin$1.class
@@ -35,6 +38,7 @@ com/uitem/rarity/RarityConfig$RarityEntry.class
 com/example/uitem/gui/RemoveItemGUI.class
 com/example/uitem/listener/GUIListener.class
 com/uitem/util/SchedulerUtil.class
+com/uitem/recipe/UItemRecipe.class
 com/uitem/api/package-info.class
 com/uitem/util/TextUtil.class
 com/uitem/listener/PassiveListener$1.class
@@ -45,6 +49,7 @@ com/example/uitem/command/AdminCommand.class
 com/uitem/gui/PassiveDetailGui.class
 com/uitem/api/events/UItemGiveEvent.class
 com/example/uitem/UitemPlugin.class
+com/uitem/gui/CraftingGui.class
 com/example/uitem/gui/RecipeEditorGUI.class
 com/uitem/UItemManager.class
 com/uitem/UItemData$AttributeData.class
@@ -66,6 +71,7 @@ com/example/uitem/gui/ConfirmDeleteGUI.class
 com/example/uitem/model/Category.class
 com/uitem/gui/MaterialPickerGui.class
 com/uitem/passive/PassiveManager.class
+com/uitem/command/CraftingCommand.class
 com/uitem/UItemPlugin.class
 com/example/uitem/manager/RecipeManager.class
 com/uitem/gui/ItemListGui.class
