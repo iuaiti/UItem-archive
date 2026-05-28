@@ -5,8 +5,11 @@ import com.uitem.chat.ChatInputManager;
 import com.uitem.command.UItemCommand;
 import com.uitem.gui.GuiListener;
 import com.uitem.integration.IntegrationManager;
+import com.uitem.listener.PassiveListener;
 import com.uitem.listener.UItemActionListener;
+import com.uitem.rarity.RarityConfig;
 import com.uitem.resourcepack.ResourcePackManager;
+import com.uitem.resourcepack.ResourcePackServer;
 import com.uitem.storage.StorageManager;
 import com.uitem.util.SchedulerUtil;
 import net.kyori.adventure.text.Component;
@@ -31,6 +34,8 @@ public final class UItemPlugin extends JavaPlugin {
     private GuiListener guiListener;
     private ResourcePackManager resourcePackManager;
     private com.uitem.search.SearchManager searchManager;
+    private PassiveListener passiveListener;
+    private ResourcePackServer packServer;
 
     @Override
     public void onEnable() {
@@ -54,17 +59,24 @@ public final class UItemPlugin extends JavaPlugin {
         integrationManager.detectIntegrations();
         resourcePackManager.syncCmdsToLiveItems();
 
+        RarityConfig.load(this);
+
+        this.passiveListener = new PassiveListener(this);
+
         // Khởi tạo Public API — phải trước khi đăng ký listener
         UItemAPI.init(this);
 
         getServer().getPluginManager().registerEvents(guiListener, this);
         getServer().getPluginManager().registerEvents(chatInputManager, this);
         getServer().getPluginManager().registerEvents(new UItemActionListener(this), this);
-        registerResourcePackJoinListener();
+        getServer().getPluginManager().registerEvents(passiveListener, this);
 
         UItemCommand command = new UItemCommand(this);
         Objects.requireNonNull(getCommand("uitem")).setExecutor(command);
         Objects.requireNonNull(getCommand("uitem")).setTabCompleter(command);
+
+        // Khởi động resource pack server
+        startPackServer();
 
         getLogger().info("=================================");
         getLogger().info("  UItem v" + getDescription().getVersion() + " đã được bật!");
@@ -72,40 +84,38 @@ public final class UItemPlugin extends JavaPlugin {
         getLogger().info("  Integrations: " + integrationManager.getStatus());
         getLogger().info("  Scheduler mode: " + (SchedulerUtil.isFolia() ? "Folia" : "Paper/Spigot"));
 
+        // Auto-export & auto-apply resource pack như Oraxen/ItemsAdder
         if (getConfig().getBoolean("resourcepack.auto-generate", true)) {
-            // Chạy async để không block main thread khi startup
             SchedulerUtil.runAsync(this, () -> {
                 try {
                     resourcePackManager.exportZip();
                     getLogger().info("[UItem] Resource pack đã được export thành công.");
-                    if (getConfig().getBoolean("resourcepack.auto-apply", false)) {
-                        String url = getConfig().getString("resourcepack.url", "");
-                        if (url != null && !url.isBlank()) {
-                            SchedulerUtil.runSync(UItemPlugin.this, () -> {
-                                for (Player p : Bukkit.getOnlinePlayers()) {
-                                    resourcePackManager.applyResourcePack(p, url);
-                                }
-                            });
-                        }
+                    if (getConfig().getBoolean("resourcepack.auto-apply", true) && packServer != null && packServer.isRunning()) {
+                        String url = packServer.getPackUrl();
+                        byte[] hash = resourcePackManager.getLastPackHash();
+                        SchedulerUtil.runSync(UItemPlugin.this, () -> {
+                            for (Player p : Bukkit.getOnlinePlayers()) {
+                                resourcePackManager.applyResourcePack(p, url, hash);
+                            }
+                        });
                     }
                 } catch (IOException e) {
                     getLogger().warning("Không thể generate/export resource pack: " + e.getMessage());
                 }
             });
-        } else if (getConfig().getBoolean("resourcepack.auto-apply", false)) {
-            String url = getConfig().getString("resourcepack.url", "");
-            if (url != null && !url.isBlank()) {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    resourcePackManager.applyResourcePack(player, url);
-                }
-            }
         }
+
+        // Đăng ký join listener sau cùng
+        registerResourcePackJoinListener();
 
         getLogger().info("=================================");
     }
 
     @Override
     public void onDisable() {
+        if (packServer != null) {
+            packServer.stop();
+        }
         if (storageManager != null && itemManager != null) {
             storageManager.saveAllNow(itemManager);
         }
@@ -114,29 +124,65 @@ public final class UItemPlugin extends JavaPlugin {
         instance = null;
     }
 
+    private void startPackServer() {
+        if (!getConfig().getBoolean("resourcepack.auto-host", true)) {
+            getLogger().info("[UItem] Resource pack server bị tắt trong config.");
+            return;
+        }
+        int port = getConfig().getInt("resourcepack.server-port", 9732);
+        this.packServer = new ResourcePackServer(this);
+        try {
+            packServer.start(port);
+            getLogger().info("[UItem] Resource pack server đã khởi động tại port " + port);
+        } catch (IOException e) {
+            getLogger().warning("[UItem] Không thể khởi động resource pack server: " + e.getMessage());
+            getLogger().warning("[UItem] Auto-apply resource pack sẽ không hoạt động. Hãy set resourcepack.url thủ công.");
+            this.packServer = null;
+        }
+    }
+
     private void registerResourcePackJoinListener() {
         getServer().getPluginManager().registerEvents(new Listener() {
             @EventHandler
             public void onJoin(PlayerJoinEvent event) {
-                if (!getConfig().getBoolean("resourcepack.auto-apply", false)) {
+                if (!getConfig().getBoolean("resourcepack.auto-apply", true)) {
                     return;
                 }
-                String url = getConfig().getString("resourcepack.url", "");
+
+                Player player = event.getPlayer();
+                String url = null;
+                byte[] hash = null;
+
+                // Ưu tiên URL từ config (nếu người dùng tự host)
+                String configUrl = getConfig().getString("resourcepack.url", "");
+                if (configUrl != null && !configUrl.isBlank()) {
+                    url = configUrl;
+                    hash = resourcePackManager.getLastPackHash();
+                } else if (packServer != null && packServer.isRunning()) {
+                    // Tự động dùng server local
+                    url = packServer.getPackUrl();
+                    hash = resourcePackManager.getLastPackHash();
+                }
+
                 if (url == null || url.isBlank()) {
                     return;
                 }
-                event.getPlayer().sendTitle(
+
+                player.sendTitle(
                         "Đang tải resource packs, vui lòng đợi",
                         "Loading resource packs, please wait",
                         5, 60, 10
                 );
+
+                byte[] finalHash = hash;
+                String finalUrl = url;
                 SchedulerUtil.runSync(UItemPlugin.this, () ->
-                        resourcePackManager.applyResourcePack(event.getPlayer(), url));
+                        resourcePackManager.applyResourcePack(player, finalUrl, finalHash));
             }
 
             @EventHandler
             public void onResourcePackStatus(PlayerResourcePackStatusEvent event) {
-                if (!getConfig().getBoolean("resourcepack.auto-apply", false)) {
+                if (!getConfig().getBoolean("resourcepack.auto-apply", true)) {
                     return;
                 }
                 if (!getConfig().getBoolean("resourcepack.kick-on-fail", true)) {
@@ -188,5 +234,13 @@ public final class UItemPlugin extends JavaPlugin {
 
     public com.uitem.search.SearchManager getSearchManager() {
         return searchManager;
+    }
+
+    public PassiveListener getPassiveListener() {
+        return passiveListener;
+    }
+
+    public ResourcePackServer getPackServer() {
+        return packServer;
     }
 }

@@ -17,6 +17,10 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.uitem.passive.PassiveData;
+import com.uitem.passive.PassiveManager;
+import com.uitem.rarity.RarityConfig;
+
 /**
  * Quản lý toàn bộ custom items.
  * Cung cấp CRUD operations và build ItemStack từ UItemData.
@@ -132,17 +136,43 @@ public class UItemManager {
         ItemMeta meta = itemStack.getItemMeta();
         if (meta == null) return itemStack;
 
-        // Display Name
-        if (data.getDisplayName() != null && !data.getDisplayName().isEmpty()) {
-            meta.displayName(miniMessage.deserialize(data.getDisplayName()));
+        // Display Name with rarity prefix
+        String displayName = data.getDisplayName();
+        String rarity = data.getRarity();
+        if (displayName != null && !displayName.isEmpty()) {
+            if (rarity != null) {
+                String prefix = RarityConfig.getRarityPrefix(rarity);
+                if (prefix != null && !prefix.isEmpty()) {
+                    displayName = prefix + " " + displayName;
+                }
+            }
+            meta.displayName(miniMessage.deserialize(displayName));
         }
 
-        // Lore
-        if (data.getLore() != null && !data.getLore().isEmpty()) {
-            List<Component> loreComponents = new ArrayList<>();
+        // Lore with rarity lore and passive lore
+        List<Component> loreComponents = new ArrayList<>();
+        if (data.getLore() != null) {
             for (String line : data.getLore()) {
                 loreComponents.add(miniMessage.deserialize(line));
             }
+        }
+        if (rarity != null) {
+            List<String> rarityLore = RarityConfig.getRarityLore(rarity);
+            for (String line : rarityLore) {
+                loreComponents.add(miniMessage.deserialize(line));
+            }
+        }
+        if (data.getPassives() != null && !data.getPassives().isEmpty()) {
+            loreComponents.add(Component.empty());
+            loreComponents.add(miniMessage.deserialize("<dark_gray>═══════════════════"));
+            loreComponents.add(miniMessage.deserialize("<gold><bold>Passive Abilities"));
+            PassiveManager pm = new PassiveManager(plugin, this);
+            for (PassiveData passive : data.getPassives()) {
+                loreComponents.add(miniMessage.deserialize(pm.getPassiveDescription(passive)));
+            }
+            loreComponents.add(miniMessage.deserialize("<dark_gray>═══════════════════"));
+        }
+        if (!loreComponents.isEmpty()) {
             meta.lore(loreComponents);
         }
 

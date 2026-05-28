@@ -159,6 +159,6 @@ public class CategoryGUI {
     }
 
     private void updateInventoryTitle() {
-        inventory.setTitle(Component.text("Category: " + category.getDisplayName() + " (Page " + (currentPage + 1) + "/" + totalPages + ")"));
+        this.inventory = Bukkit.createInventory(null, 6 * 9, Component.text("Category: " + category.getDisplayName() + " (Page " + (currentPage + 1) + "/" + totalPages + ")"));
     }
 }

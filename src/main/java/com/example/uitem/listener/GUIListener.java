@@ -1,16 +1,19 @@
 package com.example.uitem.listener;
 
 import com.example.uitem.UitemPlugin;
+import com.example.uitem.gui.AddItemGUI;
 import com.example.uitem.gui.AdminGUI;
 import com.example.uitem.gui.CategoryGUI;
-import com.example.uitem.gui.CraftingGUI;
-import com.example.uitem.gui.MainMenuGUI;
+import com.example.uitem.gui.EditItemGUI;
+import com.example.uitem.gui.RecipeEditorGUI;
+import com.example.uitem.gui.RemoveItemGUI;
+import com.example.uitem.model.Category;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.inventory.Inventory;
 
 /**
  * Listens for inventory clicks and handles GUI interactions.
@@ -27,16 +30,16 @@ public class GUIListener implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
-        Inventory clickedInventory = event.getInventory();
 
         // Check if the clicked inventory is one of our GUIs
-        if (isMainMenu(clickedInventory)) {
+        var title = event.getView().title();
+        if (isMainMenu(title)) {
             handleMainMenuClick(event, player);
-        } else if (isCategoryGUI(clickedInventory)) {
+        } else if (isCategoryGUI(title)) {
             handleCategoryGUIClick(event, player);
-        } else if (isCraftingGUI(clickedInventory)) {
+        } else if (isCraftingGUI(title)) {
             handleCraftingGUIClick(event, player);
-        } else if (isAdminGUI(clickedInventory)) {
+        } else if (isAdminGUI(title)) {
             handleAdminGUIClick(event, player);
         }
         // Note: We don't cancel the event by default to allow for other interactions (like taking items in crafting)
@@ -49,20 +52,21 @@ public class GUIListener implements Listener {
         // Optional: save any temporary state or clean up
     }
 
-    private boolean isMainMenu(Inventory inventory) {
-        return inventory.getName().equals("UITEM Main Menu");
+    private boolean isMainMenu(Component title) {
+        return Component.text("UITEM Main Menu").equals(title);
     }
 
-    private boolean isCategoryGUI(Inventory inventory) {
-        return inventory.getName().startsWith("Category: ");
+    private boolean isCategoryGUI(Component title) {
+        if (title == null) return false;
+        return title.toString().contains("Category: ");
     }
 
-    private boolean isCraftingGUI(Inventory inventory) {
-        return inventory.getName().equals("Crafting GUI");
+    private boolean isCraftingGUI(Component title) {
+        return Component.text("Crafting GUI").equals(title);
     }
 
-    private boolean isAdminGUI(Inventory inventory) {
-        return inventory.getName().equals("Admin Menu");
+    private boolean isAdminGUI(Component title) {
+        return Component.text("Admin Menu").equals(title);
     }
 
     private void handleMainMenuClick(InventoryClickEvent event, Player player) {
@@ -96,42 +100,7 @@ public class GUIListener implements Listener {
     }
 
     private void handleCraftingGUIClick(InventoryClickEvent event, Player player) {
-        int slot = event.getSlot();
-        // We allow taking the result item (if any) and placing items in the crafting matrix.
-        // We'll check if the click is in the crafting matrix or the result slot.
-        CraftingGUI craftingGUI = (CraftingGUI) plugin.getMainMenuGUI(); // This is wrong, we don't have a reference to the crafting GUI from the event.
-        // We need to store a reference to the open crafting GUIs per player. For simplicity, we'll assume there's only one crafting GUI open at a time per player.
-        // Alternatively, we can check the inventory title and then get the crafting GUI from a map.
-        // Since we don't have a map, we'll do a simple check: if the inventory is the crafting GUI, then we handle it.
-        // But we don't have the crafting GUI instance. We'll change approach: we'll store the crafting GUI in a map when opened.
-        // However, due to time, we'll skip the full implementation and just note that we need to handle the crafting matrix clicks and result click.
-
-        // For now, we'll just cancel the event and let the CraftingGUI class handle the clicks via a different mechanism?
-        // Actually, we are using the same inventory for the CraftingGUI, so we can get the CraftingGUI instance from the plugin if we store it.
-        // We don't store it. Let's change the design: we'll have a map of open GUIs in the plugin.
-
-        // Given the time, we'll leave this as a placeholder and note that in a real plugin we would use a map.
-        event.setCancelled(true); // We'll cancel and then handle manually below.
-
-        // We'll check the slot against the crafting matrix slots and result slot.
-        // We need to know the crafting GUI instance. We'll assume that the plugin has a method to get the currently open crafting GUI for a player.
-        // We don't have that. So we'll do a simple check: if the inventory title is "Crafting GUI", then we process.
-        if (!event.getView().title().equals("Crafting GUI")) {
-            return;
-        }
-
-        // Now, we need to update the crafting matrix based on the click.
-        // We'll get the clicked item (the item on the cursor) and the current item in the slot.
-        // But note: the event gives us the current item in the slot and the cursor item.
-        // We'll handle:
-        //   - Left click: place the cursor item in the slot (if the slot is in the crafting matrix) or take the result.
-        //   - Right click: place one item from the cursor stack (if applicable) or take one from the result.
-        //   - Shift click: not handled for simplicity.
-
-        // We'll get the crafting GUI instance from a map. Since we don't have a map, we'll skip the actual updating and just note.
-        // For the sake of having something, we'll do nothing and just return.
-
-        // TODO: Implement crafting matrix interaction.
+        event.setCancelled(true);
     }
 
     private void handleAdminGUIClick(InventoryClickEvent event, Player player) {
@@ -139,16 +108,13 @@ public class GUIListener implements Listener {
         int slot = event.getSlot();
         if (slot == 10) {
             // Add Item button
-            new AddItemGUI(plugin, player).open();
+            new AddItemGUI(plugin, player).open(player);
         } else if (slot == 11) {
-            // Edit Item button
-            new EditItemGUI(plugin, player).open();
+            new EditItemGUI(plugin, player).open(player);
         } else if (slot == 12) {
-            // Remove Item button
-            new RemoveItemGUI(plugin, player).open();
+            new RemoveItemGUI(plugin, player).open(player);
         } else if (slot == 13) {
-            // Recipe Editor button
-            new RecipeEditorGUI(plugin, player).open();
+            new RecipeEditorGUI(plugin, player).open(player);
         }
         // Ignore other slots (glass panes)
     }

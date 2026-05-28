@@ -9,6 +9,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.Material;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
@@ -110,7 +111,7 @@ public class RemoveItemGUI {
         if (!items.isEmpty()) {
             this.itemToRemove = items.get(0).getId(); // This is wrong, but we don't have time to implement a proper mapping.
             // Open a confirmation GUI
-            new ConfirmDeleteGUI(plugin, player, itemToRemove).open();
+            new ConfirmDeleteGUI(plugin, player, itemToRemove).open(player);
         }
     }
 

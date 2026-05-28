@@ -54,9 +54,9 @@ public class AdminGUI {
     private ItemStack createButton(Material material, Component name, NamedTextColor color) {
         ItemStack item = new ItemStack(material);
         // We'll use the legacy method to set display name for simplicity
-        org.bukkit.inventory.ItemMeta meta = item.getItemMeta();
+        org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(name));
+            meta.displayName(name);
             item.setItemMeta(meta);
         }
         return item;
@@ -77,22 +77,18 @@ public class AdminGUI {
 
     // Placeholder methods for handling clicks - these would be implemented in the listener
     public void handleAddItemClick(Player player) {
-        // Open AddItemGUI
-        new AddItemGUI(plugin, player).open();
+        new AddItemGUI(plugin, player).open(player);
     }
 
     public void handleEditItemClick(Player player) {
-        // Open EditItemGUI (requires selecting an item first)
-        new EditItemGUI(plugin, player).open();
+        new EditItemGUI(plugin, player).open(player);
     }
 
     public void handleRemoveItemClick(Player player) {
-        // Open RemoveItemGUI (requires selecting an item first)
-        new RemoveItemGUI(plugin, player).open();
+        new RemoveItemGUI(plugin, player).open(player);
     }
 
     public void handleRecipeEditorClick(Player player) {
-        // Open RecipeEditorGUI (or perhaps open the crafting GUI in a special mode)
-        new RecipeEditorGUI(plugin, player).open();
+        new RecipeEditorGUI(plugin, player).open(player);
     }
 }

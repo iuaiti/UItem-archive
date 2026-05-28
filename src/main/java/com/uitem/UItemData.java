@@ -1,5 +1,6 @@
 package com.uitem;
 
+import com.uitem.passive.PassiveData;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -27,6 +28,9 @@ public class UItemData {
     private List<AttributeData> attributes;
 
     // Oraxen/ItemsAdder integration
+    private String rarity;
+    private List<PassiveData> passives;
+
     private String oraxenId;
     private String itemsAdderId;
 
@@ -41,6 +45,8 @@ public class UItemData {
         this.unbreakable = false;
         this.glowing = false;
         this.attributes = new ArrayList<>();
+        this.rarity = null;
+        this.passives = new ArrayList<>();
         this.oraxenId = null;
         this.itemsAdderId = null;
     }
@@ -123,6 +129,22 @@ public class UItemData {
         this.attributes = attributes;
     }
 
+    public String getRarity() {
+        return rarity;
+    }
+
+    public void setRarity(String rarity) {
+        this.rarity = rarity;
+    }
+
+    public List<PassiveData> getPassives() {
+        return passives;
+    }
+
+    public void setPassives(List<PassiveData> passives) {
+        this.passives = passives;
+    }
+
     public String getOraxenId() {
         return oraxenId;
     }
@@ -155,6 +177,13 @@ public class UItemData {
         clone.attributes = new ArrayList<>();
         for (AttributeData attribute : this.attributes) {
             clone.attributes.add(attribute.copy());
+        }
+        clone.rarity = this.rarity;
+        clone.passives = new ArrayList<>();
+        if (this.passives != null) {
+            for (PassiveData p : this.passives) {
+                clone.passives.add(p.copy());
+            }
         }
         clone.oraxenId = this.oraxenId;
         clone.itemsAdderId = this.itemsAdderId;

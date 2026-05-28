@@ -73,8 +73,8 @@ public class CustomItem {
 
         // Glow effect
         if (glow) {
-            meta.addEnchant(org.bukkit.enchantments.Enchantment.LUCK, 1, true);
-            meta.addItemFlags(org.bukkit.ItemFlag.HIDE_ENCHANTS);
+            meta.addEnchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1, true);
+            meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
         }
 
         stack.setItemMeta(meta);

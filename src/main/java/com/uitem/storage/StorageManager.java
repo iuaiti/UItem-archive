@@ -3,6 +3,7 @@ package com.uitem.storage;
 import com.uitem.UItemData;
 import com.uitem.UItemManager;
 import com.uitem.UItemPlugin;
+import com.uitem.passive.PassiveData;
 import com.uitem.util.SchedulerUtil;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -112,6 +113,31 @@ public class StorageManager {
                 data.setOraxenId(section.getString("oraxen-id", null));
                 data.setItemsAdderId(section.getString("itemsadder-id", null));
 
+                data.setRarity(section.getString("rarity", null));
+
+                ConfigurationSection passiveSection = section.getConfigurationSection("passives");
+                if (passiveSection != null) {
+                    List<PassiveData> passives = new ArrayList<>();
+                    for (String pKey : passiveSection.getKeys(false)) {
+                        ConfigurationSection ps = passiveSection.getConfigurationSection(pKey);
+                        if (ps == null) continue;
+                        PassiveData pd = new PassiveData();
+                        pd.setType(ps.getString("type", "LIGHTNING"));
+                        pd.setTrigger(ps.getString("trigger", "HIT"));
+                        pd.setCooldown(ps.getInt("cooldown", 0));
+                        ConfigurationSection condSection = ps.getConfigurationSection("conditions");
+                        if (condSection != null) {
+                            Map<String, Object> conds = new LinkedHashMap<>();
+                            for (String cKey : condSection.getKeys(false)) {
+                                conds.put(cKey, condSection.get(cKey));
+                            }
+                            pd.setConditions(conds);
+                        }
+                        passives.add(pd);
+                    }
+                    data.setPassives(passives);
+                }
+
                 manager.registerItem(data);
                 plugin.getLogger().info("  Đã load item: " + id);
 
@@ -220,6 +246,25 @@ public class StorageManager {
             }
             if (data.getItemsAdderId() != null) {
                 config.set(path + ".itemsadder-id", data.getItemsAdderId());
+            }
+
+            if (data.getRarity() != null) {
+                config.set(path + ".rarity", data.getRarity());
+            }
+
+            if (data.getPassives() != null && !data.getPassives().isEmpty()) {
+                for (int i = 0; i < data.getPassives().size(); i++) {
+                    PassiveData pd = data.getPassives().get(i);
+                    String pPath = path + ".passives.p" + i;
+                    config.set(pPath + ".type", pd.getType());
+                    config.set(pPath + ".trigger", pd.getTrigger());
+                    config.set(pPath + ".cooldown", pd.getCooldown());
+                    if (pd.getConditions() != null && !pd.getConditions().isEmpty()) {
+                        for (Map.Entry<String, Object> ce : pd.getConditions().entrySet()) {
+                            config.set(pPath + ".conditions." + ce.getKey(), ce.getValue());
+                        }
+                    }
+                }
             }
         }
 

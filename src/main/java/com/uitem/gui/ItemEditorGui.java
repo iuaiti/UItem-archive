@@ -2,6 +2,7 @@ package com.uitem.gui;
 
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
+import com.uitem.rarity.RarityConfig;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -9,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,29 +35,17 @@ public class ItemEditorGui extends AbstractGui {
         ItemStack preview = plugin.getItemManager().buildItemStack(data);
         setItem(4, preview);
 
-        // === Material (slot 10) ===
+        // === Material (slot 10) - Mở Material Picker ===
         setItem(10, createItem(Material.CRAFTING_TABLE,
                 "<gold><bold>Material</bold>",
                 List.of(
                         "<gray>Hiện tại: <white>" + data.getMaterial().name(),
                         "",
-                        "<yellow>Click để thay đổi material",
-                        "<gray>Nhập tên material trong chat"
+                        "<yellow>Click để mở danh sách material",
+                        "<gray>Xem tất cả blocks, items, tools, armor..."
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Nhập tên Material <gray>(ví dụ: DIAMOND_SWORD, GOLDEN_APPLE):",
-                    input -> {
-                        try {
-                            Material mat = Material.valueOf(input.toUpperCase().trim());
-                            data.setMaterial(mat);
-                            saveAndReopen();
-                            player.sendMessage(TextUtil.success("Đã đổi material thành " + mat.name()));
-                        } catch (IllegalArgumentException e) {
-                            player.sendMessage(TextUtil.error("Material '" + input + "' không hợp lệ!"));
-                            new ItemEditorGui(plugin, player, data).open();
-                        }
-                    });
+            new MaterialPickerGui(plugin, player, data, null).open();
         });
 
         // === Display Name (slot 11) ===
@@ -218,9 +208,63 @@ public class ItemEditorGui extends AbstractGui {
                     });
         });
 
-        // === Oraxen ID (slot 21) - chỉ hiện nếu Oraxen có ===
+        // === Rarity (slot 21) ===
+        String currentRarity = data.getRarity();
+        String rarityDisplay = currentRarity != null ? currentRarity : "Không";
+        setItem(21, createItem(Material.NETHER_STAR,
+                "<gold><bold>Rarity</bold>",
+                List.of(
+                        "<gray>Hiện tại: " + (currentRarity != null ? RarityConfig.getRarityColor(currentRarity) + currentRarity : "<gray>Không"),
+                        "",
+                        "<yellow>Click để chọn rarity",
+                        "<gray>COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, ULTRA"
+                )), event -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            player.closeInventory();
+            StringBuilder msg = new StringBuilder("<gold>Các rarity có sẵn:<dark_gray> ");
+            for (String r : RarityConfig.getKeys()) {
+                msg.append("\n").append(RarityConfig.getRarityColor(r)).append("▸ ").append(r);
+            }
+            msg.append("\n\n<yellow>Nhập tên rarity (hoặc 'none' để bỏ):");
+            plugin.getChatInputManager().requestInput(player,
+                    msg.toString(),
+                    input -> {
+                        if (input.equalsIgnoreCase("none")) {
+                            data.setRarity(null);
+                            saveAndReopen();
+                            player.sendMessage(TextUtil.success("Đã bỏ rarity!"));
+                            return;
+                        }
+                        String upper = input.toUpperCase().trim();
+                        if (RarityConfig.getKeys().contains(upper)) {
+                            data.setRarity(upper);
+                            saveAndReopen();
+                            player.sendMessage(TextUtil.success("Đã đặt rarity = " + upper));
+                        } else {
+                            player.sendMessage(TextUtil.error("Rarity '" + input + "' không tồn tại!"));
+                            new ItemEditorGui(plugin, player, data).open();
+                        }
+                    });
+        });
+
+        // === Passives (slot 22) ===
+        int passiveCount = data.getPassives() != null ? data.getPassives().size() : 0;
+        setItem(22, createItem(Material.BLAZE_POWDER,
+                "<gold><bold>⚡ Passives</bold>",
+                List.of(
+                        "<gray>Số passive: <white>" + passiveCount,
+                        "",
+                        "<yellow>Click để quản lý passives",
+                        "<gray>Thêm/sửa/xóa kỹ năng passive",
+                        "<gray>Trigger: HIT, DAMAGED, HOLD, EQUIP, BREAK_BLOCK, KILL"
+                )), event -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            new PassiveEditorGui(plugin, player, data).open();
+        });
+
+        // === Oraxen ID (slot 23) - chỉ hiện nếu Oraxen có ===
         if (plugin.getIntegrationManager().hasOraxen()) {
-            setItem(21, createItem(Material.DIAMOND,
+            setItem(23, createItem(Material.DIAMOND,
                     "<aqua><bold>Oraxen ID</bold>",
                     List.of(
                             "<gray>Hiện tại: <white>" + (data.getOraxenId() != null ? data.getOraxenId() : "Không"),
@@ -241,9 +285,9 @@ public class ItemEditorGui extends AbstractGui {
             });
         }
 
-        // === ItemsAdder ID (slot 22) - chỉ hiện nếu ItemsAdder có ===
+        // === ItemsAdder ID (slot 24) - chỉ hiện nếu ItemsAdder có ===
         if (plugin.getIntegrationManager().hasItemsAdder()) {
-            setItem(22, createItem(Material.EMERALD,
+            setItem(24, createItem(Material.EMERALD,
                     "<green><bold>ItemsAdder ID</bold>",
                     List.of(
                             "<gray>Hiện tại: <white>" + (data.getItemsAdderId() != null ? data.getItemsAdderId() : "Không"),

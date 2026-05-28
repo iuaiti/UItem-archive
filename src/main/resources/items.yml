@@ -1,15 +1,96 @@
-# Example items configuration
 items:
-  # Example item UUID: 123e4567-e89b-12d3-a456-426614174000
-  123e4567-e89b-12d3-a456-426614174000:
-    id: 123e4567-e89b-12d3-a456-426614174000
+  fire_blade:
     material: DIAMOND_SWORD
-    name: '&eExcalibur'
+    display-name: "<red><bold>Fire Blade"
     lore:
-      - '&7A legendary sword'
-      - '&7Only the worthy can wield it'
-    custom_model_data: 123
+      - "<gray>Một thanh kiếm lửa huyền thoại"
+      - "<gray>Thiêu đốt mọi kẻ thù"
+    enchantments:
+      sharpness: 5
+      fire_aspect: 2
+    flags:
+      - HIDE_ENCHANTS
+    custom-model-data: 10001
+    unbreakable: true
+    glowing: false
+    rarity: EPIC
+    passives:
+      p0:
+        type: LIGHTNING
+        trigger: HIT
+        cooldown: 3
+        conditions:
+          chance: 15
+      p1:
+        type: FIRE
+        trigger: HIT
+        cooldown: 0
+        conditions:
+          ticks: 40
+      p2:
+        type: LIFE_STEAL
+        trigger: HIT
+        cooldown: 0
+        conditions:
+          percent: 10
+
+  ice_ender:
+    material: NETHERITE_SWORD
+    display-name: "<aqua><bold>Ice Ender"
+    lore:
+      - "<gray>Băng giá vĩnh cửu"
+    enchantments:
+      sharpness: 7
+      unbreaking: 5
+    custom-model-data: 10002
     rarity: LEGENDARY
-    glow: true
-    # Recipe is optional and would be defined here in a real implementation
-    # For simplicity, we omit the recipe structure in this example.
+    passives:
+      p0:
+        type: FREEZE
+        trigger: HIT
+        cooldown: 2
+        conditions:
+          chance: 30
+          ticks: 100
+      p1:
+        type: PULL_ENTITY
+        trigger: HIT
+        cooldown: 5
+        conditions:
+          chance: 20
+          force: 2.0
+      p2:
+        type: PARTICLE
+        trigger: HOLD
+        cooldown: 0
+        conditions:
+          particle: SNOWFLAKE
+          count: 5
+
+  healing_staff:
+    material: BLAZE_ROD
+    display-name: "<green><bold>Healing Staff"
+    lore:
+      - "<gray>Quyền trượng hồi phục"
+    rarity: RARE
+    passives:
+      p0:
+        type: HEAL
+        trigger: HIT
+        cooldown: 5
+        conditions:
+          chance: 100
+          amount: 2.0
+      p1:
+        type: FEED
+        trigger: HIT
+        cooldown: 10
+        conditions:
+          chance: 50
+          food: 4
+      p2:
+        type: GLOW
+        trigger: EQUIP
+        cooldown: 0
+        conditions:
+          duration: 999999

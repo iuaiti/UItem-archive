@@ -12,7 +12,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.meta.ItemFlag;
+import org.bukkit.inventory.ItemFlag;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -177,7 +177,7 @@ public class ConfigManager {
 
         // Set rarity (using enchantment glow as example)
         if (item.isGlow()) {
-            meta.addEnchant(Enchantment.LURE, 1);
+            meta.addEnchant(Enchantment.LURE, 1, true);
             meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
         }
 
