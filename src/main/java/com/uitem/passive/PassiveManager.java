@@ -42,7 +42,12 @@ public class PassiveManager {
     public PassiveManager(UItemPlugin plugin, UItemManager itemManager) {
         this.plugin = plugin;
         this.itemManager = itemManager;
-        this.uitemKey = itemManager.getUItemKey();
+        NamespacedKey key = itemManager.getUItemKey();
+        if (key == null) {
+            plugin.getLogger().warning("[Passive] UItemKey is null — creating fallback key!");
+            key = new NamespacedKey(plugin, "uitem_id");
+        }
+        this.uitemKey = key;
         this.miniMessage = MiniMessage.miniMessage();
         instance = this;
     }
@@ -67,16 +72,16 @@ public class PassiveManager {
 
         PersistentDataContainer pdc = meta.getPersistentDataContainer();
         if (pdc == null) {
-            if (isDebug()) {
-                plugin.getLogger().warning("[Passive] PDC is null for item: " + item.getType());
-            }
+            plugin.getLogger().warning("[Passive] PDC is null for item: " + item.getType());
             return null;
         }
 
         String id = pdc.get(uitemKey, PersistentDataType.STRING);
         if (id == null && isDebug()) {
-            plugin.getLogger().warning("[Passive] No uitem_id PDC tag found on " + item.getType()
-                    + "! Item may have been obtained via /give or Creative menu instead of /uitem give.");
+            if (item.hasItemMeta()) {
+                plugin.getLogger().warning("[Passive] Item " + item.getType() + " missing 'uitem_id' tag! Use /uitem give instead of /give or Creative.");
+            }
+            plugin.getLogger().warning("[Passive] Available PDC keys: " + pdc.getKeys());
         }
         return id;
     }
@@ -85,14 +90,26 @@ public class PassiveManager {
         if (id == null) return List.of();
         UItemData data = itemManager.getItem(id);
         if (data == null) {
-            plugin.getLogger().warning("[Passive] Không tìm thấy item '" + id + "' trong manager! Danh sách items: " + itemManager.getAllItems().keySet());
+            for (Map.Entry<String, UItemData> entry : itemManager.getAllItems().entrySet()) {
+                if (entry.getKey().equalsIgnoreCase(id)) {
+                    data = entry.getValue();
+                    if (isDebug()) plugin.getLogger().info("[Passive] Found item '" + id + "' via case-insensitive fallback: " + entry.getKey());
+                    break;
+                }
+            }
+        }
+        if (data == null) {
+            plugin.getLogger().warning("[Passive] Item '" + id + "' not found in itemManager! Available: " + itemManager.getAllItems().keySet());
             return List.of();
         }
         List<PassiveData> passives = data.getPassives();
-        if ((passives == null || passives.isEmpty()) && isDebug()) {
-            plugin.getLogger().info("[Passive] Item '" + id + "' has no passives defined.");
+        if (passives == null || passives.isEmpty()) {
+            if (isDebug()) {
+                plugin.getLogger().info("[Passive] Item '" + id + "' has ZERO passives defined. Skipping.");
+            }
+            return List.of();
         }
-        return passives != null ? passives : List.of();
+        return passives;
     }
 
     public void executePassives(Player player, ItemStack item, String trigger, Map<String, Object> context) {
@@ -132,6 +149,9 @@ public class PassiveManager {
 
     public void executePassives(Player player, String itemId, PassiveTrigger trigger, Map<String, Object> context) {
         boolean debug = isDebug();
+        if (debug) {
+            plugin.getLogger().info("[PASSIVE-DEBUG] Attempt: player=" + player.getName() + " item=" + itemId + " trigger=" + trigger);
+        }
         List<PassiveData> passives = getPassivesForItem(itemId);
         if (passives.isEmpty()) {
             if (debug) {
@@ -147,29 +167,37 @@ public class PassiveManager {
 
         for (PassiveData passive : passives) {
             try {
+                Map<String, Object> passiveContext = context != null ? new HashMap<>(context) : new HashMap<>();
+
                 PassiveTrigger passiveTrigger;
                 try {
-                    passiveTrigger = PassiveTrigger.valueOf(passive.getTrigger().toUpperCase(Locale.ROOT));
+                    String triggerStr = passive.getTrigger();
+                    if (triggerStr == null || triggerStr.trim().isEmpty()) {
+                        if (debug) plugin.getLogger().warning("[Passive] Skip " + passive.getType() + ": trigger is null/empty");
+                        continue;
+                    }
+                    passiveTrigger = PassiveTrigger.valueOf(triggerStr.toUpperCase(Locale.ROOT).trim());
                 } catch (IllegalArgumentException e) {
+                    if (debug) plugin.getLogger().warning("[Passive] Invalid trigger '" + passive.getTrigger() + "' for " + passive.getType());
                     continue;
                 }
-                if (passiveTrigger != trigger) continue;
-                if (context == null) context = new HashMap<>();
+                if (!passiveTrigger.equals(trigger)) continue;
+
                 if (!checkCooldown(player, itemId, passive)) {
                     if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": on cooldown");
                     continue;
                 }
-                if (!checkConditions(player, passive, context)) {
+                if (!checkConditions(player, passive, passiveContext)) {
                     if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": conditions not met");
                     continue;
                 }
                 if (debug) plugin.getLogger().info("[Passive] EXECUTE " + passive.getType() + " for " + player.getName());
-                executeAction(player, passive, context);
+                executeAction(player, passive, passiveContext);
                 applyCooldown(player, itemId, passive);
             } catch (Exception e) {
                 plugin.getLogger().warning("Error executing passive " + passive.getType()
                         + " for item " + itemId + " on player " + player.getName() + ": " + e.getMessage());
-                e.printStackTrace();
+                if (isDebug()) e.printStackTrace();
             }
         }
     }
@@ -179,11 +207,18 @@ public class PassiveManager {
         String key = player.getUniqueId() + "_" + itemId + "_" + passive.getType() + "_" + passive.getTrigger();
         Long lastUse = cooldowns.get(key);
         if (lastUse == null) {
-            lastUse = loadCooldownFromPDC(player, passive);
+            lastUse = loadCooldownFromPDC(player, itemId, passive);
             if (lastUse != null) cooldowns.put(key, lastUse);
         }
         if (lastUse == null) return true;
-        return (System.currentTimeMillis() - lastUse) >= (passive.getCooldown() * 1000L);
+        long elapsed = System.currentTimeMillis() - lastUse;
+        long cooldownMs = passive.getCooldown() * 1000L;
+        if (elapsed >= cooldownMs) return true;
+        long remaining = (cooldownMs - elapsed + 999) / 1000;
+        player.sendActionBar(net.kyori.adventure.text.Component.text(
+                "⏳ " + passive.getType() + " hồi " + remaining + "s",
+                net.kyori.adventure.text.format.NamedTextColor.RED));
+        return false;
     }
 
     private void applyCooldown(Player player, String itemId, PassiveData passive) {
@@ -191,17 +226,28 @@ public class PassiveManager {
         String key = player.getUniqueId() + "_" + itemId + "_" + passive.getType() + "_" + passive.getTrigger();
         long now = System.currentTimeMillis();
         cooldowns.put(key, now);
-        saveCooldownToPDC(player, passive, now);
+        saveCooldownToPDC(player, itemId, passive, now);
     }
 
-    private NamespacedKey cooldownKey(Player player, PassiveData passive) {
-        String cdKey = "uitem_cd_" + passive.getType() + "_" + passive.getTrigger();
+    private String sanitizeKey(String input) {
+        return input.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_/]", "_");
+    }
+
+    private NamespacedKey cooldownKey(Player player, String itemId, PassiveData passive) {
+        String cdKey = "uitem_cd_"
+                + sanitizeKey(itemId) + "_"
+                + sanitizeKey(passive.getType()) + "_"
+                + sanitizeKey(passive.getTrigger());
         return new NamespacedKey(plugin, cdKey);
     }
 
-    private void saveCooldownToPDC(Player player, PassiveData passive, long timestamp) {
-        PersistentDataContainer pdc = player.getPersistentDataContainer();
-        pdc.set(cooldownKey(player, passive), PersistentDataType.LONG, timestamp);
+    private void saveCooldownToPDC(Player player, String itemId, PassiveData passive, long timestamp) {
+        try {
+            PersistentDataContainer pdc = player.getPersistentDataContainer();
+            pdc.set(cooldownKey(player, itemId, passive), PersistentDataType.LONG, timestamp);
+        } catch (IllegalArgumentException e) {
+            if (isDebug()) plugin.getLogger().warning("[Passive] Invalid cooldown key, skipping PDC save: " + e.getMessage());
+        }
     }
 
     public void clearCooldownsFor(Player player) {
@@ -209,10 +255,15 @@ public class PassiveManager {
         cooldowns.keySet().removeIf(k -> k.startsWith(prefix));
     }
 
-    private Long loadCooldownFromPDC(Player player, PassiveData passive) {
-        PersistentDataContainer pdc = player.getPersistentDataContainer();
-        if (pdc.has(cooldownKey(player, passive), PersistentDataType.LONG)) {
-            return pdc.get(cooldownKey(player, passive), PersistentDataType.LONG);
+    private Long loadCooldownFromPDC(Player player, String itemId, PassiveData passive) {
+        try {
+            PersistentDataContainer pdc = player.getPersistentDataContainer();
+            NamespacedKey key = cooldownKey(player, itemId, passive);
+            if (pdc.has(key, PersistentDataType.LONG)) {
+                return pdc.get(key, PersistentDataType.LONG);
+            }
+        } catch (IllegalArgumentException e) {
+            if (isDebug()) plugin.getLogger().warning("[Passive] Invalid cooldown key, skipping PDC load: " + e.getMessage());
         }
         return null;
     }
@@ -240,7 +291,13 @@ public class PassiveManager {
     private boolean parseBoolean(Map<String, Object> conds, String key, boolean defaultVal) {
         Object val = conds.get(key);
         if (val instanceof Boolean b) return b;
-        if (val instanceof String s) return Boolean.parseBoolean(s);
+        if (val instanceof String s) {
+            return switch (s.trim().toLowerCase(Locale.ROOT)) {
+                case "true", "yes", "1", "on" -> true;
+                case "false", "no", "0", "off" -> false;
+                default -> Boolean.parseBoolean(s);
+            };
+        }
         if (val instanceof Number n) return n.intValue() != 0;
         return defaultVal;
     }
@@ -354,20 +411,20 @@ public class PassiveManager {
                 player.getWorld().strikeLightningEffect(loc);
             }
             case "FIRE" -> {
-                int ticks = conds != null && conds.containsKey("ticks") ? ((Number) conds.get("ticks")).intValue() : 40;
+                int ticks = parseInt(conds, "ticks", 40);
                 if (target != null) target.setFireTicks(ticks);
                 else player.setFireTicks(ticks);
             }
             case "FREEZE" -> {
-                int ticks = conds != null && conds.containsKey("ticks") ? ((Number) conds.get("ticks")).intValue() : 100;
+                int ticks = parseInt(conds, "ticks", 100);
                 if (target != null) target.setFreezeTicks(ticks);
                 else player.setFreezeTicks(ticks);
             }
             case "POTION" -> {
                 if (conds != null && conds.containsKey("effect")) {
                     String effectName = conds.get("effect").toString();
-                    int duration = conds.containsKey("duration") ? ((Number) conds.get("duration")).intValue() : 100;
-                    int amplifier = conds.containsKey("amplifier") ? ((Number) conds.get("amplifier")).intValue() : 0;
+                    int duration = parseInt(conds, "duration", 100);
+                    int amplifier = parseInt(conds, "amplifier", 0);
                     PotionEffectType effectType = PotionEffectType.getByKey(NamespacedKey.fromString(effectName.toLowerCase(Locale.ROOT)));
                     if (effectType != null) {
                         boolean self = !conds.containsKey("self") || condBoolean(conds, "self");
@@ -379,38 +436,38 @@ public class PassiveManager {
                 }
             }
             case "HEAL" -> {
-                double amount = conds != null && conds.containsKey("amount") ? ((Number) conds.get("amount")).doubleValue() : 4.0;
+                double amount = parseDouble(conds, "amount", 4.0);
                 player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + amount));
             }
             case "FEED" -> {
-                int food = conds != null && conds.containsKey("food") ? ((Number) conds.get("food")).intValue() : 6;
+                int food = parseInt(conds, "food", 6);
                 player.setFoodLevel(Math.min(20, player.getFoodLevel() + food));
             }
             case "SATURATION" -> {
-                float sat = conds != null && conds.containsKey("amount") ? ((Number) conds.get("amount")).floatValue() : 5;
-                player.setSaturation(Math.min(20, player.getSaturation() + sat));
+                double sat = parseDouble(conds, "amount", 5.0);
+                player.setSaturation((float) Math.min(20, player.getSaturation() + sat));
             }
             case "SPEED" -> {
-                int dur = conds != null && conds.containsKey("duration") ? ((Number) conds.get("duration")).intValue() : 200;
-                int amp = conds != null && conds.containsKey("amplifier") ? ((Number) conds.get("amplifier")).intValue() : 1;
+                int dur = parseInt(conds, "duration", 200);
+                int amp = parseInt(conds, "amplifier", 1);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, dur, amp, false, true, true));
             }
             case "JUMP" -> {
-                int dur = conds != null && conds.containsKey("duration") ? ((Number) conds.get("duration")).intValue() : 200;
-                int amp = conds != null && conds.containsKey("amplifier") ? ((Number) conds.get("amplifier")).intValue() : 1;
+                int dur = parseInt(conds, "duration", 200);
+                int amp = parseInt(conds, "amplifier", 1);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, dur, amp, false, true, true));
             }
             case "GLOW" -> {
-                int dur = conds != null && conds.containsKey("duration") ? ((Number) conds.get("duration")).intValue() : 100;
-                int amp = conds != null && conds.containsKey("amplifier") ? ((Number) conds.get("amplifier")).intValue() : 0;
+                int dur = parseInt(conds, "duration", 100);
+                int amp = parseInt(conds, "amplifier", 0);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, dur, amp, false, true, true));
             }
             case "INVISIBILITY" -> {
-                int dur = conds != null && conds.containsKey("duration") ? ((Number) conds.get("duration")).intValue() : 200;
+                int dur = parseInt(conds, "duration", 200);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, dur, 0, false, true, true));
             }
             case "KNOCKBACK" -> {
-                double force = conds != null && conds.containsKey("force") ? ((Number) conds.get("force")).doubleValue() : 1.5;
+                double force = parseDouble(conds, "force", 1.5);
                 if (target != null) {
                     Vector knockback = target.getLocation().toVector().subtract(player.getLocation().toVector()).normalize().multiply(force);
                     knockback.setY(0.4);
@@ -418,31 +475,31 @@ public class PassiveManager {
                 }
             }
             case "DAMAGE_MULTIPLIER" -> {
-                double multiplier = conds != null && conds.containsKey("multiplier")
-                        ? ((Number) conds.get("multiplier")).doubleValue() : 1.5;
+                double multiplier = parseDouble(conds, "multiplier", 1.5);
                 context.compute("damage_multiplier", (k, v) -> v != null ? ((Number) v).doubleValue() * multiplier : multiplier);
             }
             case "LIFE_STEAL" -> {
-                double percent = conds != null && conds.containsKey("percent") ? ((Number) conds.get("percent")).doubleValue() : 10;
+                double percent = parseDouble(conds, "percent", 10.0);
                 if (context != null && context.containsKey("damage")) {
-                    double damage = ((Number) context.get("damage")).doubleValue();
-                    double heal = damage * percent / 100.0;
-                    player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + heal));
+                    Object dmgObj = context.get("damage");
+                    if (dmgObj instanceof Number dmgNum) {
+                        double heal = dmgNum.doubleValue() * percent / 100.0;
+                        player.setHealth(Math.min(player.getMaxHealth(), player.getHealth() + heal));
+                    }
                 }
             }
             case "CRIT" -> {
-                // Force critical hit handled via context
                 if (context != null) context.put("force_crit", true);
             }
             case "AUTO_SMELT" -> {
                 if (context != null) context.put("auto_smelt", true);
             }
             case "XP_BOOST" -> {
-                double multiplier = conds != null && conds.containsKey("multiplier") ? ((Number) conds.get("multiplier")).doubleValue() : 2.0;
+                double multiplier = parseDouble(conds, "multiplier", 2.0);
                 if (context != null) context.put("xp_boost", multiplier);
             }
             case "REPAIR" -> {
-                int amount = conds != null && conds.containsKey("amount") ? ((Number) conds.get("amount")).intValue() : 10;
+                int amount = parseInt(conds, "amount", 10);
                 ItemStack item = player.getInventory().getItemInMainHand();
                 if (item != null && item.getType() != Material.AIR && item.getItemMeta() instanceof Damageable damageable) {
                     int newDamage = Math.max(0, damageable.getDamage() - amount);
@@ -451,26 +508,26 @@ public class PassiveManager {
                 }
             }
             case "NIGHT_VISION" -> {
-                int dur = conds != null && conds.containsKey("duration") ? ((Number) conds.get("duration")).intValue() : 600;
+                int dur = parseInt(conds, "duration", 600);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, dur, 0, false, true, true));
             }
             case "WATER_BREATHING" -> {
-                int dur = conds != null && conds.containsKey("duration") ? ((Number) conds.get("duration")).intValue() : 600;
+                int dur = parseInt(conds, "duration", 600);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.WATER_BREATHING, dur, 0, false, true, true));
             }
             case "FIRE_RESISTANCE" -> {
-                int dur = conds != null && conds.containsKey("duration") ? ((Number) conds.get("duration")).intValue() : 600;
+                int dur = parseInt(conds, "duration", 600);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE, dur, 0, false, true, true));
             }
             case "ABSORPTION" -> {
-                int dur = conds != null && conds.containsKey("duration") ? ((Number) conds.get("duration")).intValue() : 200;
-                int amp = conds != null && conds.containsKey("amplifier") ? ((Number) conds.get("amplifier")).intValue() : 0;
+                int dur = parseInt(conds, "duration", 200);
+                int amp = parseInt(conds, "amplifier", 0);
                 player.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, dur, amp, false, true, true));
             }
             case "PARTICLE" -> {
                 if (conds != null && conds.containsKey("particle")) {
                     String particleName = conds.get("particle").toString();
-                    int count = conds.containsKey("count") ? ((Number) conds.get("count")).intValue() : 10;
+                    int count = parseInt(conds, "count", 10);
                     try {
                         org.bukkit.Particle particle = org.bukkit.Particle.valueOf(particleName.toUpperCase(Locale.ROOT));
                         player.getWorld().spawnParticle(particle, player.getLocation().add(0, 1, 0), count, 0.5, 0.5, 0.5, 0.05);
@@ -483,8 +540,8 @@ public class PassiveManager {
                     String soundName = conds.get("sound").toString();
                     try {
                         org.bukkit.Sound sound = org.bukkit.Sound.valueOf(soundName.toUpperCase(Locale.ROOT));
-                        float volume = conds.containsKey("volume") ? ((Number) conds.get("volume")).floatValue() : 1.0f;
-                        float pitch = conds.containsKey("pitch") ? ((Number) conds.get("pitch")).floatValue() : 1.0f;
+                        float volume = (float) parseDouble(conds, "volume", 1.0);
+                        float pitch = (float) parseDouble(conds, "pitch", 1.0);
                         player.getWorld().playSound(player.getLocation(), sound, volume, pitch);
                     } catch (IllegalArgumentException ignored) {
                     }
@@ -512,13 +569,13 @@ public class PassiveManager {
                 }
             }
             case "EXPLODE" -> {
-                float power = conds != null && conds.containsKey("power") ? ((Number) conds.get("power")).floatValue() : 2.0f;
+                float power = (float) parseDouble(conds, "power", 4.0);
                 boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || condBoolean(conds, "break-blocks");
                 player.getWorld().createExplosion(player.getLocation(), power, false, breakBlocks);
             }
             case "IGNITE_NEARBY" -> {
-                int radius = conds != null && conds.containsKey("radius") ? ((Number) conds.get("radius")).intValue() : 3;
-                int fireTicks = conds != null && conds.containsKey("ticks") ? ((Number) conds.get("ticks")).intValue() : 40;
+                int radius = parseInt(conds, "radius", 3);
+                int fireTicks = parseInt(conds, "ticks", 40);
                 for (Entity entity : player.getNearbyEntities(radius, radius, radius)) {
                     if (entity instanceof LivingEntity le && !le.equals(player)) {
                         le.setFireTicks(fireTicks);
@@ -526,7 +583,7 @@ public class PassiveManager {
                 }
             }
             case "PULL_ENTITY" -> {
-                double force = conds != null && conds.containsKey("force") ? ((Number) conds.get("force")).doubleValue() : 1.5;
+                double force = parseDouble(conds, "force", 1.5);
                 if (target != null) {
                     Vector pull = player.getLocation().toVector().subtract(target.getLocation().toVector()).normalize().multiply(force);
                     pull.setY(0.3);
@@ -534,7 +591,7 @@ public class PassiveManager {
                 }
             }
             case "PUSH_ENTITY" -> {
-                double force = conds != null && conds.containsKey("force") ? ((Number) conds.get("force")).doubleValue() : 1.5;
+                double force = parseDouble(conds, "force", 1.5);
                 if (target != null) {
                     Vector push = target.getLocation().toVector().subtract(player.getLocation().toVector()).normalize().multiply(force);
                     push.setY(0.3);
@@ -544,7 +601,7 @@ public class PassiveManager {
             case "TNT_MINER" -> {
                 if (context != null && context.containsKey("block")) {
                     org.bukkit.block.Block block = (org.bukkit.block.Block) context.get("block");
-                    float power = conds != null && conds.containsKey("power") ? ((Number) conds.get("power")).floatValue() : 2.0f;
+                    float power = (float) parseDouble(conds, "power", 4.0);
                     boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || condBoolean(conds, "break-blocks");
                     Location loc = block.getLocation().add(0.5, 0.5, 0.5);
                     player.setInvulnerable(true);
@@ -555,7 +612,7 @@ public class PassiveManager {
             case "TREE_FELLER" -> {
                 if (context != null && context.containsKey("block")) {
                     org.bukkit.block.Block block = (org.bukkit.block.Block) context.get("block");
-                    int maxLogs = conds != null && conds.containsKey("max_logs") ? ((Number) conds.get("max_logs")).intValue() : 200;
+                    int maxLogs = parseInt(conds, "max_logs", 200);
                     if (isLog(block.getType())) {
                         Set<org.bukkit.block.Block> logs = new HashSet<>();
                         ArrayDeque<org.bukkit.block.Block> queue = new ArrayDeque<>();
@@ -595,7 +652,7 @@ public class PassiveManager {
             }
             case "MACE_TNT" -> {
                 Location loc = target != null ? target.getLocation() : player.getLocation();
-                float power = conds != null && conds.containsKey("power") ? ((Number) conds.get("power")).floatValue() : 2.0f;
+                float power = (float) parseDouble(conds, "power", 4.0);
                 boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || condBoolean(conds, "break-blocks");
                 player.getWorld().createExplosion(loc, power, false, breakBlocks);
             }

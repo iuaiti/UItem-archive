@@ -21,6 +21,8 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -29,6 +31,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
+import com.uitem.util.SchedulerUtil;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -64,14 +67,20 @@ public class PassiveListener implements Listener {
             ItemStack mainHand = shooter.getInventory().getItemInMainHand();
             ItemStack offHand = shooter.getInventory().getItemInOffHand();
 
-            String mainId = passiveManager.getItemId(mainHand);
-            String offId = passiveManager.getItemId(offHand);
-
-            if (mainId != null) {
-                attackItem = mainHand;
-            } else if (offId != null) {
-                attackItem = offHand;
+            Map<String, Object> baseContext = new HashMap<>();
+            baseContext.put("damage", event.getDamage());
+            baseContext.put("projectile", true);
+            if (event.getEntity() instanceof LivingEntity target) {
+                baseContext.put("target", target);
             }
+
+            if (passiveManager.getItemId(mainHand) != null && mainHand.getType() != Material.AIR) {
+                passiveManager.executePassives(shooter, mainHand, PassiveTrigger.HIT, new HashMap<>(baseContext));
+            }
+            if (passiveManager.getItemId(offHand) != null && offHand.getType() != Material.AIR && !offHand.equals(mainHand)) {
+                passiveManager.executePassives(shooter, offHand, PassiveTrigger.HIT, new HashMap<>(baseContext));
+            }
+            return;
         }
 
         if (attacker != null && attackItem != null && attackItem.getType() != Material.AIR
@@ -273,6 +282,24 @@ public class PassiveListener implements Listener {
         checkAndTriggerEquipPassives(player, EquipmentSlot.FEET);
         checkAndTriggerEquipPassives(player, EquipmentSlot.HAND);
         checkAndTriggerEquipPassives(player, EquipmentSlot.OFF_HAND);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onInventoryClickEquip(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        InventoryType.SlotType slotType = event.getSlotType();
+        if (slotType == InventoryType.SlotType.ARMOR || slotType == InventoryType.SlotType.FUEL) {
+            SchedulerUtil.runSync(plugin, () -> {
+                if (slotType == InventoryType.SlotType.ARMOR) {
+                    checkAndTriggerEquipPassives(player, EquipmentSlot.HEAD);
+                    checkAndTriggerEquipPassives(player, EquipmentSlot.CHEST);
+                    checkAndTriggerEquipPassives(player, EquipmentSlot.LEGS);
+                    checkAndTriggerEquipPassives(player, EquipmentSlot.FEET);
+                } else {
+                    checkAndTriggerEquipPassives(player, EquipmentSlot.OFF_HAND);
+                }
+            });
+        }
     }
 
     @EventHandler
