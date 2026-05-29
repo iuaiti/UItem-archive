@@ -24,6 +24,11 @@ public class CraftingCommand implements CommandExecutor {
             return true;
         }
 
+        if (!player.hasPermission("uitem.craft")) {
+            player.sendMessage("You don't have permission to use this command.");
+            return true;
+        }
+
         if (args.length > 0 && args[0].equalsIgnoreCase("craft")) {
             new CraftingGui(plugin, player).open();
         } else {

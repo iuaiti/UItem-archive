@@ -103,13 +103,32 @@ public class RecipeManager {
     }
 
     public void saveRecipes() {
+        doSave();
+    }
+
+    public void saveRecipesAsync() {
+        YamlConfiguration config = buildConfig();
+        com.uitem.util.SchedulerUtil.runAsync(plugin, () -> {
+            try {
+                config.save(recipesFile);
+            } catch (IOException e) {
+                plugin.getLogger().log(Level.SEVERE, "Could not save recipes.yml", e);
+            }
+        });
+    }
+
+    private YamlConfiguration buildConfig() {
         YamlConfiguration config = new YamlConfiguration();
         for (Map.Entry<String, UItemRecipe> entry : recipes.entrySet()) {
             ConfigurationSection section = config.createSection("recipes." + entry.getKey());
             entry.getValue().save(section);
         }
+        return config;
+    }
+
+    private void doSave() {
         try {
-            config.save(recipesFile);
+            buildConfig().save(recipesFile);
         } catch (IOException e) {
             plugin.getLogger().log(Level.SEVERE, "Could not save recipes.yml", e);
         }

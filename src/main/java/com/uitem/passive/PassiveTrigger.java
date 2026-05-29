@@ -6,5 +6,7 @@ public enum PassiveTrigger {
     HOLD,
     EQUIP,
     BREAK_BLOCK,
-    KILL
+    KILL,
+    LEFT_CLICK,
+    RIGHT_CLICK
 }

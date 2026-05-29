@@ -19,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -30,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PassiveManager {
 
+    private static PassiveManager instance;
+
     private final UItemPlugin plugin;
     private final UItemManager itemManager;
     private final NamespacedKey uitemKey;
@@ -39,17 +42,41 @@ public class PassiveManager {
     public PassiveManager(UItemPlugin plugin, UItemManager itemManager) {
         this.plugin = plugin;
         this.itemManager = itemManager;
-        this.uitemKey = new NamespacedKey(plugin, "uitem_id");
+        this.uitemKey = itemManager.getUItemKey();
         this.miniMessage = MiniMessage.miniMessage();
+        instance = this;
+    }
+
+    public static PassiveManager getInstance() {
+        return instance;
+    }
+
+    public static void clearInstance() {
+        instance = null;
+    }
+
+    private boolean isDebug() {
+        return plugin.getConfig().getBoolean("passive.debug", false)
+                || plugin.getConfig().getBoolean("debug", false);
     }
 
     public String getItemId(ItemStack item) {
         if (item == null) return null;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return null;
-        String id = meta.getPersistentDataContainer().get(uitemKey, PersistentDataType.STRING);
-        if (id == null) {
-            plugin.getLogger().warning("[Passive] Item không có PDC tag uitem_id! Kiểm tra NamespacedKey có khớp không.");
+
+        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+        if (pdc == null) {
+            if (isDebug()) {
+                plugin.getLogger().warning("[Passive] PDC is null for item: " + item.getType());
+            }
+            return null;
+        }
+
+        String id = pdc.get(uitemKey, PersistentDataType.STRING);
+        if (id == null && isDebug()) {
+            plugin.getLogger().warning("[Passive] No uitem_id PDC tag found on " + item.getType()
+                    + "! Item may have been obtained via /give or Creative menu instead of /uitem give.");
         }
         return id;
     }
@@ -62,32 +89,83 @@ public class PassiveManager {
             return List.of();
         }
         List<PassiveData> passives = data.getPassives();
-        if (passives == null || passives.isEmpty()) {
-            plugin.getLogger().warning("[Passive] Item '" + id + "' không có passive nào.");
+        if ((passives == null || passives.isEmpty()) && isDebug()) {
+            plugin.getLogger().info("[Passive] Item '" + id + "' has no passives defined.");
         }
         return passives != null ? passives : List.of();
     }
 
     public void executePassives(Player player, ItemStack item, String trigger, Map<String, Object> context) {
+        try {
+            executePassives(player, item, PassiveTrigger.valueOf(trigger.toUpperCase(Locale.ROOT)), context);
+        } catch (IllegalArgumentException e) {
+            if (isDebug()) {
+                plugin.getLogger().warning("[Passive] Invalid trigger string: " + trigger);
+            }
+        }
+    }
+
+    public void executePassives(Player player, ItemStack item, PassiveTrigger trigger, Map<String, Object> context) {
         String itemId = getItemId(item);
         if (itemId == null) {
-            plugin.getLogger().warning("[Passive] Không tìm thấy item ID trong PDC khi xử lý trigger " + trigger + " cho player " + player.getName());
+            if (isDebug()) {
+                plugin.getLogger().info("[Passive] No uitem_id in PDC for " + player.getName()
+                        + " trigger=" + trigger + " item=" + item.getType());
+            }
             return;
+        }
+        if (isDebug()) {
+            plugin.getLogger().info("[Passive] Trigger " + trigger + " for " + player.getName() + " item=" + itemId);
         }
         executePassives(player, itemId, trigger, context);
     }
 
-    public void executePassives(Player player, String itemId, String trigger, Map<String, Object> context) {
+    public void executePassives(Player player, String itemId, String triggerStr, Map<String, Object> context) {
+        try {
+            executePassives(player, itemId, PassiveTrigger.valueOf(triggerStr.toUpperCase(Locale.ROOT)), context);
+        } catch (IllegalArgumentException e) {
+            if (isDebug()) {
+                plugin.getLogger().warning("[Passive] Invalid trigger string: " + triggerStr);
+            }
+        }
+    }
+
+    public void executePassives(Player player, String itemId, PassiveTrigger trigger, Map<String, Object> context) {
+        boolean debug = isDebug();
         List<PassiveData> passives = getPassivesForItem(itemId);
-        if (passives.isEmpty()) return;
+        if (passives.isEmpty()) {
+            if (debug) {
+                plugin.getLogger().info("[Passive] No passives for " + itemId + " trigger=" + trigger);
+            }
+            return;
+        }
+
+        if (debug) {
+            plugin.getLogger().info("[Passive] Executing " + passives.size() + " passive(s) for "
+                    + player.getName() + " item=" + itemId + " trigger=" + trigger);
+        }
 
         for (PassiveData passive : passives) {
             try {
-                if (!passive.getTrigger().equalsIgnoreCase(trigger)) continue;
-                if (!checkCooldown(player, passive)) continue;
-                if (!checkConditions(player, passive, context)) continue;
+                PassiveTrigger passiveTrigger;
+                try {
+                    passiveTrigger = PassiveTrigger.valueOf(passive.getTrigger().toUpperCase(Locale.ROOT));
+                } catch (IllegalArgumentException e) {
+                    continue;
+                }
+                if (passiveTrigger != trigger) continue;
+                if (context == null) context = new HashMap<>();
+                if (!checkCooldown(player, itemId, passive)) {
+                    if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": on cooldown");
+                    continue;
+                }
+                if (!checkConditions(player, passive, context)) {
+                    if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": conditions not met");
+                    continue;
+                }
+                if (debug) plugin.getLogger().info("[Passive] EXECUTE " + passive.getType() + " for " + player.getName());
                 executeAction(player, passive, context);
-                applyCooldown(player, passive);
+                applyCooldown(player, itemId, passive);
             } catch (Exception e) {
                 plugin.getLogger().warning("Error executing passive " + passive.getType()
                         + " for item " + itemId + " on player " + player.getName() + ": " + e.getMessage());
@@ -96,88 +174,158 @@ public class PassiveManager {
         }
     }
 
-    private boolean checkCooldown(Player player, PassiveData passive) {
+    private boolean checkCooldown(Player player, String itemId, PassiveData passive) {
         if (passive.getCooldown() <= 0) return true;
-        String key = player.getUniqueId() + "_" + passive.getType() + "_" + passive.getTrigger();
+        String key = player.getUniqueId() + "_" + itemId + "_" + passive.getType() + "_" + passive.getTrigger();
         Long lastUse = cooldowns.get(key);
+        if (lastUse == null) {
+            lastUse = loadCooldownFromPDC(player, passive);
+            if (lastUse != null) cooldowns.put(key, lastUse);
+        }
         if (lastUse == null) return true;
         return (System.currentTimeMillis() - lastUse) >= (passive.getCooldown() * 1000L);
     }
 
-    private void applyCooldown(Player player, PassiveData passive) {
+    private void applyCooldown(Player player, String itemId, PassiveData passive) {
         if (passive.getCooldown() <= 0) return;
-        String key = player.getUniqueId() + "_" + passive.getType() + "_" + passive.getTrigger();
-        cooldowns.put(key, System.currentTimeMillis());
+        String key = player.getUniqueId() + "_" + itemId + "_" + passive.getType() + "_" + passive.getTrigger();
+        long now = System.currentTimeMillis();
+        cooldowns.put(key, now);
+        saveCooldownToPDC(player, passive, now);
+    }
+
+    private NamespacedKey cooldownKey(Player player, PassiveData passive) {
+        String cdKey = "uitem_cd_" + passive.getType() + "_" + passive.getTrigger();
+        return new NamespacedKey(plugin, cdKey);
+    }
+
+    private void saveCooldownToPDC(Player player, PassiveData passive, long timestamp) {
+        PersistentDataContainer pdc = player.getPersistentDataContainer();
+        pdc.set(cooldownKey(player, passive), PersistentDataType.LONG, timestamp);
+    }
+
+    public void clearCooldownsFor(Player player) {
+        String prefix = player.getUniqueId() + "_";
+        cooldowns.keySet().removeIf(k -> k.startsWith(prefix));
+    }
+
+    private Long loadCooldownFromPDC(Player player, PassiveData passive) {
+        PersistentDataContainer pdc = player.getPersistentDataContainer();
+        if (pdc.has(cooldownKey(player, passive), PersistentDataType.LONG)) {
+            return pdc.get(cooldownKey(player, passive), PersistentDataType.LONG);
+        }
+        return null;
+    }
+
+    private double parseDouble(Map<String, Object> conds, String key, double defaultVal) {
+        Object val = conds.get(key);
+        if (val instanceof Number n) return n.doubleValue();
+        if (val instanceof String s) {
+            try { return Double.parseDouble(s); }
+            catch (NumberFormatException e) { return defaultVal; }
+        }
+        return defaultVal;
+    }
+
+    private int parseInt(Map<String, Object> conds, String key, int defaultVal) {
+        Object val = conds.get(key);
+        if (val instanceof Number n) return n.intValue();
+        if (val instanceof String s) {
+            try { return Integer.parseInt(s); }
+            catch (NumberFormatException e) { return defaultVal; }
+        }
+        return defaultVal;
+    }
+
+    private boolean parseBoolean(Map<String, Object> conds, String key, boolean defaultVal) {
+        Object val = conds.get(key);
+        if (val instanceof Boolean b) return b;
+        if (val instanceof String s) return Boolean.parseBoolean(s);
+        if (val instanceof Number n) return n.intValue() != 0;
+        return defaultVal;
     }
 
     private boolean checkConditions(Player player, PassiveData passive, Map<String, Object> context) {
         Map<String, Object> conds = passive.getConditions();
         if (conds == null || conds.isEmpty()) return true;
+        boolean debug = isDebug();
 
         if (conds.containsKey("chance")) {
-            double chance = ((Number) conds.get("chance")).doubleValue();
-            if (Math.random() * 100 > chance) return false;
+            double chance = parseDouble(conds, "chance", 100.0);
+            if (Math.random() * 100 > chance) {
+                if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": chance failed (" + chance + "%)");
+                return false;
+            }
         }
 
         if (conds.containsKey("health_below")) {
-            double healthBelow = ((Number) conds.get("health_below")).doubleValue();
-            if (player.getHealth() >= healthBelow) return false;
+            double healthBelow = parseDouble(conds, "health_below", player.getMaxHealth());
+            if (player.getHealth() >= healthBelow) {
+                if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": health below (" + player.getHealth() + " >= " + healthBelow + ")");
+                return false;
+            }
         }
 
         if (conds.containsKey("sneaking")) {
-            boolean sneaking;
-            Object sneakVal = conds.get("sneaking");
-            if (sneakVal instanceof Boolean) {
-                sneaking = (Boolean) sneakVal;
-            } else {
-                sneaking = Boolean.parseBoolean(sneakVal.toString());
+            if (parseBoolean(conds, "sneaking", false) != player.isSneaking()) {
+                if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": sneaking mismatch");
+                return false;
             }
-            if (sneaking != player.isSneaking()) return false;
         }
 
         if (conds.containsKey("sprinting")) {
-            boolean sprinting;
-            Object sprintVal = conds.get("sprinting");
-            if (sprintVal instanceof Boolean) {
-                sprinting = (Boolean) sprintVal;
-            } else {
-                sprinting = Boolean.parseBoolean(sprintVal.toString());
+            if (parseBoolean(conds, "sprinting", false) != player.isSprinting()) {
+                if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": sprinting mismatch");
+                return false;
             }
-            if (sprinting != player.isSprinting()) return false;
         }
 
         if (conds.containsKey("world")) {
             String worldName = conds.get("world").toString();
-            if (!player.getWorld().getName().equalsIgnoreCase(worldName)) return false;
+            if (!player.getWorld().getName().equalsIgnoreCase(worldName)) {
+                if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": world mismatch");
+                return false;
+            }
         }
 
         if (conds.containsKey("biome")) {
-            String biomeName = conds.get("biome").toString();
-            String currentBiome = player.getLocation().getBlock().getBiome().getKey().getKey();
-            if (!currentBiome.equalsIgnoreCase(biomeName)) return false;
+            String biomeName = conds.get("biome").toString().toLowerCase(Locale.ROOT);
+            String currentBiome = player.getLocation().getBlock().getBiome().getKey().toString();
+            String configBiome = biomeName.contains(":") ? biomeName : "minecraft:" + biomeName;
+            if (!currentBiome.equalsIgnoreCase(configBiome)) {
+                if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": biome mismatch");
+                return false;
+            }
         }
 
         if (conds.containsKey("time")) {
             long time = player.getWorld().getTime();
             String timeCondition = conds.get("time").toString().toLowerCase(Locale.ROOT);
-            switch (timeCondition) {
-                case "day" -> { if (time < 0 || time > 12000) return false; }
-                case "night" -> { if (time < 13000 || time > 23000) return false; }
-                case "dawn" -> {
-                    boolean isDawn = time >= 22000 || time <= 1000;
-                    if (!isDawn) return false;
-                }
-                case "dusk" -> { if (time < 12000 || time > 14000) return false; }
+            boolean timeMatch = switch (timeCondition) {
+                case "day" -> time >= 0 && time <= 12000;
+                case "night" -> time >= 13000;
+                case "dawn" -> time >= 22000 || time <= 2000;
+                case "dusk" -> time >= 12000 && time <= 14000;
+                default -> true;
+            };
+            if (!timeMatch) {
+                if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": time mismatch (" + timeCondition + ", world time=" + time + ")");
+                return false;
             }
         }
 
         if (conds.containsKey("weather")) {
             World world = player.getWorld();
             String weather = conds.get("weather").toString().toLowerCase(Locale.ROOT);
-            switch (weather) {
-                case "clear" -> { if (world.hasStorm() || world.isThundering()) return false; }
-                case "rain" -> { if (!world.hasStorm()) return false; }
-                case "thunder" -> { if (!world.isThundering()) return false; }
+            boolean weatherMatch = switch (weather) {
+                case "clear" -> !world.hasStorm() && !world.isThundering();
+                case "rain" -> world.hasStorm();
+                case "thunder" -> world.isThundering();
+                default -> true;
+            };
+            if (!weatherMatch) {
+                if (debug) plugin.getLogger().fine("[Passive] Skip " + passive.getType() + ": weather mismatch (" + weather + ")");
+                return false;
             }
         }
 
@@ -186,11 +334,7 @@ public class PassiveManager {
 
     private boolean condBoolean(Map<String, Object> conds, String key) {
         if (conds == null || !conds.containsKey(key)) return false;
-        Object val = conds.get(key);
-        if (val instanceof Boolean) return (Boolean) val;
-        if (val instanceof String) return Boolean.parseBoolean((String) val);
-        if (val instanceof Number) return ((Number) val).intValue() != 0;
-        return false;
+        return parseBoolean(conds, key, false);
     }
 
     @SuppressWarnings("unchecked")
@@ -274,9 +418,9 @@ public class PassiveManager {
                 }
             }
             case "DAMAGE_MULTIPLIER" -> {
-                // Handled in PassiveListener via context
-                if (context != null) context.put("damage_multiplier",
-                        conds != null && conds.containsKey("multiplier") ? ((Number) conds.get("multiplier")).doubleValue() : 1.5);
+                double multiplier = conds != null && conds.containsKey("multiplier")
+                        ? ((Number) conds.get("multiplier")).doubleValue() : 1.5;
+                context.compute("damage_multiplier", (k, v) -> v != null ? ((Number) v).doubleValue() * multiplier : multiplier);
             }
             case "LIFE_STEAL" -> {
                 double percent = conds != null && conds.containsKey("percent") ? ((Number) conds.get("percent")).doubleValue() : 10;

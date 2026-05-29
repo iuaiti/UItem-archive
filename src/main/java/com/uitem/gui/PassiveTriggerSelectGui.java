@@ -27,6 +27,8 @@ public class PassiveTriggerSelectGui extends AbstractGui {
         TRIGGER_MATERIALS.put("EQUIP", Material.CHAINMAIL_CHESTPLATE);
         TRIGGER_MATERIALS.put("BREAK_BLOCK", Material.DIAMOND_PICKAXE);
         TRIGGER_MATERIALS.put("KILL", Material.SKULL_BANNER_PATTERN);
+        TRIGGER_MATERIALS.put("LEFT_CLICK", Material.STONE_SWORD);
+        TRIGGER_MATERIALS.put("RIGHT_CLICK", Material.BLAZE_ROD);
     }
 
     private static final Map<String, String> TRIGGER_DESCRIPTIONS = new LinkedHashMap<>();
@@ -38,19 +40,21 @@ public class PassiveTriggerSelectGui extends AbstractGui {
         TRIGGER_DESCRIPTIONS.put("EQUIP", "When equipped in any slot");
         TRIGGER_DESCRIPTIONS.put("BREAK_BLOCK", "When breaking a block");
         TRIGGER_DESCRIPTIONS.put("KILL", "When you kill an entity");
+        TRIGGER_DESCRIPTIONS.put("LEFT_CLICK", "When you left-click with the item");
+        TRIGGER_DESCRIPTIONS.put("RIGHT_CLICK", "When you right-click with the item");
     }
 
     public PassiveTriggerSelectGui(UItemPlugin plugin, Player player, UItemData data, String passiveType) {
-        super(plugin, player, 27, "<gold>Select Trigger: " + passiveType);
+        super(plugin, player, 36, "<gold>Select Trigger: " + passiveType);
         this.data = data;
         this.passiveType = passiveType;
     }
 
     @Override
     protected void setup() {
-        for (int i = 0; i < 27; i++) {
+        for (int i = 0; i < 36; i++) {
             int row = i / 9;
-            if (row == 0 || row == 2) {
+            if (row == 0 || row == 2 || row == 3) {
                 setItem(i, createItem(Material.GRAY_STAINED_GLASS_PANE, " "));
             }
         }
@@ -59,8 +63,8 @@ public class PassiveTriggerSelectGui extends AbstractGui {
                 "<gold><bold>" + passiveType + "</bold>",
                 List.of("<gray>Choose a trigger for this passive")));
 
-        String[] triggers = {"HIT", "DAMAGED", "HOLD", "EQUIP", "BREAK_BLOCK", "KILL"};
-        int[] triggerSlots = {10, 11, 12, 13, 14, 15};
+        String[] triggers = {"HIT", "DAMAGED", "HOLD", "EQUIP", "BREAK_BLOCK", "KILL", "LEFT_CLICK", "RIGHT_CLICK"};
+        int[] triggerSlots = {10, 11, 12, 13, 14, 15, 16, 17};
 
         for (int i = 0; i < triggers.length; i++) {
             String trigger = triggers[i];
@@ -88,7 +92,7 @@ public class PassiveTriggerSelectGui extends AbstractGui {
             });
         }
 
-        setItem(22, createItem(Material.REDSTONE, "<red>Cancel", List.of("<gray>Go back")),
+        setItem(31, createItem(Material.REDSTONE, "<red>Cancel", List.of("<gray>Go back")),
                 ev -> new PassiveTypeSelectGui(plugin, player, data).open());
     }
 }

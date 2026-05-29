@@ -178,9 +178,9 @@ public class UItemData {
         UItemData clone = new UItemData(this.id);
         clone.material = this.material;
         clone.displayName = this.displayName;
-        clone.lore = new ArrayList<>(this.lore);
-        clone.enchantments = new LinkedHashMap<>(this.enchantments);
-        clone.flags = new LinkedHashSet<>(this.flags);
+        clone.lore = this.lore != null ? new ArrayList<>(this.lore) : new ArrayList<>();
+        clone.enchantments = this.enchantments != null ? new LinkedHashMap<>(this.enchantments) : new LinkedHashMap<>();
+        clone.flags = this.flags != null ? new LinkedHashSet<>(this.flags) : new LinkedHashSet<>();
         clone.customModelData = this.customModelData;
         clone.unbreakable = this.unbreakable;
         clone.glowing = this.glowing;

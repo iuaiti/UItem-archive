@@ -122,7 +122,11 @@ public class RecipeEditorGui implements InventoryHolder {
         for (int cs : CRAFT_SLOTS) {
             if (cs == slot) { isCraftSlot = true; break; }
         }
-        if (isCraftSlot || slot == RESULT_SLOT) {
+        if (isCraftSlot) {
+            return;
+        }
+        if (slot == RESULT_SLOT) {
+            event.setCancelled(true);
             return;
         }
 
@@ -138,7 +142,7 @@ public class RecipeEditorGui implements InventoryHolder {
         }
         if (slot == CLEAR_SLOT) {
             plugin.getRecipeManager().removeRecipe(data.getId());
-            plugin.getRecipeManager().saveRecipes();
+            plugin.getRecipeManager().saveRecipesAsync();
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 0.5f);
             player.sendMessage(TextUtil.success("Deleted recipe for '" + data.getId() + "'!"));
             refresh();
@@ -193,7 +197,7 @@ public class RecipeEditorGui implements InventoryHolder {
         }
 
         plugin.getRecipeManager().setRecipe(data.getId(), recipe);
-        plugin.getRecipeManager().saveRecipes();
+        plugin.getRecipeManager().saveRecipesAsync();
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.2f);
         player.sendMessage(TextUtil.success("Saved recipe " + (shaped ? "shaped" : "shapeless") + " for '" + data.getId() + "'!"));
         refresh();

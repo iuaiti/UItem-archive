@@ -69,8 +69,9 @@ public class PassiveDetailGui extends AbstractGui {
                     player.closeInventory();
                     Map<String, Object> ctx = new HashMap<>();
                     ctx.put("target", player);
-                    PassiveManager pm = new PassiveManager(plugin, plugin.getItemManager());
-                    pm.executePassives(player, data.getId(), passive.getTrigger(), ctx);
+                    ctx.put("damage", 10.0);
+                    ctx.put("block", player.getLocation().getBlock());
+                    plugin.getPassiveManager().executePassives(player, data.getId(), passive.getTrigger(), ctx);
                     player.sendMessage(TextUtil.success("Tested passive " + passive.getType() + "!"));
                 });
 
@@ -80,7 +81,7 @@ public class PassiveDetailGui extends AbstractGui {
     }
 
     private void updatePreview() {
-        PassiveManager pm = new PassiveManager(plugin, plugin.getItemManager());
+        PassiveManager pm = plugin.getPassiveManager();
         ItemStack preview = new ItemStack(Material.KNOWLEDGE_BOOK);
         ItemMeta meta = preview.getItemMeta();
         if (meta != null) {

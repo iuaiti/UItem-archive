@@ -10,11 +10,13 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +29,7 @@ import java.util.Map;
 public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> ROOT_SUBCOMMANDS = List.of(
-            "give", "editor", "reload", "list", "resourcepack", "rp", "craft", "help"
+            "give", "editor", "reload", "list", "resourcepack", "rp", "craft", "help", "check"
     );
 
     private static final List<String> RP_ACTIONS = List.of(
@@ -58,6 +60,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             case "list" -> handleList(sender);
             case "resourcepack", "rp" -> handleResourcePack(sender, args);
             case "craft", "crafting" -> handleCraft(sender);
+            case "check" -> handleCheck(sender);
             case "help" -> sendHelp(sender);
             default -> sender.sendMessage(TextUtil.error("Invalid command. Use /" + label + " help"));
         }
@@ -218,6 +221,31 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(TextUtil.success("Reloaded UItem! Loaded " + plugin.getItemManager().getAllItems().size() + " items."));
     }
 
+    private void handleCheck(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
+            return;
+        }
+
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (item == null || item.getType() == Material.AIR) {
+            sender.sendMessage(TextUtil.error("You are not holding any item!"));
+            return;
+        }
+
+        var api = com.uitem.api.UItemAPI.get();
+        if (api.isUItem(item)) {
+            String id = api.getUItemId(item).orElse("unknown");
+            sender.sendMessage(TextUtil.success("✔ Item is a valid UItem!"));
+            sender.sendMessage(TextUtil.prefixed("<green>ID: <white>" + id));
+            sender.sendMessage(TextUtil.prefixed("<green>Type: <white>" + item.getType().name()));
+        } else {
+            sender.sendMessage(TextUtil.error("✗ Item is NOT a valid UItem!"));
+            sender.sendMessage(TextUtil.prefixed("<red>Missing PDC tag 'uitem_id'. This item was not obtained through /uitem give."));
+            sender.sendMessage(TextUtil.prefixed("<red>Use <white>/uitem give <id> <player><red> to get properly tagged items."));
+        }
+    }
+
     private void handleCraft(CommandSender sender) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(TextUtil.error("This command can only be used by players!"));
@@ -331,6 +359,8 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                 "  <gold>/uitem list <dark_gray>— <gray>List items"));
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem rp <generate|export|apply|status> <dark_gray>— <gray>Manage resource pack"));
+        sender.sendMessage(miniMessage.deserialize(
+                "  <gold>/uitem check <dark_gray>— <gray>Check if held item is a valid UItem"));
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem craft <dark_gray>— <gray>Open UItem crafting table"));
         sender.sendMessage(miniMessage.deserialize(

@@ -10,7 +10,7 @@ import org.bukkit.inventory.InventoryHolder;
 
 public class GuiListener implements Listener {
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getClickedInventory() == null) {
             return;
@@ -27,7 +27,7 @@ public class GuiListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryDrag(InventoryDragEvent event) {
         InventoryHolder holder = event.getView().getTopInventory().getHolder();
         if (holder instanceof AbstractGui) {

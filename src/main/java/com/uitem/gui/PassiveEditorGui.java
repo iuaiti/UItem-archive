@@ -106,7 +106,7 @@ public class PassiveEditorGui extends AbstractGui {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return item;
 
-        PassiveManager pm = new PassiveManager(plugin, plugin.getItemManager());
+        PassiveManager pm = plugin.getPassiveManager();
         meta.displayName(TextUtil.parse("<gold><bold>#" + (index + 1) + " " + pd.getType()));
 
         List<String> lore = new ArrayList<>();

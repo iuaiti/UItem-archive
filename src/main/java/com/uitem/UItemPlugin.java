@@ -7,6 +7,7 @@ import com.uitem.gui.GuiListener;
 import com.uitem.integration.IntegrationManager;
 import com.uitem.listener.PassiveListener;
 import com.uitem.listener.UItemActionListener;
+import com.uitem.passive.PassiveManager;
 import com.uitem.rarity.RarityConfig;
 import com.uitem.recipe.RecipeManager;
 import com.uitem.resourcepack.ResourcePackManager;
@@ -20,6 +21,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -35,9 +37,11 @@ public final class UItemPlugin extends JavaPlugin {
     private GuiListener guiListener;
     private ResourcePackManager resourcePackManager;
     private com.uitem.search.SearchManager searchManager;
+    private PassiveManager passiveManager;
     private PassiveListener passiveListener;
     private ResourcePackServer packServer;
     private RecipeManager recipeManager;
+    private Listener resourcePackJoinListener;
 
     @Override
     public void onEnable() {
@@ -65,6 +69,7 @@ public final class UItemPlugin extends JavaPlugin {
 
         RarityConfig.load(this);
 
+        this.passiveManager = new PassiveManager(this, this.itemManager);
         this.passiveListener = new PassiveListener(this);
 
         // Khởi tạo Public API — phải trước khi đăng ký listener
@@ -134,6 +139,9 @@ public final class UItemPlugin extends JavaPlugin {
             recipeManager.saveRecipes();
         }
         UItemAPI.shutdown();
+        if (passiveManager != null) {
+            com.uitem.passive.PassiveManager.clearInstance();
+        }
         getLogger().info("UItem disabled. All items have been saved.");
         instance = null;
     }
@@ -156,7 +164,10 @@ public final class UItemPlugin extends JavaPlugin {
     }
 
     private void registerResourcePackJoinListener() {
-        getServer().getPluginManager().registerEvents(new Listener() {
+        if (resourcePackJoinListener != null) {
+            HandlerList.unregisterAll(resourcePackJoinListener);
+        }
+        resourcePackJoinListener = new Listener() {
             @EventHandler
             public void onJoin(PlayerJoinEvent event) {
                 if (!getConfig().getBoolean("resourcepack.auto-apply", true)) {
@@ -215,7 +226,8 @@ public final class UItemPlugin extends JavaPlugin {
                     event.getPlayer().kick(Component.text(kickMessage));
                 }
             }
-        }, this);
+        };
+        getServer().getPluginManager().registerEvents(resourcePackJoinListener, this);
     }
 
     public static UItemPlugin getInstance() {
@@ -248,6 +260,10 @@ public final class UItemPlugin extends JavaPlugin {
 
     public com.uitem.search.SearchManager getSearchManager() {
         return searchManager;
+    }
+
+    public PassiveManager getPassiveManager() {
+        return passiveManager;
     }
 
     public PassiveListener getPassiveListener() {

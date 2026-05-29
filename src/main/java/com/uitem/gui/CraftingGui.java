@@ -18,6 +18,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CraftingGui implements InventoryHolder {
 
@@ -30,7 +31,7 @@ public class CraftingGui implements InventoryHolder {
     private static final int CRAFT_64_SLOT = 38;
     private static final int CRAFT_MAX_SLOT = 39;
 
-    private static final Set<UUID> openCraftingGuis = new HashSet<>();
+    private static final Set<UUID> openCraftingGuis = ConcurrentHashMap.newKeySet();
 
     private final UItemPlugin plugin;
     private final Player player;
@@ -279,7 +280,28 @@ public class CraftingGui implements InventoryHolder {
         }
 
         if (event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
-            SchedulerUtil.runSync(plugin, this::updateResult);
+            if (slot < GUI_SIZE) {
+                if (slot == RESULT_SLOT) {
+                    event.setCancelled(true);
+                    return;
+                }
+                SchedulerUtil.runSync(plugin, this::updateResult);
+                return;
+            }
+            event.setCancelled(true);
+            ItemStack clicked = event.getCurrentItem();
+            if (clicked == null || clicked.getType().isAir()) return;
+            for (int cs : CRAFT_SLOTS) {
+                ItemStack existing = inventory.getItem(cs);
+                if (existing == null || existing.getType().isAir()) {
+                    ItemStack one = clicked.clone();
+                    one.setAmount(1);
+                    inventory.setItem(cs, one);
+                    clicked.setAmount(clicked.getAmount() - 1);
+                    SchedulerUtil.runSync(plugin, this::updateResult);
+                    return;
+                }
+            }
         }
     }
 
@@ -303,16 +325,20 @@ public class CraftingGui implements InventoryHolder {
         }
     }
 
+    private void returnItem(ItemStack item) {
+        if (item == null || item.getType().isAir()) return;
+        for (ItemStack leftover : player.getInventory().addItem(item).values()) {
+            player.getWorld().dropItem(player.getLocation(), leftover);
+        }
+    }
+
     public void onClose() {
         for (int slot : CRAFT_SLOTS) {
-            ItemStack item = inventory.getItem(slot);
-            if (item != null && !item.getType().isAir()) {
-                for (ItemStack leftover : player.getInventory().addItem(item).values()) {
-                    player.getWorld().dropItem(player.getLocation(), leftover);
-                }
-                inventory.setItem(slot, null);
-            }
+            returnItem(inventory.getItem(slot));
+            inventory.setItem(slot, null);
         }
+        returnItem(inventory.getItem(RESULT_SLOT));
+        inventory.setItem(RESULT_SLOT, null);
     }
 
     public void open() {

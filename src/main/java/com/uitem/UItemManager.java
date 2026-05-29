@@ -167,7 +167,7 @@ public class UItemManager {
             loreComponents.add(Component.empty());
             loreComponents.add(miniMessage.deserialize("<dark_gray>═══════════════════"));
             loreComponents.add(miniMessage.deserialize("<gold><bold>Passive Abilities"));
-            PassiveManager pm = new PassiveManager(plugin, this);
+            PassiveManager pm = plugin.getPassiveManager();
             for (PassiveData passive : data.getPassives()) {
                 loreComponents.add(miniMessage.deserialize(pm.getPassiveDescription(passive)));
             }
