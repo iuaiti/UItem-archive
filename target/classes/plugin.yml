@@ -4,10 +4,8 @@ main: com.uitem.UItemPlugin
 api-version: '1.21'
 folia-supported: true
 description: Ultimate Item - Custom item plugin for Minecraft
-author: UItemDev
-softdepend:
-  - Oraxen
-  - ItemsAdder
+author: iuaititi
+license: Delta Softwares License (DSL) - All Rights Reserved - No Redistribution
 commands:
   uitem:
     description: UItem main command
