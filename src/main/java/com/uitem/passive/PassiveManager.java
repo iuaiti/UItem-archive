@@ -69,11 +69,17 @@ public class PassiveManager {
         if (passives.isEmpty()) return;
 
         for (PassiveData passive : passives) {
-            if (!passive.getTrigger().equalsIgnoreCase(trigger)) continue;
-            if (!checkCooldown(player, passive)) continue;
-            if (!checkConditions(player, passive, context)) continue;
-            executeAction(player, passive, context);
-            applyCooldown(player, passive);
+            try {
+                if (!passive.getTrigger().equalsIgnoreCase(trigger)) continue;
+                if (!checkCooldown(player, passive)) continue;
+                if (!checkConditions(player, passive, context)) continue;
+                executeAction(player, passive, context);
+                applyCooldown(player, passive);
+            } catch (Exception e) {
+                plugin.getLogger().warning("Error executing passive " + passive.getType()
+                        + " for item " + itemId + " on player " + player.getName() + ": " + e.getMessage());
+                e.printStackTrace();
+            }
         }
     }
 
@@ -367,8 +373,8 @@ public class PassiveManager {
                     org.bukkit.block.Block block = (org.bukkit.block.Block) context.get("block");
                     int maxLogs = conds != null && conds.containsKey("max_logs") ? ((Number) conds.get("max_logs")).intValue() : 200;
                     if (isLog(block.getType())) {
-                        java.util.Set<org.bukkit.block.Block> logs = new java.util.HashSet<>();
-                        java.util.ArrayDeque<org.bukkit.block.Block> queue = new java.util.ArrayDeque<>();
+                        Set<org.bukkit.block.Block> logs = new HashSet<>();
+                        ArrayDeque<org.bukkit.block.Block> queue = new ArrayDeque<>();
                         queue.add(block);
                         while (!queue.isEmpty() && logs.size() < maxLogs) {
                             org.bukkit.block.Block current = queue.poll();
@@ -386,8 +392,12 @@ public class PassiveManager {
                                 }
                             }
                         }
+                        ItemStack tool = player.getInventory().getItemInMainHand();
                         for (org.bukkit.block.Block log : logs) {
-                            log.breakNaturally(player.getInventory().getItemInMainHand());
+                            log.setType(Material.AIR);
+                            for (ItemStack drop : log.getDrops(tool)) {
+                                log.getWorld().dropItemNaturally(log.getLocation(), drop);
+                            }
                         }
                     }
                 }

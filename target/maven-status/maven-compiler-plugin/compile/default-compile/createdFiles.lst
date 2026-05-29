@@ -29,6 +29,7 @@ com/example/uitem/gui/MainMenuGUI.class
 com/uitem/api/events/UItemCreateEvent.class
 com/uitem/gui/FlagGui.class
 com/uitem/api/events/UItemPickupEvent.class
+com/uitem/gui/RecipeDetailGui.class
 com/uitem/UItemData.class
 com/example/uitem/gui/CategoryGUI.class
 com/uitem/gui/RecipeListGui.class
