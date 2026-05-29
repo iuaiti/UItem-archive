@@ -2,7 +2,11 @@ package com.uitem.listener;
 
 import com.uitem.UItemPlugin;
 import com.uitem.passive.PassiveManager;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Tag;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -21,6 +25,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 
 import java.util.*;
+import java.util.logging.Level;
 
 public class PassiveListener implements Listener {
 
@@ -100,6 +105,77 @@ public class PassiveListener implements Listener {
         context.put("block", event.getBlock());
 
         passiveManager.executePassives(player, item, "BREAK_BLOCK", context);
+
+        if (context.containsKey("auto_smelt")) {
+            org.bukkit.block.Block block = event.getBlock();
+            event.setDropItems(false);
+            List<ItemStack> drops = new ArrayList<>(block.getDrops(item));
+            for (ItemStack drop : drops) {
+                ItemStack smelted = getSmeltedResult(drop);
+                if (smelted != null) {
+                    Location loc = block.getLocation().add(0.5, 0.5, 0.5);
+                    loc.getWorld().dropItemNaturally(loc, smelted);
+                } else {
+                    Location loc = block.getLocation().add(0.5, 0.5, 0.5);
+                    loc.getWorld().dropItemNaturally(loc, drop);
+                }
+            }
+        }
+    }
+
+    private ItemStack getSmeltedResult(ItemStack item) {
+        if (item == null || item.getType().isAir()) return null;
+        Material mat = item.getType();
+        Material result = switch (mat) {
+            case IRON_ORE -> Material.IRON_INGOT;
+            case DEEPSLATE_IRON_ORE -> Material.IRON_INGOT;
+            case RAW_IRON -> Material.IRON_INGOT;
+            case GOLD_ORE -> Material.GOLD_INGOT;
+            case DEEPSLATE_GOLD_ORE -> Material.GOLD_INGOT;
+            case RAW_GOLD -> Material.GOLD_INGOT;
+            case COPPER_ORE -> Material.COPPER_INGOT;
+            case DEEPSLATE_COPPER_ORE -> Material.COPPER_INGOT;
+            case RAW_COPPER -> Material.COPPER_INGOT;
+            case NETHER_GOLD_ORE -> Material.GOLD_INGOT;
+            case NETHER_QUARTZ_ORE -> Material.QUARTZ;
+            case LAPIS_ORE -> Material.LAPIS_LAZULI;
+            case DEEPSLATE_LAPIS_ORE -> Material.LAPIS_LAZULI;
+            case REDSTONE_ORE -> Material.REDSTONE;
+            case DEEPSLATE_REDSTONE_ORE -> Material.REDSTONE;
+            case DIAMOND_ORE -> Material.DIAMOND;
+            case DEEPSLATE_DIAMOND_ORE -> Material.DIAMOND;
+            case EMERALD_ORE -> Material.EMERALD;
+            case DEEPSLATE_EMERALD_ORE -> Material.EMERALD;
+            case COAL_ORE -> Material.COAL;
+            case DEEPSLATE_COAL_ORE -> Material.COAL;
+            case ANCIENT_DEBRIS -> Material.NETHERITE_SCRAP;
+            case IRON_INGOT -> Material.IRON_INGOT;
+            case GOLD_INGOT -> Material.GOLD_INGOT;
+            case SAND -> Material.GLASS;
+            case COBBLESTONE -> Material.STONE;
+            case STONE -> Material.STONE;
+            case COBBLED_DEEPSLATE -> Material.DEEPSLATE;
+            case CLAY_BALL -> Material.TERRACOTTA;
+            case NETHERRACK -> Material.NETHER_BRICK;
+            case WET_SPONGE -> Material.SPONGE;
+            case CHORUS_FRUIT -> Material.POPPED_CHORUS_FRUIT;
+            default -> null;
+        };
+        if (result != null) {
+            ItemStack smelted = new ItemStack(result);
+            smelted.setAmount(item.getAmount());
+            if (mat.name().endsWith("_ORE") || mat.name().startsWith("DEEPSLATE_") || mat == Material.NETHER_GOLD_ORE) {
+                java.util.Random rand = new java.util.Random();
+                int bonus = 0;
+                if (item.containsEnchantment(Enchantment.FORTUNE)) {
+                    int level = item.getEnchantmentLevel(Enchantment.FORTUNE);
+                    bonus = rand.nextInt(level + 1);
+                }
+                smelted.setAmount(item.getAmount() + bonus);
+            }
+            return smelted;
+        }
+        return null;
     }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)

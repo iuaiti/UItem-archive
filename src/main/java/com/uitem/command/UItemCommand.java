@@ -334,6 +334,10 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem craft <dark_gray>— <gray>Open UItem crafting table"));
         sender.sendMessage(miniMessage.deserialize(
+                "  <gold>/crafting <dark_gray>— <gray>List all crafting recipes"));
+        sender.sendMessage(miniMessage.deserialize(
+                "  <gold>/crafting craft <dark_gray>— <gray>Open UItem crafting table"));
+        sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem reload <dark_gray>— <gray>Reload plugin"));
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem help <dark_gray>— <gray>Show help"));

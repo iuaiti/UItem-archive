@@ -1,5 +1,6 @@
 package com.uitem.recipe;
 
+import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -84,6 +85,17 @@ public class UItemRecipe {
         }
 
         public ItemStack toItemStack() {
+            if (uitemId != null) {
+                UItemPlugin plugin = UItemPlugin.getInstance();
+                if (plugin != null) {
+                    UItemData data = plugin.getItemManager().getItem(uitemId);
+                    if (data != null) {
+                        ItemStack item = plugin.getItemManager().buildItemStack(data);
+                        item.setAmount(amount);
+                        return item;
+                    }
+                }
+            }
             if (material != null && !material.isAir()) {
                 return new ItemStack(material, amount);
             }

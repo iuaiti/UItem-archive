@@ -2,6 +2,7 @@ package com.uitem.command;
 
 import com.uitem.UItemPlugin;
 import com.uitem.gui.CraftingGui;
+import com.uitem.gui.RecipeListGui;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -23,7 +24,11 @@ public class CraftingCommand implements CommandExecutor {
             return true;
         }
 
-        new CraftingGui(plugin, player).open();
+        if (args.length > 0 && args[0].equalsIgnoreCase("craft")) {
+            new CraftingGui(plugin, player).open();
+        } else {
+            new RecipeListGui(plugin, player).open();
+        }
         return true;
     }
 }

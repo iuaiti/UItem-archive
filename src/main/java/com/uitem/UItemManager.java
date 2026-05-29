@@ -11,6 +11,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 
@@ -208,6 +209,18 @@ public class UItemManager {
         // Glowing (enchant glow effect mà không hiện enchant text)
         if (data.isGlowing() && (data.getEnchantments() == null || data.getEnchantments().isEmpty())) {
             meta.setEnchantmentGlintOverride(true);
+        }
+
+        // Durability
+        if (meta instanceof Damageable damageable) {
+            int maxDur = data.getMaxDurability();
+            if (maxDur > 0) {
+                damageable.setMaxDamage(maxDur);
+                damageable.setDamage(0);
+            } else if (maxDur == 0) {
+                damageable.setMaxDamage(0);
+                damageable.setDamage(0);
+            }
         }
 
         // Attributes

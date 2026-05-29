@@ -34,7 +34,8 @@ public class PassiveEditorGui extends AbstractGui {
             "DAMAGE_MULTIPLIER", "LIFE_STEAL", "CRIT", "AUTO_SMELT", "XP_BOOST", "REPAIR",
             "NIGHT_VISION", "WATER_BREATHING", "FIRE_RESISTANCE", "ABSORPTION",
             "PARTICLE", "SOUND", "MESSAGE", "TELEPORT", "EXPLODE",
-            "IGNITE_NEARBY", "PULL_ENTITY", "PUSH_ENTITY"
+            "IGNITE_NEARBY", "PULL_ENTITY", "PUSH_ENTITY",
+            "TNT_MINER", "TREE_FELLER", "MACE_LIGHTNING", "MACE_TNT"
     );
 
     public PassiveEditorGui(UItemPlugin plugin, Player player, UItemData data) {

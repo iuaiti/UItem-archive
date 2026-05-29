@@ -93,6 +93,7 @@ public class StorageManager {
                 data.setCustomModelData(section.getInt("custom-model-data", -1));
                 data.setUnbreakable(section.getBoolean("unbreakable", false));
                 data.setGlowing(section.getBoolean("glowing", false));
+                data.setMaxDurability(section.getInt("max-durability", -1));
 
                 ConfigurationSection attrSection = section.getConfigurationSection("attributes");
                 if (attrSection != null) {
@@ -229,6 +230,7 @@ public class StorageManager {
             config.set(path + ".custom-model-data", data.getCustomModelData());
             config.set(path + ".unbreakable", data.isUnbreakable());
             config.set(path + ".glowing", data.isGlowing());
+            config.set(path + ".max-durability", data.getMaxDurability());
 
             if (data.getAttributes() != null && !data.getAttributes().isEmpty()) {
                 for (int i = 0; i < data.getAttributes().size(); i++) {

@@ -31,6 +31,7 @@ com/uitem/gui/FlagGui.class
 com/uitem/api/events/UItemPickupEvent.class
 com/uitem/UItemData.class
 com/example/uitem/gui/CategoryGUI.class
+com/uitem/gui/RecipeListGui.class
 com/uitem/storage/StorageManager$PendingSave.class
 com/example/uitem/gui/AdminGUI.class
 com/uitem/gui/EnchantmentGui.class
@@ -53,6 +54,7 @@ com/uitem/gui/CraftingGui.class
 com/example/uitem/gui/RecipeEditorGUI.class
 com/uitem/UItemManager.class
 com/uitem/UItemData$AttributeData.class
+com/uitem/passive/PassiveManager$1.class
 com/example/uitem/gui/CraftingGUI.class
 com/uitem/gui/ConfirmDeleteGui.class
 com/uitem/api/events/UItemInteractEvent.class

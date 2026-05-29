@@ -8,6 +8,7 @@ import com.uitem.util.SchedulerUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -350,7 +351,77 @@ public class PassiveManager {
                     target.setVelocity(push);
                 }
             }
+            case "TNT_MINER" -> {
+                if (context != null && context.containsKey("block")) {
+                    org.bukkit.block.Block block = (org.bukkit.block.Block) context.get("block");
+                    float power = conds != null && conds.containsKey("power") ? ((Number) conds.get("power")).floatValue() : 2.0f;
+                    boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || ((boolean) conds.get("break-blocks"));
+                    Location loc = block.getLocation().add(0.5, 0.5, 0.5);
+                    player.setInvulnerable(true);
+                    player.getWorld().createExplosion(loc, power, false, breakBlocks);
+                    org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> player.setInvulnerable(false), 2);
+                }
+            }
+            case "TREE_FELLER" -> {
+                if (context != null && context.containsKey("block")) {
+                    org.bukkit.block.Block block = (org.bukkit.block.Block) context.get("block");
+                    int maxLogs = conds != null && conds.containsKey("max_logs") ? ((Number) conds.get("max_logs")).intValue() : 200;
+                    if (isLog(block.getType())) {
+                        java.util.Set<org.bukkit.block.Block> logs = new java.util.HashSet<>();
+                        java.util.ArrayDeque<org.bukkit.block.Block> queue = new java.util.ArrayDeque<>();
+                        queue.add(block);
+                        while (!queue.isEmpty() && logs.size() < maxLogs) {
+                            org.bukkit.block.Block current = queue.poll();
+                            if (!isLog(current.getType())) continue;
+                            if (!logs.add(current)) continue;
+                            for (int dx = -1; dx <= 1; dx++) {
+                                for (int dy = -1; dy <= 1; dy++) {
+                                    for (int dz = -1; dz <= 1; dz++) {
+                                        if (dx == 0 && dy == 0 && dz == 0) continue;
+                                        org.bukkit.block.Block neighbor = current.getRelative(dx, dy, dz);
+                                        if (isLog(neighbor.getType()) && !logs.contains(neighbor)) {
+                                            queue.add(neighbor);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        for (org.bukkit.block.Block log : logs) {
+                            log.breakNaturally(player.getInventory().getItemInMainHand());
+                        }
+                    }
+                }
+            }
+            case "MACE_LIGHTNING" -> {
+                Location loc = target != null ? target.getLocation() : player.getTargetBlock(null, 50).getLocation().add(0.5, 1, 0.5);
+                player.getWorld().strikeLightningEffect(loc);
+                if (target != null) {
+                    target.getWorld().strikeLightning(target.getLocation());
+                }
+            }
+            case "MACE_TNT" -> {
+                Location loc = target != null ? target.getLocation() : player.getLocation();
+                float power = conds != null && conds.containsKey("power") ? ((Number) conds.get("power")).floatValue() : 2.0f;
+                boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || ((boolean) conds.get("break-blocks"));
+                player.getWorld().createExplosion(loc, power, false, breakBlocks);
+            }
         }
+    }
+
+    private boolean isLog(Material material) {
+        return switch (material) {
+            case OAK_LOG, OAK_WOOD, STRIPPED_OAK_LOG, STRIPPED_OAK_WOOD,
+                 SPRUCE_LOG, SPRUCE_WOOD, STRIPPED_SPRUCE_LOG, STRIPPED_SPRUCE_WOOD,
+                 BIRCH_LOG, BIRCH_WOOD, STRIPPED_BIRCH_LOG, STRIPPED_BIRCH_WOOD,
+                 JUNGLE_LOG, JUNGLE_WOOD, STRIPPED_JUNGLE_LOG, STRIPPED_JUNGLE_WOOD,
+                 ACACIA_LOG, ACACIA_WOOD, STRIPPED_ACACIA_LOG, STRIPPED_ACACIA_WOOD,
+                 DARK_OAK_LOG, DARK_OAK_WOOD, STRIPPED_DARK_OAK_LOG, STRIPPED_DARK_OAK_WOOD,
+                 MANGROVE_LOG, MANGROVE_WOOD, STRIPPED_MANGROVE_LOG, STRIPPED_MANGROVE_WOOD,
+                 CHERRY_LOG, CHERRY_WOOD, STRIPPED_CHERRY_LOG, STRIPPED_CHERRY_WOOD,
+                 CRIMSON_STEM, STRIPPED_CRIMSON_STEM, CRIMSON_HYPHAE, STRIPPED_CRIMSON_HYPHAE,
+                 WARPED_STEM, STRIPPED_WARPED_STEM, WARPED_HYPHAE, STRIPPED_WARPED_HYPHAE -> true;
+            default -> false;
+        };
     }
 
     public String getPassiveDescription(PassiveData passive) {
@@ -406,6 +477,10 @@ public class PassiveManager {
             case "ignite_nearby" -> "<red>🔥 Ignite Nearby";
             case "pull_entity" -> "<dark_aqua>🔄 Pull Entity";
             case "push_entity" -> "<aqua>➡ Push Entity";
+            case "tnt_miner" -> "<red>💥 TNT Miner";
+            case "tree_feller" -> "<green>🌲 Tree Feller";
+            case "mace_lightning" -> "<gold>⚡ Mace Lightning";
+            case "mace_tnt" -> "<red>💥 Mace TNT";
             default -> "<gray>" + type;
         };
     }

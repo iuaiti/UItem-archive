@@ -149,6 +149,33 @@ public class ItemEditorGui extends AbstractGui {
             saveAndRefresh();
         });
 
+        // === Durability (slot 17) ===
+        setItem(17, createItem(Material.ANVIL,
+                "<gold><bold>Durability</bold>",
+                List.of(
+                        "<gray>Max Durability: <white>" + (data.getMaxDurability() > 0 ? data.getMaxDurability() : "Default"),
+                        "",
+                        "<yellow>Click to set max durability",
+                        "<gray>Enter -1 for default material durability",
+                        "<gray>Enter 0 for unbreakable-like (no damage bar)",
+                        "<gray>Or enter any number > 0"
+                )), event -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            plugin.getChatInputManager().requestInput(player,
+                    "<yellow>Enter max durability <gray>(-1 = default, 0 = no damage bar, >0 = custom):",
+                    input -> {
+                        try {
+                            int dur = Integer.parseInt(input.trim());
+                            data.setMaxDurability(dur);
+                            saveAndReopen();
+                            player.sendMessage(TextUtil.success("Max durability = " + (dur > 0 ? dur : (dur == 0 ? "No bar" : "Default"))));
+                        } catch (NumberFormatException e) {
+                            player.sendMessage(TextUtil.error("Invalid number!"));
+                            new ItemEditorGui(plugin, player, data).open();
+                        }
+                    });
+        });
+
         // === Glowing (slot 19) ===
         setItem(19, createItem(
                 data.isGlowing() ? Material.GLOWSTONE : Material.STONE,

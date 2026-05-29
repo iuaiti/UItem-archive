@@ -25,6 +25,7 @@ public class UItemData {
     private int customModelData; // -1 = không set
     private boolean unbreakable;
     private boolean glowing;
+    private int maxDurability; // -1 = use default material durability
     private List<AttributeData> attributes;
 
     // Oraxen/ItemsAdder integration
@@ -44,6 +45,7 @@ public class UItemData {
         this.customModelData = -1;
         this.unbreakable = false;
         this.glowing = false;
+        this.maxDurability = -1;
         this.attributes = new ArrayList<>();
         this.rarity = null;
         this.passives = new ArrayList<>();
@@ -121,6 +123,14 @@ public class UItemData {
         this.glowing = glowing;
     }
 
+    public int getMaxDurability() {
+        return maxDurability;
+    }
+
+    public void setMaxDurability(int maxDurability) {
+        this.maxDurability = maxDurability;
+    }
+
     public List<AttributeData> getAttributes() {
         return attributes;
     }
@@ -174,6 +184,7 @@ public class UItemData {
         clone.customModelData = this.customModelData;
         clone.unbreakable = this.unbreakable;
         clone.glowing = this.glowing;
+        clone.maxDurability = this.maxDurability;
         clone.attributes = new ArrayList<>();
         for (AttributeData attribute : this.attributes) {
             clone.attributes.add(attribute.copy());

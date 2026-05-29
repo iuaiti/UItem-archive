@@ -278,8 +278,19 @@ public class RecipeEditorGui implements InventoryHolder {
     }
 
     private void refresh() {
+        ItemStack[] savedItems = new ItemStack[9];
+        for (int i = 0; i < 9; i++) {
+            savedItems[i] = inventory.getItem(CRAFT_SLOTS[i]);
+        }
+
         this.existingRecipe = plugin.getRecipeManager().getRecipe(data.getId());
         initialize();
+
+        for (int i = 0; i < 9; i++) {
+            if (savedItems[i] != null && !savedItems[i].getType().isAir()) {
+                inventory.setItem(CRAFT_SLOTS[i], savedItems[i]);
+            }
+        }
     }
 
     private ItemStack createInfoItem(Material material, String name, List<String> lore) {

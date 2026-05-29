@@ -4,13 +4,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.InventoryHolder;
 
-/**
- * Listener tập trung xử lý tất cả GUI click events.
- * Dispatch event đến đúng AbstractGui instance.
- */
 public class GuiListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -39,6 +36,15 @@ public class GuiListener implements Listener {
             gui.handleDrag(event);
         } else if (holder instanceof RecipeEditorGui gui) {
             gui.handleDrag(event);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onInventoryClose(InventoryCloseEvent event) {
+        InventoryHolder holder = event.getView().getTopInventory().getHolder();
+        if (holder instanceof CraftingGui gui) {
+            gui.onClose();
+            CraftingGui.removeCraftingPlayer((org.bukkit.entity.Player) event.getPlayer());
         }
     }
 }
