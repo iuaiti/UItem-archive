@@ -239,9 +239,13 @@ public class PassiveDetailGui extends AbstractGui {
                     try { yield Double.parseDouble(val); }
                     catch (NumberFormatException e) { yield val; }
                 }
-                case "sneaking", "sprinting" -> val.equalsIgnoreCase("true");
-                case "ticks" -> {
+                case "sneaking", "sprinting", "self", "break-blocks" -> val.equalsIgnoreCase("true");
+                case "ticks", "duration", "amplifier", "food", "count", "max_logs", "radius" -> {
                     try { yield Integer.parseInt(val); }
+                    catch (NumberFormatException e) { yield val; }
+                }
+                case "percent", "multiplier", "force", "power", "amount" -> {
+                    try { yield Double.parseDouble(val); }
                     catch (NumberFormatException e) { yield val; }
                 }
                 default -> val;

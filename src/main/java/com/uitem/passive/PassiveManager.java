@@ -47,20 +47,33 @@ public class PassiveManager {
         if (item == null) return null;
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return null;
-        return meta.getPersistentDataContainer().get(uitemKey, PersistentDataType.STRING);
+        String id = meta.getPersistentDataContainer().get(uitemKey, PersistentDataType.STRING);
+        if (id == null) {
+            plugin.getLogger().warning("[Passive] Item không có PDC tag uitem_id! Kiểm tra NamespacedKey có khớp không.");
+        }
+        return id;
     }
 
     public List<PassiveData> getPassivesForItem(String id) {
         if (id == null) return List.of();
         UItemData data = itemManager.getItem(id);
-        if (data == null) return List.of();
+        if (data == null) {
+            plugin.getLogger().warning("[Passive] Không tìm thấy item '" + id + "' trong manager! Danh sách items: " + itemManager.getAllItems().keySet());
+            return List.of();
+        }
         List<PassiveData> passives = data.getPassives();
+        if (passives == null || passives.isEmpty()) {
+            plugin.getLogger().warning("[Passive] Item '" + id + "' không có passive nào.");
+        }
         return passives != null ? passives : List.of();
     }
 
     public void executePassives(Player player, ItemStack item, String trigger, Map<String, Object> context) {
         String itemId = getItemId(item);
-        if (itemId == null) return;
+        if (itemId == null) {
+            plugin.getLogger().warning("[Passive] Không tìm thấy item ID trong PDC khi xử lý trigger " + trigger + " cho player " + player.getName());
+            return;
+        }
         executePassives(player, itemId, trigger, context);
     }
 
@@ -111,12 +124,26 @@ public class PassiveManager {
             if (player.getHealth() >= healthBelow) return false;
         }
 
-        if (conds.containsKey("sneaking") && ((boolean) conds.get("sneaking")) != player.isSneaking()) {
-            return false;
+        if (conds.containsKey("sneaking")) {
+            boolean sneaking;
+            Object sneakVal = conds.get("sneaking");
+            if (sneakVal instanceof Boolean) {
+                sneaking = (Boolean) sneakVal;
+            } else {
+                sneaking = Boolean.parseBoolean(sneakVal.toString());
+            }
+            if (sneaking != player.isSneaking()) return false;
         }
 
-        if (conds.containsKey("sprinting") && ((boolean) conds.get("sprinting")) != player.isSprinting()) {
-            return false;
+        if (conds.containsKey("sprinting")) {
+            boolean sprinting;
+            Object sprintVal = conds.get("sprinting");
+            if (sprintVal instanceof Boolean) {
+                sprinting = (Boolean) sprintVal;
+            } else {
+                sprinting = Boolean.parseBoolean(sprintVal.toString());
+            }
+            if (sprinting != player.isSprinting()) return false;
         }
 
         if (conds.containsKey("world")) {
@@ -136,7 +163,10 @@ public class PassiveManager {
             switch (timeCondition) {
                 case "day" -> { if (time < 0 || time > 12000) return false; }
                 case "night" -> { if (time < 13000 || time > 23000) return false; }
-                case "dawn" -> { if (time < 22000 || time > 24000) return false; }
+                case "dawn" -> {
+                    boolean isDawn = time >= 22000 || time <= 1000;
+                    if (!isDawn) return false;
+                }
                 case "dusk" -> { if (time < 12000 || time > 14000) return false; }
             }
         }
@@ -152,6 +182,15 @@ public class PassiveManager {
         }
 
         return true;
+    }
+
+    private boolean condBoolean(Map<String, Object> conds, String key) {
+        if (conds == null || !conds.containsKey(key)) return false;
+        Object val = conds.get(key);
+        if (val instanceof Boolean) return (Boolean) val;
+        if (val instanceof String) return Boolean.parseBoolean((String) val);
+        if (val instanceof Number) return ((Number) val).intValue() != 0;
+        return false;
     }
 
     @SuppressWarnings("unchecked")
@@ -187,7 +226,8 @@ public class PassiveManager {
                     int amplifier = conds.containsKey("amplifier") ? ((Number) conds.get("amplifier")).intValue() : 0;
                     PotionEffectType effectType = PotionEffectType.getByKey(NamespacedKey.fromString(effectName.toLowerCase(Locale.ROOT)));
                     if (effectType != null) {
-                        LivingEntity applyTo = conds.containsKey("self") && !((boolean) conds.get("self")) ? target : player;
+                        boolean self = !conds.containsKey("self") || condBoolean(conds, "self");
+                        LivingEntity applyTo = self ? player : target;
                         if (applyTo != null) {
                             applyTo.addPotionEffect(new PotionEffect(effectType, duration, amplifier, false, true, true));
                         }
@@ -329,7 +369,7 @@ public class PassiveManager {
             }
             case "EXPLODE" -> {
                 float power = conds != null && conds.containsKey("power") ? ((Number) conds.get("power")).floatValue() : 2.0f;
-                boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || ((boolean) conds.get("break-blocks"));
+                boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || condBoolean(conds, "break-blocks");
                 player.getWorld().createExplosion(player.getLocation(), power, false, breakBlocks);
             }
             case "IGNITE_NEARBY" -> {
@@ -361,11 +401,11 @@ public class PassiveManager {
                 if (context != null && context.containsKey("block")) {
                     org.bukkit.block.Block block = (org.bukkit.block.Block) context.get("block");
                     float power = conds != null && conds.containsKey("power") ? ((Number) conds.get("power")).floatValue() : 2.0f;
-                    boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || ((boolean) conds.get("break-blocks"));
+                    boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || condBoolean(conds, "break-blocks");
                     Location loc = block.getLocation().add(0.5, 0.5, 0.5);
                     player.setInvulnerable(true);
                     player.getWorld().createExplosion(loc, power, false, breakBlocks);
-                    org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> player.setInvulnerable(false), 2);
+                    SchedulerUtil.runSync(plugin, () -> player.setInvulnerable(false));
                 }
             }
             case "TREE_FELLER" -> {
@@ -412,7 +452,7 @@ public class PassiveManager {
             case "MACE_TNT" -> {
                 Location loc = target != null ? target.getLocation() : player.getLocation();
                 float power = conds != null && conds.containsKey("power") ? ((Number) conds.get("power")).floatValue() : 2.0f;
-                boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || ((boolean) conds.get("break-blocks"));
+                boolean breakBlocks = conds == null || !conds.containsKey("break-blocks") || condBoolean(conds, "break-blocks");
                 player.getWorld().createExplosion(loc, power, false, breakBlocks);
             }
         }

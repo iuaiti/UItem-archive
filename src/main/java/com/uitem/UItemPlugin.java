@@ -74,6 +74,7 @@ public final class UItemPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(chatInputManager, this);
         getServer().getPluginManager().registerEvents(new UItemActionListener(this), this);
         getServer().getPluginManager().registerEvents(passiveListener, this);
+        passiveListener.startHoldTickTask();
 
         UItemCommand command = new UItemCommand(this);
         Objects.requireNonNull(getCommand("uitem")).setExecutor(command);

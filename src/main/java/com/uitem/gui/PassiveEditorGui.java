@@ -12,7 +12,9 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class PassiveEditorGui extends AbstractGui {
 
@@ -26,17 +28,6 @@ public class PassiveEditorGui extends AbstractGui {
             28, 29, 30, 31, 32, 33, 34,
             37, 38, 39, 40, 41, 42, 43
     };
-
-    private static final List<String> TRIGGERS = List.of("HIT", "DAMAGED", "HOLD", "EQUIP", "BREAK_BLOCK", "KILL");
-    private static final List<String> ACTION_TYPES = List.of(
-            "LIGHTNING", "FIRE", "FREEZE", "POTION", "HEAL", "FEED", "SATURATION",
-            "SPEED", "JUMP", "GLOW", "INVISIBILITY", "KNOCKBACK",
-            "DAMAGE_MULTIPLIER", "LIFE_STEAL", "CRIT", "AUTO_SMELT", "XP_BOOST", "REPAIR",
-            "NIGHT_VISION", "WATER_BREATHING", "FIRE_RESISTANCE", "ABSORPTION",
-            "PARTICLE", "SOUND", "MESSAGE", "TELEPORT", "EXPLODE",
-            "IGNITE_NEARBY", "PULL_ENTITY", "PUSH_ENTITY",
-            "TNT_MINER", "TREE_FELLER", "MACE_LIGHTNING", "MACE_TNT"
-    );
 
     public PassiveEditorGui(UItemPlugin plugin, Player player, UItemData data) {
         this(plugin, player, data, 0);
@@ -145,60 +136,7 @@ public class PassiveEditorGui extends AbstractGui {
     }
 
     private void promptNewPassiveType() {
-        player.closeInventory();
-        player.sendMessage(TextUtil.info("Choose a passive type to add (type name):"));
-        player.sendMessage(TextUtil.parse("<dark_gray>╔══════════════════════════════════════╗"));
-        StringBuilder line = new StringBuilder("<dark_gray>║ ");
-        int count = 0;
-        for (String type : ACTION_TYPES) {
-            line.append("<white>").append(type).append(" <dark_gray>│ ");
-            count++;
-            if (count >= 5) {
-                player.sendMessage(TextUtil.parse(line.toString()));
-                line = new StringBuilder("<dark_gray>║ ");
-                count = 0;
-            }
-        }
-        if (count > 0) player.sendMessage(TextUtil.parse(line.toString()));
-        player.sendMessage(TextUtil.parse("<dark_gray>╚══════════════════════════════════════╝"));
-
-        plugin.getChatInputManager().requestInput(player,
-                "<yellow>Enter passive type:",
-                input -> {
-                    String type = input.trim().toUpperCase();
-                    if (!ACTION_TYPES.contains(type)) {
-                        player.sendMessage(TextUtil.error("Passive type '" + type + "' is invalid!"));
-                        open();
-                        return;
-                    }
-                    promptTrigger(type);
-                });
-    }
-
-    private void promptTrigger(String type) {
-        player.closeInventory();
-        player.sendMessage(TextUtil.info("Choose trigger for " + type + ":"));
-        StringBuilder sb = new StringBuilder("<dark_gray>");
-        for (String t : TRIGGERS) {
-            sb.append("<aqua>").append(t).append(" <dark_gray>│ ");
-        }
-        player.sendMessage(TextUtil.parse(sb.toString()));
-
-        plugin.getChatInputManager().requestInput(player,
-                "<yellow>Enter trigger:",
-                input -> {
-                    String trigger = input.trim().toUpperCase();
-                    if (!TRIGGERS.contains(trigger)) {
-                        player.sendMessage(TextUtil.error("Invalid trigger!"));
-                        open();
-                        return;
-                    }
-                    PassiveData pd = new PassiveData(type, trigger, new LinkedHashMap<>(), 0);
-                    data.getPassives().add(pd);
-                    save();
-                    player.sendMessage(TextUtil.success("Added passive " + type + " for trigger " + trigger));
-                    editPassive(data.getPassives().size() - 1);
-                });
+        new PassiveTypeSelectGui(plugin, player, data).open();
     }
 
     private void save() {

@@ -43,6 +43,8 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/MaterialPickerGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PassiveDetailGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PassiveEditorGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PassiveTriggerSelectGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PassiveTypeSelectGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/RecipeDetailGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/RecipeEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/RecipeListGui.java

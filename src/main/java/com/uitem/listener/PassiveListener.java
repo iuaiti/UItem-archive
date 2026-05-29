@@ -44,24 +44,37 @@ public class PassiveListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
-        if (!(event.getDamager() instanceof Player player)) return;
-        if (!(event.getEntity() instanceof LivingEntity target)) return;
+        // Case 1: Player is the ATTACKER -> HIT trigger
+        if (event.getDamager() instanceof Player player) {
+            if (event.getEntity() instanceof LivingEntity target) {
+                ItemStack item = player.getInventory().getItemInMainHand();
+                if (item.getType() != Material.AIR) {
+                    Map<String, Object> context = new HashMap<>();
+                    context.put("target", target);
+                    context.put("damage", event.getDamage());
+                    passiveManager.executePassives(player, item, "HIT", context);
 
-        ItemStack item = player.getInventory().getItemInMainHand();
-        if (item == null || item.getType() == Material.AIR) return;
-
-        Map<String, Object> context = new HashMap<>();
-        context.put("target", target);
-        context.put("damage", event.getDamage());
-
-        passiveManager.executePassives(player, item, "HIT", context);
-
-        if (context.containsKey("damage_multiplier")) {
-            double mult = ((Number) context.get("damage_multiplier")).doubleValue();
-            event.setDamage(event.getDamage() * mult);
+                    if (context.containsKey("damage_multiplier")) {
+                        double mult = ((Number) context.get("damage_multiplier")).doubleValue();
+                        event.setDamage(event.getDamage() * mult);
+                    }
+                    if (context.containsKey("force_crit")) {
+                        event.setDamage(event.getDamage() * 1.5);
+                    }
+                }
+            }
         }
-        if (context.containsKey("force_crit")) {
-            event.setDamage(event.getDamage() * 1.5);
+
+        // Case 2: Player is the VICTIM -> DAMAGED trigger
+        if (event.getEntity() instanceof Player victim) {
+            ItemStack item = victim.getInventory().getItemInMainHand();
+            if (item.getType() == Material.AIR) return;
+
+            Map<String, Object> context = new HashMap<>();
+            context.put("damage", event.getDamage());
+            context.put("cause", event.getCause().name());
+
+            passiveManager.executePassives(victim, item, "DAMAGED", context);
         }
     }
 
@@ -82,15 +95,15 @@ public class PassiveListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onEntityKill(EntityDeathEvent event) {
-        if (!(event.getEntity() instanceof LivingEntity)) return;
-        Player killer = event.getEntity().getKiller();
+        if (!(event.getEntity() instanceof LivingEntity living)) return;
+        Player killer = living.getKiller();
         if (killer == null) return;
 
         ItemStack item = killer.getInventory().getItemInMainHand();
         if (item == null || item.getType() == Material.AIR) return;
 
         Map<String, Object> context = new HashMap<>();
-        context.put("target", event.getEntity());
+        context.put("target", living);
 
         passiveManager.executePassives(killer, item, "KILL", context);
     }
@@ -188,6 +201,14 @@ public class PassiveListener implements Listener {
         passiveManager.executePassives(player, item, "HOLD", context);
     }
 
+    public void tickHoldPassives(Player player) {
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (item == null || item.getType() == Material.AIR) return;
+
+        Map<String, Object> context = new HashMap<>();
+        passiveManager.executePassives(player, item, "HOLD", context);
+    }
+
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
@@ -206,6 +227,22 @@ public class PassiveListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         equippedPlayers.remove(event.getPlayer().getUniqueId());
+    }
+
+    public void startHoldTickTask() {
+        if (com.uitem.util.SchedulerUtil.isFolia()) {
+            plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, task -> {
+                for (Player player : plugin.getServer().getOnlinePlayers()) {
+                    tickHoldPassives(player);
+                }
+            }, 20L, 20L);
+        } else {
+            plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+                for (Player player : plugin.getServer().getOnlinePlayers()) {
+                    tickHoldPassives(player);
+                }
+            }, 20L, 20L);
+        }
     }
 
     public void checkAndTriggerEquipPassives(Player player, EquipmentSlot slot) {
