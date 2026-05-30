@@ -3,6 +3,8 @@ package com.uitem.command;
 import com.uitem.UItemPlugin;
 import com.uitem.gui.CraftingGui;
 import com.uitem.gui.RecipeListGui;
+import com.uitem.util.Messages;
+import com.uitem.util.TextUtil;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -20,12 +22,12 @@ public class CraftingCommand implements CommandExecutor {
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage("Only players can use this command.");
+            sender.sendMessage(TextUtil.error(Messages.playersOnly()));
             return true;
         }
 
         if (!player.hasPermission("uitem.craft")) {
-            player.sendMessage("You don't have permission to use this command.");
+            player.sendMessage(TextUtil.error(Messages.noPermission()));
             return true;
         }
 

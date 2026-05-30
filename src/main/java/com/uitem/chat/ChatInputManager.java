@@ -89,6 +89,11 @@ public class ChatInputManager implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         pendingInputs.remove(event.getPlayer().getUniqueId());
+        // Clean up SearchManager query for this player (null-safe)
+        var inst = com.uitem.UItemPlugin.getInstance();
+        if (inst != null) {
+            inst.getSearchManager().clearQuery(event.getPlayer());
+        }
     }
 
     private record ChatInputRequest(Consumer<String> callback) {

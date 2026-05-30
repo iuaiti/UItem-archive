@@ -63,19 +63,14 @@ public class RecipeManager {
         return null;
     }
 
+    /**
+     * @deprecated This method does NOT consume ingredients — it only matches and returns result.
+     *             Use {@link #matchRecipe(ItemStack[])} instead. The consumption logic is handled
+     *             entirely in {@code CraftingGui.takeResult()}.
+     */
+    @Deprecated
     public ItemStack matchRecipeAndConsume(ItemStack[] matrix) {
-        for (Map.Entry<String, UItemRecipe> entry : recipes.entrySet()) {
-            UItemRecipe recipe = entry.getValue();
-            if (recipe.matches(matrix)) {
-                UItemData data = itemManager.getItem(recipe.getResultItemId());
-                if (data != null) {
-                    ItemStack result = itemManager.buildItemStack(data);
-                    result.setAmount(recipe.getResultAmount());
-                    return result;
-                }
-            }
-        }
-        return null;
+        return matchRecipe(matrix);
     }
 
     public void loadRecipes() {

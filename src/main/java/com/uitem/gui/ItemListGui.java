@@ -57,30 +57,27 @@ public class ItemListGui extends AbstractGui {
                 )));
 
         // Search button (if enabled)
-        if (plugin.getConfig().getBoolean("gui.search.enabled", true)) {
-            if (player.hasPermission("uitem.search")) {
-                setItem(48, createItem(Material.MAGENTA_GLAZED_TERRACOTTA,
-                        "<aqua><bold>Search Item</bold>",
-                        List.of(
-                                "<gray>Enter keyword to filter list",
-                                "<gray>Type 'clear' to clear filter"
-                        )), event -> {
-                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                    plugin.getChatInputManager().requestInput(player,
-                            "<yellow>Enter search keyword (<gray>or 'clear' to clear):",
-                            input -> {
-                                SearchManager sm = plugin.getSearchManager();
-                                if (input.equalsIgnoreCase("clear")) {
-                                    sm.clearQuery(player);
-                                } else {
-                                    sm.setQuery(player, input);
-                                }
-                                new ItemListGui(plugin, player, page).open();
-                            });
-                });
-            } else {
-                player.sendMessage(TextUtil.error("You don't have permission to use search (uitem.search)."));
-            }
+        if (plugin.getConfig().getBoolean("gui.search.enabled", true)
+                && player.hasPermission("uitem.search")) {
+            setItem(48, createItem(Material.MAGENTA_GLAZED_TERRACOTTA,
+                    "<aqua><bold>Search Item</bold>",
+                    List.of(
+                            "<gray>Enter keyword to filter list",
+                            "<gray>Type 'clear' to clear filter"
+                    )), event -> {
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                plugin.getChatInputManager().requestInput(player,
+                        "<yellow>Enter search keyword (<gray>or 'clear' to clear):",
+                        input -> {
+                            SearchManager sm = plugin.getSearchManager();
+                            if (input.equalsIgnoreCase("clear")) {
+                                sm.clearQuery(player);
+                            } else {
+                                sm.setQuery(player, input);
+                            }
+                            new ItemListGui(plugin, player, page).open();
+                        });
+            });
         }
 
         // Lấy danh sách items

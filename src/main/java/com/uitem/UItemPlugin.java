@@ -65,6 +65,9 @@ public final class UItemPlugin extends JavaPlugin {
 
         RarityConfig.load(this);
 
+        // Khởi tạo Messages (language system)
+        com.uitem.util.Messages.init(this);
+
         // Khởi tạo Public API — phải trước khi đăng ký listener
         UItemAPI.init(this);
 
@@ -121,6 +124,27 @@ public final class UItemPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Force-close all UItem GUIs to prevent item dupes during reload
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            try {
+                var topInv = player.getOpenInventory().getTopInventory();
+                if (topInv == null) continue;
+                var holder = topInv.getHolder();
+                if (holder instanceof com.uitem.gui.CraftingGui craftingGui) {
+                    craftingGui.onClose();
+                } else if (holder instanceof com.uitem.gui.RecipeEditorGui recipeEditorGui) {
+                    recipeEditorGui.onClose(player);
+                }
+                if (holder instanceof com.uitem.gui.AbstractGui || holder instanceof com.uitem.gui.CraftingGui || holder instanceof com.uitem.gui.RecipeEditorGui) {
+                    player.closeInventory();
+                }
+            } catch (Exception ignored) {
+                // Player might be disconnecting, ignore to prevent crash on shutdown
+            }
+        }
+        // Clear static crafting GUI tracking set
+        com.uitem.gui.CraftingGui.removeCraftingPlayer(null);
+
         if (packServer != null) {
             packServer.stop();
         }

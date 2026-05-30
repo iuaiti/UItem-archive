@@ -556,11 +556,7 @@ public class ResourcePackManager {
             }
         };
 
-        if (SchedulerUtil.isFolia()) {
-            SchedulerUtil.runForEntity(plugin, player, task);
-        } else {
-            task.run();
-        }
+        SchedulerUtil.runSync(plugin, task);
     }
 
     private boolean isHandheld(String material) {

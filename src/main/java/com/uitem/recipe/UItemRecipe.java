@@ -13,6 +13,22 @@ import java.util.*;
 
 public class UItemRecipe {
 
+    // Cached NamespacedKey for PDC tag matching — avoids creating a new one each match()
+    private static NamespacedKey CACHED_UITEM_KEY;
+
+    private static NamespacedKey getUItemKey() {
+        if (CACHED_UITEM_KEY == null) {
+            var plugin = UItemPlugin.getInstance();
+            if (plugin != null) {
+                CACHED_UITEM_KEY = plugin.getItemManager().getUItemKey();
+            } else {
+                // Fallback (should not happen during normal operation)
+                CACHED_UITEM_KEY = new NamespacedKey("uitem", "uitem_id");
+            }
+        }
+        return CACHED_UITEM_KEY;
+    }
+
     private final String resultItemId;
     private int resultAmount;
     private boolean shaped;
@@ -73,8 +89,7 @@ public class UItemRecipe {
             if (uitemId != null) {
                 ItemMeta meta = item.getItemMeta();
                 if (meta == null) return false;
-                NamespacedKey key = new NamespacedKey(UItemPlugin.getInstance(), "uitem_id");
-                String id = meta.getPersistentDataContainer().get(key, PersistentDataType.STRING);
+                String id = meta.getPersistentDataContainer().get(getUItemKey(), PersistentDataType.STRING);
                 return uitemId.equals(id) && item.getAmount() >= amount;
             }
             return item.getType() == material && item.getAmount() >= amount;
@@ -156,6 +171,8 @@ public class UItemRecipe {
         String row0 = shape.get(0);
         String row1 = shape.get(1);
         String row2 = shape.get(2);
+        // Null-check to prevent NPE from corrupt YAML data
+        if (row0 == null || row1 == null || row2 == null) return false;
         if (row0.length() != 3 || row1.length() != 3 || row2.length() != 3) return false;
 
         List<String> rows = List.of(row0, row1, row2);

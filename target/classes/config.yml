@@ -2,6 +2,9 @@
 # ║       UItem - Main Configuration         ║
 # ╚══════════════════════════════════════════╝
 
+# Language: "en" = English, "vi" = Vietnamese
+language: "en"
+
 # Language prefix in chat
 prefix: "<gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <dark_gray>│ "
 

@@ -38,6 +38,7 @@ com/uitem/api/events/UItemGiveEvent.class
 com/uitem/gui/CraftingGui.class
 com/uitem/UItemManager.class
 com/uitem/UItemData$AttributeData.class
+com/uitem/util/Messages.class
 com/uitem/gui/ConfirmDeleteGui.class
 com/uitem/api/events/UItemInteractEvent.class
 com/uitem/listener/UItemActionListener$1.class

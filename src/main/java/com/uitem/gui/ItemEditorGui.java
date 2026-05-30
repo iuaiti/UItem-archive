@@ -396,14 +396,14 @@ public class ItemEditorGui extends AbstractGui {
     private void saveAndReopen() {
         plugin.getItemManager().registerItem(data);
         plugin.getResourcePackManager().syncCmdsToLiveItems();
-        plugin.getStorageManager().saveAll(plugin.getItemManager());
+        plugin.getStorageManager().saveAllNow(plugin.getItemManager());
         new ItemEditorGui(plugin, player, data).open();
     }
 
     private void saveAndRefresh() {
         plugin.getItemManager().registerItem(data);
         plugin.getResourcePackManager().syncCmdsToLiveItems();
-        plugin.getStorageManager().saveAll(plugin.getItemManager());
+        plugin.getStorageManager().saveAllNow(plugin.getItemManager());
         refresh();
     }
 

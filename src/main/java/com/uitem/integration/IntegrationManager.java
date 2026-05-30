@@ -4,6 +4,9 @@ import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
+
+import java.util.logging.Level;
 
 /**
  * Quản lý tích hợp với Oraxen, ItemsAdder và ExecutableItems.
@@ -32,7 +35,7 @@ public class IntegrationManager {
 
     /**
      * Detect xem Oraxen, ItemsAdder và ExecutableItems có đang cài không.
-     * Dùng Class.forName() thay vì plugin name để tránh sai tên plugin.
+     * Dùng plugin name trước (ổn định hơn), sau đó fallback về Class.forName().
      */
     public void detectIntegrations() {
         oraxenIntegration = null;
@@ -43,60 +46,83 @@ public class IntegrationManager {
         hasExecutableItems = false;
 
         // ── Check Oraxen ──
-        oraxenVersion = getPluginVersion("io.th0rgal.oraxen.api.OraxenItems", "Oraxen");
-        try {
-            Class.forName("io.th0rgal.oraxen.api.OraxenItems");
-            oraxenIntegration = new OraxenIntegration();
-            hasOraxen = true;
-            plugin.getLogger().info("  ✔ Oraxen" + (oraxenVersion != null ? " v" + oraxenVersion : "") + " — hooked");
-        } catch (Exception e) {
+        Plugin oraxenPlugin = Bukkit.getPluginManager().getPlugin("Oraxen");
+        if (oraxenPlugin != null && oraxenPlugin.isEnabled()) {
+            oraxenVersion = oraxenPlugin.getDescription().getVersion();
+            try {
+                // Try multiple known class paths for Oraxen API
+                Class<?> oraxenItemsClass = tryFindClass(
+                        "io.th0rgal.oraxen.api.OraxenItems"
+                );
+                if (oraxenItemsClass != null) {
+                    oraxenIntegration = new OraxenIntegration();
+                    hasOraxen = true;
+                    plugin.getLogger().info("  ✔ Oraxen v" + oraxenVersion + " — hooked");
+                }
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "  ○ Oraxen plugin found but API hook failed: " + e.getMessage());
+                plugin.getLogger().warning("    Please report this to the UItem developer with your Oraxen version.");
+            }
+        } else {
             plugin.getLogger().info("  ○ Oraxen — not detected");
         }
 
         // ── Check ItemsAdder ──
-        itemsAdderVersion = getPluginVersion("dev.lone.itemsadder.api.CustomStack", "ItemsAdder");
-        try {
-            Class.forName("dev.lone.itemsadder.api.CustomStack");
-            itemsAdderIntegration = new ItemsAdderIntegration();
-            hasItemsAdder = true;
-            plugin.getLogger().info("  ✔ ItemsAdder" + (itemsAdderVersion != null ? " v" + itemsAdderVersion : "") + " — hooked");
-        } catch (Exception e) {
+        Plugin itemsAdderPlugin = Bukkit.getPluginManager().getPlugin("ItemsAdder");
+        if (itemsAdderPlugin != null && itemsAdderPlugin.isEnabled()) {
+            itemsAdderVersion = itemsAdderPlugin.getDescription().getVersion();
+            try {
+                // Try multiple known class paths for ItemsAdder API
+                Class<?> customStackClass = tryFindClass(
+                        "dev.lone.itemsadder.api.CustomStack",
+                        "dev.lone.itemsadder.api.ItemsAdder"
+                );
+                if (customStackClass != null) {
+                    itemsAdderIntegration = new ItemsAdderIntegration();
+                    hasItemsAdder = true;
+                    plugin.getLogger().info("  ✔ ItemsAdder v" + itemsAdderVersion + " — hooked");
+                }
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "  ○ ItemsAdder plugin found but API hook failed: " + e.getMessage());
+                plugin.getLogger().warning("    Please report this to the UItem developer with your ItemsAdder version.");
+            }
+        } else {
             plugin.getLogger().info("  ○ ItemsAdder — not detected");
         }
 
         // ── Check ExecutableItems ──
-        executableItemsVersion = getPluginVersion(null, "ExecutableItems");
-        try {
-            ExecutableItemsIntegration testEi = new ExecutableItemsIntegration();
-            executableItemsIntegration = testEi;
-            hasExecutableItems = true;
-            plugin.getLogger().info("  ✔ ExecutableItems" + (executableItemsVersion != null ? " v" + executableItemsVersion : "") + " — hooked");
-        } catch (Exception e) {
+        Plugin executableItemsPlugin = Bukkit.getPluginManager().getPlugin("ExecutableItems");
+        if (executableItemsPlugin == null) {
+            // ExecutableItems might be listed as "ExecutableItems" or part of SCore
+            executableItemsPlugin = Bukkit.getPluginManager().getPlugin("SCore");
+        }
+        if (executableItemsPlugin != null && executableItemsPlugin.isEnabled()) {
+            executableItemsVersion = executableItemsPlugin.getDescription().getVersion();
+            try {
+                ExecutableItemsIntegration testEi = new ExecutableItemsIntegration();
+                executableItemsIntegration = testEi;
+                hasExecutableItems = true;
+                plugin.getLogger().info("  ✔ ExecutableItems v" + executableItemsVersion + " — hooked");
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "  ○ ExecutableItems plugin found but API hook failed: " + e.getMessage());
+                plugin.getLogger().warning("    Please report this to the UItem developer with your ExecutableItems version.");
+            }
+        } else {
             plugin.getLogger().info("  ○ ExecutableItems — not detected");
         }
     }
 
     /**
-     * Tìm version của plugin từ classpath bằng cách scan Bukkit plugins.
+     * Try to find a class from multiple possible paths.
+     * Returns the first matching Class, or null if none found.
      */
-    private String getPluginVersion(String className, String fallbackName) {
-        if (className != null) {
+    private Class<?> tryFindClass(String... classNames) {
+        for (String name : classNames) {
             try {
-                Class<?> cls = Class.forName(className);
-                var packageInfo = cls.getPackage();
-                if (packageInfo != null) {
-                    String implVersion = packageInfo.getImplementationVersion();
-                    if (implVersion != null) return implVersion;
-                }
-            } catch (Exception ignored) {}
+                return Class.forName(name);
+            } catch (ClassNotFoundException ignored) {
+            }
         }
-
-        // Fallback: scan plugin name
-        try {
-            var plugin = Bukkit.getPluginManager().getPlugin(fallbackName);
-            if (plugin != null) return plugin.getDescription().getVersion();
-        } catch (Exception ignored) {}
-
         return null;
     }
 

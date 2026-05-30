@@ -4,6 +4,7 @@ import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.gui.ItemListGui;
 import com.uitem.resourcepack.ResourcePackManager;
+import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -176,11 +177,12 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleReload(CommandSender sender) {
         if (!sender.hasPermission("uitem.reload")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            sender.sendMessage(TextUtil.error(Messages.noPermission()));
             return;
         }
 
         plugin.reloadConfig();
+        com.uitem.util.Messages.reload();
         plugin.getStorageManager().saveAllNow(plugin.getItemManager());
         plugin.getStorageManager().loadAll(plugin.getItemManager());
         plugin.getIntegrationManager().detectIntegrations();

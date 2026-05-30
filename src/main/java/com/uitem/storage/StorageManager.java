@@ -34,6 +34,10 @@ public class StorageManager {
     // giữa worker đọc/xóa và main thread ghi save mới vào cùng lúc.
     private final AtomicReference<PendingSave> pendingSaveRef = new AtomicReference<>();
 
+    // Debounce: track the last scheduled flush to avoid scheduling too many
+    private final AtomicLong lastDebounceSchedule = new AtomicLong(0);
+    private static final long DEBOUNCE_MS = 2000; // 2 seconds
+
     public StorageManager(UItemPlugin plugin) {
         this.plugin = plugin;
         this.itemsFile = new File(plugin.getDataFolder(), "items.yml");
@@ -136,6 +140,30 @@ public class StorageManager {
         if (asyncSaveWorkerRunning.compareAndSet(false, true)) {
             SchedulerUtil.runAsync(plugin, this::flushPendingSaves);
         }
+    }
+
+    /**
+     * Debounced save — delays the actual write by DEBOUNCE_MS.
+     * Repeated calls reset the timer. Use for UI-driven changes to avoid I/O spam.
+     */
+    public void saveAllDebounced(UItemManager manager) {
+        long now = System.currentTimeMillis();
+        lastDebounceSchedule.set(now);
+
+        // Immediately register the newest snapshot as pending
+        saveAll(manager);
+
+        // Schedule a guaranteed flush after debounce window
+        long scheduleId = now;
+        SchedulerUtil.runDelayedAsync(plugin, () -> {
+            // Only flush if no newer schedule came in
+            if (lastDebounceSchedule.get() == scheduleId) {
+                // Force a flush if worker hasn't already done it
+                if (pendingSaveRef.get() != null && asyncSaveWorkerRunning.compareAndSet(false, true)) {
+                    SchedulerUtil.runAsync(plugin, this::flushPendingSaves);
+                }
+            }
+        }, DEBOUNCE_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 
     /**

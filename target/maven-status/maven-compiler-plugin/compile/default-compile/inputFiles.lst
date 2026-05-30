@@ -39,5 +39,6 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/resourcepack/ResourcePackServer.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/search/SearchManager.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/storage/StorageManager.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/util/Messages.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/util/SchedulerUtil.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/util/TextUtil.java

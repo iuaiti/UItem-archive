@@ -75,7 +75,7 @@ public class FlagGui extends AbstractGui {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f,
                         !isEnabled ? 1.2f : 0.8f);
                 plugin.getItemManager().registerItem(data);
-                plugin.getStorageManager().saveAll(plugin.getItemManager());
+                plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
                 refresh();
             });
         }

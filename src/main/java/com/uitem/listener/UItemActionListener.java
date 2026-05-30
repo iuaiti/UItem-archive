@@ -46,33 +46,22 @@ public class UItemActionListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = false)
     public void onPlayerInteract(@NotNull PlayerInteractEvent event) {
-        // Bỏ qua off-hand để không fire event 2 lần (Bukkit fires cho cả 2 tay)
-        if (event.getHand() == EquipmentSlot.OFF_HAND) return;
-
         Player player = event.getPlayer();
 
-        // Kiểm tra tay chính trước, sau đó off-hand
-        ItemStack mainItem = player.getInventory().getItemInMainHand();
-        ItemStack offItem  = player.getInventory().getItemInOffHand();
+        // Determine which hand triggered this event
+        EquipmentSlot usedHand = event.getHand();
+        if (usedHand == null) return;
 
-        // Thử main hand
-        UItemData data = getUItemData(mainItem);
-        EquipmentSlot usedHand = EquipmentSlot.HAND;
+        // Get the item from the triggering hand
+        ItemStack usedItem = (usedHand == EquipmentSlot.HAND)
+                ? player.getInventory().getItemInMainHand()
+                : player.getInventory().getItemInOffHand();
 
-        // Nếu main hand không phải UItem, thử off hand
-        if (data == null && event.getAction() != Action.PHYSICAL) {
-            data = getUItemData(offItem);
-            if (data != null) {
-                usedHand = EquipmentSlot.OFF_HAND;
-            }
-        }
-
+        UItemData data = getUItemData(usedItem);
         if (data == null) return;
 
         Action action = event.getAction();
         if (action == Action.PHYSICAL) return; // pressure plate / trampling — bỏ qua
-
-        ItemStack usedItem = usedHand == EquipmentSlot.HAND ? mainItem : offItem;
 
         UItemInteractEvent uiEvent = new UItemInteractEvent(
                 data,

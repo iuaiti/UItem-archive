@@ -17,17 +17,23 @@ public class ExecutableItemsIntegration {
 
     private static final String[] API_CLASS_PATHS = {
         "com.ssomar.score.api.executableitems.ExecutableItemsAPI",
-        "com.ssomar.executableitems.api.ExecutableItemsAPI"
+        "com.ssomar.executableitems.api.ExecutableItemsAPI",
+        "com.ssomar.score.api.ExecutableItemsAPI",
+        "com.ssomar.executableitems.ExecutableItemsAPI"
     };
 
     private static final String[] MANAGER_PATHS = {
         "com.ssomar.score.api.executableitems.ExecutableItemsManagerInterface",
-        "com.ssomar.executableitems.api.ExecutableItemsManagerInterface"
+        "com.ssomar.executableitems.api.ExecutableItemsManagerInterface",
+        "com.ssomar.score.api.ExecutableItemsManager",
+        "com.ssomar.executableitems.ExecutableItemsManager"
     };
 
     private static final String[] ITEM_PATHS = {
         "com.ssomar.score.api.executableitems.ExecutableItemInterface",
-        "com.ssomar.executableitems.api.ExecutableItemInterface"
+        "com.ssomar.executableitems.api.ExecutableItemInterface",
+        "com.ssomar.score.api.ExecutableItemObject",
+        "com.ssomar.executableitems.ExecutableItemObject"
     };
 
     public ExecutableItemsIntegration() throws Exception {

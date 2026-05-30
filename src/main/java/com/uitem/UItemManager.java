@@ -145,20 +145,20 @@ public class UItemManager {
                     displayName = prefix + " " + displayName;
                 }
             }
-            meta.displayName(miniMessage.deserialize(displayName));
+            meta.displayName(safeDeserialize(displayName, data.getId()));
         }
 
         // Lore with rarity lore
         List<Component> loreComponents = new ArrayList<>();
         if (data.getLore() != null) {
             for (String line : data.getLore()) {
-                loreComponents.add(miniMessage.deserialize(line));
+                loreComponents.add(safeDeserialize(line, data.getId()));
             }
         }
         if (rarity != null) {
             List<String> rarityLore = RarityConfig.getRarityLore(rarity);
             for (String line : rarityLore) {
-                loreComponents.add(miniMessage.deserialize(line));
+                loreComponents.add(safeDeserialize(line, data.getId()));
             }
         }
         if (!loreComponents.isEmpty()) {
@@ -268,16 +268,31 @@ public class UItemManager {
 
     // === Helper methods ===
 
+    /**
+     * Safe MiniMessage deserialize — fallback to plain text on parse error.
+     * Prevents crashes from user-input MiniMessage syntax errors.
+     */
+    private Component safeDeserialize(String miniMessageStr, String itemId) {
+        try {
+            return miniMessage.deserialize(miniMessageStr);
+        } catch (Exception e) {
+            plugin.getLogger().warning(
+                "[UItem] Invalid MiniMessage in item '" + itemId + "': " + miniMessageStr
+                + " — falling back to plain text. Error: " + e.getMessage());
+            return Component.text(miniMessageStr);
+        }
+    }
+
     private void applyDisplayProperties(ItemStack item, UItemData data) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
         if (data.getDisplayName() != null && !data.getDisplayName().isEmpty()) {
-            meta.displayName(miniMessage.deserialize(data.getDisplayName()));
+            meta.displayName(safeDeserialize(data.getDisplayName(), data.getId()));
         }
         if (data.getLore() != null && !data.getLore().isEmpty()) {
             List<Component> loreComponents = new ArrayList<>();
             for (String line : data.getLore()) {
-                loreComponents.add(miniMessage.deserialize(line));
+                loreComponents.add(safeDeserialize(line, data.getId()));
             }
             meta.lore(loreComponents);
         }

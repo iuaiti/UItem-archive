@@ -181,7 +181,7 @@ public class MaterialPickerGui extends AbstractGui {
                 String materialName = mat.name();
                 data.setMaterial(mat);
                 plugin.getItemManager().registerItem(data);
-                plugin.getStorageManager().saveAll(plugin.getItemManager());
+                plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.0f);
                 player.sendMessage(TextUtil.success("Set material = " + materialName));
                 if (callback != null) callback.accept(materialName);

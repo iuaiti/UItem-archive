@@ -186,15 +186,13 @@ public class CraftingGui implements InventoryHolder {
         ItemStack result = inventory.getItem(RESULT_SLOT);
         if (result == null || result.getType().isAir()) return;
 
-        ItemStack[] matrix = getMatrix();
-        UItemRecipe recipe = findMatchingRecipe(matrix);
-        if (recipe == null) return;
-
         int toCraft = result.getAmount();
         int crafted = 0;
 
         while (crafted < toCraft) {
-            if (!recipe.matches(matrix)) break;
+            ItemStack[] matrix = getMatrix();
+            UItemRecipe recipe = findMatchingRecipe(matrix);
+            if (recipe == null) break;
 
             for (int i = 0; i < 9; i++) {
                 ItemStack item = inventory.getItem(CRAFT_SLOTS[i]);
@@ -354,7 +352,12 @@ public class CraftingGui implements InventoryHolder {
     }
 
     public static void removeCraftingPlayer(Player player) {
-        openCraftingGuis.remove(player.getUniqueId());
+        if (player == null) {
+            // Bulk cleanup on plugin disable — clear all tracked players
+            openCraftingGuis.clear();
+        } else {
+            openCraftingGuis.remove(player.getUniqueId());
+        }
     }
 
     @Override
