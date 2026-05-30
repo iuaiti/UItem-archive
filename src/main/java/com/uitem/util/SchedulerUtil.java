@@ -43,6 +43,14 @@ public final class SchedulerUtil {
         plugin.getServer().getGlobalRegionScheduler().execute(plugin, runnable);
     }
 
+    public static void runLater(Plugin plugin, Runnable runnable, long delayTicks) {
+        if (isFolia()) {
+            plugin.getServer().getGlobalRegionScheduler().runDelayed(plugin, task -> runnable.run(), delayTicks);
+        } else {
+            plugin.getServer().getScheduler().runTaskLater(plugin, runnable, delayTicks);
+        }
+    }
+
     public static void runAtLocation(Plugin plugin, Location location, Runnable runnable) {
         plugin.getServer().getRegionScheduler().execute(plugin, location, runnable);
     }

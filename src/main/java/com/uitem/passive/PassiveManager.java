@@ -194,6 +194,13 @@ public class PassiveManager {
                 if (debug) plugin.getLogger().info("[Passive] EXECUTE " + passive.getType() + " for " + player.getName());
                 executeAction(player, passive, passiveContext);
                 applyCooldown(player, itemId, passive);
+                if (passive.getCooldown() > 0) {
+                    int cd = passive.getCooldown();
+                    SchedulerUtil.runLater(plugin, () -> {
+                        player.sendActionBar(Component.text("✅ " + passive.getType() + " — hồi " + cd + "s",
+                                net.kyori.adventure.text.format.NamedTextColor.GREEN));
+                    }, 5L);
+                }
             } catch (Exception e) {
                 plugin.getLogger().warning("Error executing passive " + passive.getType()
                         + " for item " + itemId + " on player " + player.getName() + ": " + e.getMessage());
@@ -202,73 +209,109 @@ public class PassiveManager {
         }
     }
 
+    private String getCooldownBaseKey(Player player, String itemId, PassiveData passive) {
+        if (passive == null || itemId == null) return null;
+        String type = passive.getType() != null ? passive.getType().toUpperCase(Locale.ROOT) : "UNKNOWN";
+        String trigger = passive.getTrigger() != null ? passive.getTrigger().toUpperCase(Locale.ROOT) : "UNKNOWN";
+        return player.getUniqueId() + "|uitem|" + itemId + "|" + type + "|" + trigger;
+    }
+
+    private NamespacedKey getCooldownPDCKey(Player player, String itemId, PassiveData passive) {
+        String base = getCooldownBaseKey(player, itemId, passive);
+        if (base == null) return null;
+
+        if (base.length() > 64) {
+            base = base.substring(0, 32) + "_" + Integer.toHexString(base.hashCode() & 0x7FFFFFFF);
+        }
+        String sanitized = base.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_]", "_");
+
+        try {
+            return new NamespacedKey(plugin, sanitized);
+        } catch (IllegalArgumentException e) {
+            String fallback = "cd_" + Math.abs((itemId + passive.getType()).hashCode() % 10000);
+            return new NamespacedKey(plugin, fallback);
+        }
+    }
+
     private boolean checkCooldown(Player player, String itemId, PassiveData passive) {
-        if (passive.getCooldown() <= 0) return true;
-        String key = player.getUniqueId() + "_" + itemId + "_" + passive.getType() + "_" + passive.getTrigger();
-        Long lastUse = cooldowns.get(key);
+        if (passive == null || passive.getCooldown() <= 0) return true;
+
+        String cacheKey = getCooldownBaseKey(player, itemId, passive);
+        if (cacheKey == null) return true;
+
+        boolean debug = isDebug();
+        Long lastUse = cooldowns.get(cacheKey);
+
         if (lastUse == null) {
             lastUse = loadCooldownFromPDC(player, itemId, passive);
-            if (lastUse != null) cooldowns.put(key, lastUse);
+            if (lastUse != null) {
+                cooldowns.put(cacheKey, lastUse);
+                if (debug) plugin.getLogger().fine("[Cooldown] Loaded PDC: " + cacheKey);
+            }
         }
-        if (lastUse == null) return true;
+
+        if (lastUse == null) {
+            if (debug) plugin.getLogger().fine("[Cooldown] First use: " + cacheKey);
+            return true;
+        }
+
         long elapsed = System.currentTimeMillis() - lastUse;
         long cooldownMs = passive.getCooldown() * 1000L;
-        if (elapsed >= cooldownMs) return true;
+
+        if (elapsed >= cooldownMs) {
+            cooldowns.remove(cacheKey);
+            if (debug) plugin.getLogger().fine("[Cooldown] Expired: " + cacheKey);
+            return true;
+        }
+
         long remaining = (cooldownMs - elapsed + 999) / 1000;
-        player.sendActionBar(net.kyori.adventure.text.Component.text(
-                "⏳ " + passive.getType() + " hồi " + remaining + "s",
-                net.kyori.adventure.text.format.NamedTextColor.RED));
+        if (debug) plugin.getLogger().fine("[Cooldown] Active: " + remaining + "s left");
+
+        player.sendActionBar(
+                Component.text("⏳ " + passive.getType() + " hồi " + remaining + "s",
+                        net.kyori.adventure.text.format.NamedTextColor.RED));
         return false;
     }
 
     private void applyCooldown(Player player, String itemId, PassiveData passive) {
-        if (passive.getCooldown() <= 0) return;
-        String key = player.getUniqueId() + "_" + itemId + "_" + passive.getType() + "_" + passive.getTrigger();
+        if (passive == null || passive.getCooldown() <= 0) return;
+        String cacheKey = getCooldownBaseKey(player, itemId, passive);
+        if (cacheKey == null) return;
         long now = System.currentTimeMillis();
-        cooldowns.put(key, now);
+        cooldowns.put(cacheKey, now);
         saveCooldownToPDC(player, itemId, passive, now);
-    }
-
-    private String sanitizeKey(String input) {
-        return input.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_/]", "_");
-    }
-
-    private NamespacedKey cooldownKey(Player player, String itemId, PassiveData passive) {
-        String cdKey = "uitem_cd_"
-                + sanitizeKey(itemId) + "_"
-                + sanitizeKey(passive.getType()) + "_"
-                + sanitizeKey(passive.getTrigger());
-        return new NamespacedKey(plugin, cdKey);
+        if (isDebug()) plugin.getLogger().fine("[Cooldown] Applied: " + cacheKey);
     }
 
     private void saveCooldownToPDC(Player player, String itemId, PassiveData passive, long timestamp) {
         try {
-            PersistentDataContainer pdc = player.getPersistentDataContainer();
-            pdc.set(cooldownKey(player, itemId, passive), PersistentDataType.LONG, timestamp);
+            NamespacedKey key = getCooldownPDCKey(player, itemId, passive);
+            if (key == null) return;
+            player.getPersistentDataContainer().set(key, PersistentDataType.LONG, timestamp);
         } catch (IllegalArgumentException e) {
-            if (isDebug()) plugin.getLogger().warning("[Passive] Invalid cooldown key, skipping PDC save: " + e.getMessage());
+            if (isDebug()) plugin.getLogger().warning("[Cooldown] PDC save failed: " + e.getMessage());
         }
     }
 
     public void clearCooldownsFor(Player player) {
-        String prefix = player.getUniqueId() + "_";
+        String prefix = player.getUniqueId() + "|";
         cooldowns.keySet().removeIf(k -> k.startsWith(prefix));
     }
 
     private Long loadCooldownFromPDC(Player player, String itemId, PassiveData passive) {
         try {
+            NamespacedKey key = getCooldownPDCKey(player, itemId, passive);
+            if (key == null) return null;
             PersistentDataContainer pdc = player.getPersistentDataContainer();
-            NamespacedKey key = cooldownKey(player, itemId, passive);
-            if (pdc.has(key, PersistentDataType.LONG)) {
-                return pdc.get(key, PersistentDataType.LONG);
-            }
+            return pdc.has(key, PersistentDataType.LONG) ? pdc.get(key, PersistentDataType.LONG) : null;
         } catch (IllegalArgumentException e) {
-            if (isDebug()) plugin.getLogger().warning("[Passive] Invalid cooldown key, skipping PDC load: " + e.getMessage());
+            if (isDebug()) plugin.getLogger().warning("[Cooldown] PDC load failed: " + e.getMessage());
+            return null;
         }
-        return null;
     }
 
     private double parseDouble(Map<String, Object> conds, String key, double defaultVal) {
+        if (conds == null) return defaultVal;
         Object val = conds.get(key);
         if (val instanceof Number n) return n.doubleValue();
         if (val instanceof String s) {
@@ -279,6 +322,7 @@ public class PassiveManager {
     }
 
     private int parseInt(Map<String, Object> conds, String key, int defaultVal) {
+        if (conds == null) return defaultVal;
         Object val = conds.get(key);
         if (val instanceof Number n) return n.intValue();
         if (val instanceof String s) {
@@ -289,6 +333,7 @@ public class PassiveManager {
     }
 
     private boolean parseBoolean(Map<String, Object> conds, String key, boolean defaultVal) {
+        if (conds == null) return defaultVal;
         Object val = conds.get(key);
         if (val instanceof Boolean b) return b;
         if (val instanceof String s) {

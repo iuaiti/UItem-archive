@@ -53,19 +53,36 @@ public class PassiveListener implements Listener {
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
-        // Case 1: Player is the ATTACKER -> HIT trigger
-        Player attacker = null;
-        ItemStack attackItem = null;
+        // Case 1: Player là attacker
+        if (event.getDamager() instanceof Player attacker) {
+            ItemStack attackItem = attacker.getInventory().getItemInMainHand();
+            if (attackItem != null && attackItem.getType() != Material.AIR
+                    && event.getEntity() instanceof LivingEntity target) {
 
-        if (event.getDamager() instanceof Player player) {
-            attacker = player;
-            attackItem = player.getInventory().getItemInMainHand();
-        } else if (event.getDamager() instanceof Projectile projectile
-                && projectile.getShooter() instanceof Player shooter) {
-            attacker = shooter;
+                Map<String, Object> context = new HashMap<>();
+                context.put("target", target);
+                context.put("damage", event.getDamage());
+                passiveManager.executePassives(attacker, attackItem, PassiveTrigger.HIT, context);
 
-            ItemStack mainHand = shooter.getInventory().getItemInMainHand();
-            ItemStack offHand = shooter.getInventory().getItemInOffHand();
+                if (context.containsKey("damage_multiplier")) {
+                    double mult = ((Number) context.get("damage_multiplier")).doubleValue();
+                    event.setDamage(event.getDamage() * mult);
+                }
+                if (Boolean.TRUE.equals(context.get("force_crit"))) {
+                    event.setDamage(event.getDamage() * 1.5);
+                }
+            }
+            return;
+        }
+
+        // Case 2: Projectile từ player
+        if (event.getDamager() instanceof Projectile projectile) {
+            Entity shooter = (Entity) projectile.getShooter();
+            if (!(shooter instanceof Player player)) return;
+            if (!projectile.isValid()) return;
+
+            ItemStack mainHand = player.getInventory().getItemInMainHand();
+            ItemStack offHand = player.getInventory().getItemInOffHand();
 
             Map<String, Object> baseContext = new HashMap<>();
             baseContext.put("damage", event.getDamage());
@@ -74,32 +91,18 @@ public class PassiveListener implements Listener {
                 baseContext.put("target", target);
             }
 
-            if (passiveManager.getItemId(mainHand) != null && mainHand.getType() != Material.AIR) {
-                passiveManager.executePassives(shooter, mainHand, PassiveTrigger.HIT, new HashMap<>(baseContext));
+            if (mainHand != null && mainHand.getType() != Material.AIR
+                    && passiveManager.getItemId(mainHand) != null) {
+                passiveManager.executePassives(player, mainHand, PassiveTrigger.HIT, new HashMap<>(baseContext));
             }
-            if (passiveManager.getItemId(offHand) != null && offHand.getType() != Material.AIR && !offHand.equals(mainHand)) {
-                passiveManager.executePassives(shooter, offHand, PassiveTrigger.HIT, new HashMap<>(baseContext));
+            if (offHand != null && offHand.getType() != Material.AIR && !offHand.equals(mainHand)
+                    && passiveManager.getItemId(offHand) != null) {
+                passiveManager.executePassives(player, offHand, PassiveTrigger.HIT, new HashMap<>(baseContext));
             }
             return;
         }
 
-        if (attacker != null && attackItem != null && attackItem.getType() != Material.AIR
-                && event.getEntity() instanceof LivingEntity target) {
-            Map<String, Object> context = new HashMap<>();
-            context.put("target", target);
-            context.put("damage", event.getDamage());
-            passiveManager.executePassives(attacker, attackItem, PassiveTrigger.HIT, context);
-
-            if (context.containsKey("damage_multiplier")) {
-                double mult = ((Number) context.get("damage_multiplier")).doubleValue();
-                event.setDamage(event.getDamage() * mult);
-            }
-            if (context.containsKey("force_crit")) {
-                event.setDamage(event.getDamage() * 1.5);
-            }
-        }
-
-        // Case 2: Player is the VICTIM -> DAMAGED trigger (check all equipment slots)
+        // Case 3: Player là victim (DAMAGED trigger)
         if (event.getEntity() instanceof Player victim) {
             checkDamagedPassives(victim, event.getDamage(), event.getCause().name());
         }
@@ -202,31 +205,26 @@ public class PassiveListener implements Listener {
     private ItemStack getSmeltedResult(ItemStack item) {
         if (item == null || item.getType().isAir()) return null;
         Material mat = item.getType();
+
         Material result = switch (mat) {
-            case IRON_ORE -> Material.IRON_INGOT;
-            case DEEPSLATE_IRON_ORE -> Material.IRON_INGOT;
-            case RAW_IRON -> Material.IRON_INGOT;
-            case GOLD_ORE -> Material.GOLD_INGOT;
-            case DEEPSLATE_GOLD_ORE -> Material.GOLD_INGOT;
-            case RAW_GOLD -> Material.GOLD_INGOT;
-            case COPPER_ORE -> Material.COPPER_INGOT;
-            case DEEPSLATE_COPPER_ORE -> Material.COPPER_INGOT;
-            case RAW_COPPER -> Material.COPPER_INGOT;
-            case NETHER_GOLD_ORE -> Material.GOLD_INGOT;
+            // Iron
+            case IRON_ORE, DEEPSLATE_IRON_ORE, RAW_IRON, RAW_IRON_BLOCK -> Material.IRON_INGOT;
+            // Gold
+            case GOLD_ORE, DEEPSLATE_GOLD_ORE, RAW_GOLD, RAW_GOLD_BLOCK, NETHER_GOLD_ORE -> Material.GOLD_INGOT;
+            // Copper
+            case COPPER_ORE, DEEPSLATE_COPPER_ORE, RAW_COPPER, RAW_COPPER_BLOCK -> Material.COPPER_INGOT;
+            // Gem ores
+            case DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE -> Material.DIAMOND;
+            case EMERALD_ORE, DEEPSLATE_EMERALD_ORE -> Material.EMERALD;
+            case LAPIS_ORE, DEEPSLATE_LAPIS_ORE -> Material.LAPIS_LAZULI;
+            case REDSTONE_ORE, DEEPSLATE_REDSTONE_ORE -> Material.REDSTONE;
+            case COAL_ORE, DEEPSLATE_COAL_ORE -> Material.COAL;
             case NETHER_QUARTZ_ORE -> Material.QUARTZ;
-            case LAPIS_ORE -> Material.LAPIS_LAZULI;
-            case DEEPSLATE_LAPIS_ORE -> Material.LAPIS_LAZULI;
-            case REDSTONE_ORE -> Material.REDSTONE;
-            case DEEPSLATE_REDSTONE_ORE -> Material.REDSTONE;
-            case DIAMOND_ORE -> Material.DIAMOND;
-            case DEEPSLATE_DIAMOND_ORE -> Material.DIAMOND;
-            case EMERALD_ORE -> Material.EMERALD;
-            case DEEPSLATE_EMERALD_ORE -> Material.EMERALD;
-            case COAL_ORE -> Material.COAL;
-            case DEEPSLATE_COAL_ORE -> Material.COAL;
+            // Special
             case ANCIENT_DEBRIS -> Material.NETHERITE_SCRAP;
-            case SAND -> Material.GLASS;
-            case COBBLESTONE -> Material.STONE;
+            // Blocks
+            case SAND, RED_SAND -> Material.GLASS;
+            case COBBLESTONE, BLACKSTONE -> Material.STONE;
             case COBBLED_DEEPSLATE -> Material.DEEPSLATE;
             case CLAY_BALL -> Material.TERRACOTTA;
             case NETHERRACK -> Material.NETHER_BRICK;
@@ -234,17 +232,15 @@ public class PassiveListener implements Listener {
             case CHORUS_FRUIT -> Material.POPPED_CHORUS_FRUIT;
             default -> null;
         };
+
         if (result != null) {
-            ItemStack smelted = new ItemStack(result);
-            smelted.setAmount(item.getAmount());
-            if (mat.name().endsWith("_ORE") || mat.name().startsWith("DEEPSLATE_") || mat == Material.NETHER_GOLD_ORE) {
-                java.util.Random rand = new java.util.Random();
-                int bonus = 0;
+            ItemStack smelted = new ItemStack(result, item.getAmount());
+            if (mat.name().contains("ORE") || mat.name().contains("RAW_") || mat == Material.NETHER_GOLD_ORE) {
                 if (item.containsEnchantment(Enchantment.FORTUNE)) {
                     int level = item.getEnchantmentLevel(Enchantment.FORTUNE);
-                    bonus = rand.nextInt(level + 1);
+                    int bonus = new Random().nextInt(level + 1);
+                    smelted.setAmount(item.getAmount() + bonus);
                 }
-                smelted.setAmount(item.getAmount() + bonus);
             }
             return smelted;
         }
