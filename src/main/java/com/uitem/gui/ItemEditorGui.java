@@ -274,20 +274,28 @@ public class ItemEditorGui extends AbstractGui {
                     });
         });
 
-        // === Passives (slot 22) ===
-        int passiveCount = data.getPassives() != null ? data.getPassives().size() : 0;
-        setItem(22, createItem(Material.BLAZE_POWDER,
-                "<gold><bold>⚡ Passives</bold>",
-                List.of(
-                        "<gray>Passives: <white>" + passiveCount,
-                        "",
-                        "<yellow>Click to manage passives",
-                        "<gray>Add/edit/remove passive skills",
-                        "<gray>Trigger: HIT, DAMAGED, HOLD, EQUIP, BREAK_BLOCK, KILL"
-                )), event -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new PassiveEditorGui(plugin, player, data).open();
-        });
+        // === ExecutableItems ID (slot 22) - only show if ExecutableItems is present ===
+        if (plugin.getIntegrationManager().hasExecutableItems()) {
+            setItem(22, createItem(Material.BLAZE_POWDER,
+                    "<gold><bold>⚡ ExecutableItems</bold>",
+                    List.of(
+                            "<gray>Current: <white>" + (data.getExecutableItemsId() != null ? data.getExecutableItemsId() : "None"),
+                            "",
+                            "<yellow>Click to set ExecutableItems ID",
+                            "<gray>Skills/Passives will be handled by EI"
+                    )), event -> {
+                plugin.getChatInputManager().requestInput(player,
+                        "<yellow>Enter ExecutableItems item ID <gray>(or 'none' to remove):",
+                        input -> {
+                            if (input.equalsIgnoreCase("none")) {
+                                data.setExecutableItemsId(null);
+                            } else {
+                                data.setExecutableItemsId(input.trim());
+                            }
+                            saveAndReopen();
+                        });
+            });
+        }
 
         // === Oraxen ID (slot 23) - only show if Oraxen is present ===
         if (plugin.getIntegrationManager().hasOraxen()) {

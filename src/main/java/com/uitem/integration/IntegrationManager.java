@@ -6,7 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
 /**
- * Quản lý tích hợp với Oraxen và ItemsAdder.
+ * Quản lý tích hợp với Oraxen, ItemsAdder và ExecutableItems.
  * Detect runtime và delegate build item nếu có integration ID.
  */
 public class IntegrationManager {
@@ -14,59 +14,81 @@ public class IntegrationManager {
     private final UItemPlugin plugin;
     private OraxenIntegration oraxenIntegration;
     private ItemsAdderIntegration itemsAdderIntegration;
+    private ExecutableItemsIntegration executableItemsIntegration;
     private boolean hasOraxen;
     private boolean hasItemsAdder;
+    private boolean hasExecutableItems;
+
+    private String oraxenVersion;
+    private String itemsAdderVersion;
+    private String executableItemsVersion;
 
     public IntegrationManager(UItemPlugin plugin) {
         this.plugin = plugin;
         this.hasOraxen = false;
         this.hasItemsAdder = false;
+        this.hasExecutableItems = false;
     }
 
     /**
-     * Detect xem Oraxen và ItemsAdder có đang cài không.
+     * Detect xem Oraxen, ItemsAdder và ExecutableItems có đang cài không.
      */
     public void detectIntegrations() {
         oraxenIntegration = null;
         itemsAdderIntegration = null;
+        executableItemsIntegration = null;
         hasOraxen = false;
         hasItemsAdder = false;
+        hasExecutableItems = false;
 
-        // Check Oraxen
-        if (Bukkit.getPluginManager().getPlugin("Oraxen") != null
-                && Bukkit.getPluginManager().isPluginEnabled("Oraxen")) {
+        // ── Check Oraxen ──
+        var oraxenPlugin = Bukkit.getPluginManager().getPlugin("Oraxen");
+        if (oraxenPlugin != null && oraxenPlugin.isEnabled()) {
+            oraxenVersion = oraxenPlugin.getDescription().getVersion();
             try {
                 oraxenIntegration = new OraxenIntegration();
                 hasOraxen = true;
-                plugin.getLogger().info("[Integration] Detected Oraxen! Integration enabled.");
+                plugin.getLogger().info("  ✔ Oraxen v" + oraxenVersion + " — hooked");
             } catch (Exception e) {
-                hasOraxen = false;
-                plugin.getLogger().warning("[Integration] Detected Oraxen but could not integrate: " + e.getMessage());
+                plugin.getLogger().warning("  ✘ Oraxen v" + oraxenVersion + " found but hook failed: " + e.getMessage());
             }
         } else {
-            hasOraxen = false;
-            plugin.getLogger().info("[Integration] Oraxen not found.");
+            plugin.getLogger().info("  ○ Oraxen — not detected");
         }
 
-        // Check ItemsAdder
-        if (Bukkit.getPluginManager().getPlugin("ItemsAdder") != null
-                && Bukkit.getPluginManager().isPluginEnabled("ItemsAdder")) {
+        // ── Check ItemsAdder ──
+        var itemsAdderPlugin = Bukkit.getPluginManager().getPlugin("ItemsAdder");
+        if (itemsAdderPlugin != null && itemsAdderPlugin.isEnabled()) {
+            itemsAdderVersion = itemsAdderPlugin.getDescription().getVersion();
             try {
                 itemsAdderIntegration = new ItemsAdderIntegration();
                 hasItemsAdder = true;
-                plugin.getLogger().info("[Integration] Detected ItemsAdder! Integration enabled.");
+                plugin.getLogger().info("  ✔ ItemsAdder v" + itemsAdderVersion + " — hooked");
             } catch (Exception e) {
-                hasItemsAdder = false;
-                plugin.getLogger().warning("[Integration] Detected ItemsAdder but could not integrate: " + e.getMessage());
+                plugin.getLogger().warning("  ✘ ItemsAdder v" + itemsAdderVersion + " found but hook failed: " + e.getMessage());
             }
         } else {
-            hasItemsAdder = false;
-            plugin.getLogger().info("[Integration] ItemsAdder not found.");
+            plugin.getLogger().info("  ○ ItemsAdder — not detected");
+        }
+
+        // ── Check ExecutableItems ──
+        var eiPlugin = Bukkit.getPluginManager().getPlugin("ExecutableItems");
+        if (eiPlugin != null && eiPlugin.isEnabled()) {
+            executableItemsVersion = eiPlugin.getDescription().getVersion();
+            try {
+                executableItemsIntegration = new ExecutableItemsIntegration();
+                hasExecutableItems = true;
+                plugin.getLogger().info("  ✔ ExecutableItems v" + executableItemsVersion + " — hooked");
+            } catch (Exception e) {
+                plugin.getLogger().warning("  ✘ ExecutableItems v" + executableItemsVersion + " found but hook failed: " + e.getMessage());
+            }
+        } else {
+            plugin.getLogger().info("  ○ ExecutableItems — not detected");
         }
     }
 
     /**
-     * Thử build ItemStack từ integration (Oraxen/ItemsAdder).
+     * Thử build ItemStack từ integration (Oraxen/ItemsAdder/ExecutableItems).
      * Trả về null nếu không có integration hoặc không có ID.
      */
     public ItemStack tryBuildFromIntegration(UItemData data) {
@@ -82,6 +104,12 @@ public class IntegrationManager {
             if (item != null) return item;
         }
 
+        // Sau đó ExecutableItems
+        if (hasExecutableItems && data.getExecutableItemsId() != null && !data.getExecutableItemsId().isEmpty()) {
+            ItemStack item = executableItemsIntegration.getItem(data.getExecutableItemsId());
+            if (item != null) return item;
+        }
+
         return null;
     }
 
@@ -93,10 +121,22 @@ public class IntegrationManager {
         return hasItemsAdder;
     }
 
+    public boolean hasExecutableItems() {
+        return hasExecutableItems;
+    }
+
+    public ExecutableItemsIntegration getExecutableItemsIntegration() {
+        return executableItemsIntegration;
+    }
+
     public String getStatus() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Oraxen=").append(hasOraxen ? "✔" : "✘");
-        sb.append(", ItemsAdder=").append(hasItemsAdder ? "✔" : "✘");
+        if (hasOraxen) sb.append("Oraxen v").append(oraxenVersion).append(" ✔  ");
+        else sb.append("Oraxen ✘  ");
+        if (hasItemsAdder) sb.append("ItemsAdder v").append(itemsAdderVersion).append(" ✔  ");
+        else sb.append("ItemsAdder ✘  ");
+        if (hasExecutableItems) sb.append("ExecutableItems v").append(executableItemsVersion).append(" ✔");
+        else sb.append("ExecutableItems ✘");
         return sb.toString();
     }
 }

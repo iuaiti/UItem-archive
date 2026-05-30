@@ -1,6 +1,5 @@
 package com.uitem;
 
-import com.uitem.passive.PassiveData;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -28,12 +27,12 @@ public class UItemData {
     private int maxDurability; // -1 = use default material durability
     private List<AttributeData> attributes;
 
-    // Oraxen/ItemsAdder integration
+    // Oraxen/ItemsAdder/ExecutableItems integration
     private String rarity;
-    private List<PassiveData> passives;
 
     private String oraxenId;
     private String itemsAdderId;
+    private String executableItemsId;
 
     public UItemData(String id) {
         this.id = id;
@@ -48,9 +47,9 @@ public class UItemData {
         this.maxDurability = -1;
         this.attributes = new ArrayList<>();
         this.rarity = null;
-        this.passives = new ArrayList<>();
         this.oraxenId = null;
         this.itemsAdderId = null;
+        this.executableItemsId = null;
     }
 
     // === Getters & Setters ===
@@ -147,14 +146,6 @@ public class UItemData {
         this.rarity = rarity;
     }
 
-    public List<PassiveData> getPassives() {
-        return passives;
-    }
-
-    public void setPassives(List<PassiveData> passives) {
-        this.passives = passives;
-    }
-
     public String getOraxenId() {
         return oraxenId;
     }
@@ -169,6 +160,14 @@ public class UItemData {
 
     public void setItemsAdderId(String itemsAdderId) {
         this.itemsAdderId = itemsAdderId;
+    }
+
+    public String getExecutableItemsId() {
+        return executableItemsId;
+    }
+
+    public void setExecutableItemsId(String executableItemsId) {
+        this.executableItemsId = executableItemsId;
     }
 
     /**
@@ -190,14 +189,9 @@ public class UItemData {
             clone.attributes.add(attribute.copy());
         }
         clone.rarity = this.rarity;
-        clone.passives = new ArrayList<>();
-        if (this.passives != null) {
-            for (PassiveData p : this.passives) {
-                clone.passives.add(p.copy());
-            }
-        }
         clone.oraxenId = this.oraxenId;
         clone.itemsAdderId = this.itemsAdderId;
+        clone.executableItemsId = this.executableItemsId;
         return clone;
     }
 

@@ -318,6 +318,59 @@ public final class UItemAPI {
     }
 
     // =========================================================
+    // ExecutableItems Integration
+    // =========================================================
+
+    /**
+     * Kiểm tra ExecutableItems có được phát hiện và sẵn sàng không.
+     */
+    public boolean hasExecutableItems() {
+        return plugin.getIntegrationManager().hasExecutableItems();
+    }
+
+    /**
+     * Lấy ExecutableItems item ID từ ItemStack (qua PDC của EI).
+     *
+     * @param item ItemStack cần kiểm tra
+     * @return ExecutableItems ID, null nếu không phải EI item
+     */
+    @Nullable
+    public String getExecutableItemsId(@Nullable ItemStack item) {
+        if (!hasExecutableItems()) return null;
+        return plugin.getIntegrationManager().getExecutableItemsIntegration().getExecutableItemId(item);
+    }
+
+    /**
+     * Lấy ExecutableItems item ID từ UItem ID.
+     *
+     * @param uitemId ID của UItem
+     * @return ExecutableItems ID đã mapping, null nếu không có
+     */
+    @Nullable
+    public String getExecutableItemsIdByUItemId(@NotNull String uitemId) {
+        return getItem(uitemId)
+                .map(UItemData::getExecutableItemsId)
+                .orElse(null);
+    }
+
+    /**
+     * Lấy ExecutableItems ItemStack từ UItem ID.
+     * ExecutableItems tự xử lý skill/activator của nó — không cần trigger thủ công.
+     *
+     * @param uitemId ID của UItem
+     * @return ItemStack từ ExecutableItems, empty nếu không có mapping hoặc lỗi
+     */
+    @NotNull
+    public Optional<ItemStack> buildExecutableItemsItem(@NotNull String uitemId) {
+        if (!hasExecutableItems()) return Optional.empty();
+        String eiId = getExecutableItemsIdByUItemId(uitemId);
+        if (eiId == null) return Optional.empty();
+        return Optional.ofNullable(
+                plugin.getIntegrationManager().getExecutableItemsIntegration().getItem(eiId)
+        );
+    }
+
+    // =========================================================
     // Utility
     // =========================================================
 

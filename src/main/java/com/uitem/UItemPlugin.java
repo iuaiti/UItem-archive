@@ -5,9 +5,7 @@ import com.uitem.chat.ChatInputManager;
 import com.uitem.command.UItemCommand;
 import com.uitem.gui.GuiListener;
 import com.uitem.integration.IntegrationManager;
-import com.uitem.listener.PassiveListener;
 import com.uitem.listener.UItemActionListener;
-import com.uitem.passive.PassiveManager;
 import com.uitem.rarity.RarityConfig;
 import com.uitem.recipe.RecipeManager;
 import com.uitem.resourcepack.ResourcePackManager;
@@ -37,8 +35,6 @@ public final class UItemPlugin extends JavaPlugin {
     private GuiListener guiListener;
     private ResourcePackManager resourcePackManager;
     private com.uitem.search.SearchManager searchManager;
-    private PassiveManager passiveManager;
-    private PassiveListener passiveListener;
     private ResourcePackServer packServer;
     private RecipeManager recipeManager;
     private Listener resourcePackJoinListener;
@@ -69,17 +65,12 @@ public final class UItemPlugin extends JavaPlugin {
 
         RarityConfig.load(this);
 
-        this.passiveManager = new PassiveManager(this, this.itemManager);
-        this.passiveListener = new PassiveListener(this);
-
         // Khởi tạo Public API — phải trước khi đăng ký listener
         UItemAPI.init(this);
 
         getServer().getPluginManager().registerEvents(guiListener, this);
         getServer().getPluginManager().registerEvents(chatInputManager, this);
         getServer().getPluginManager().registerEvents(new UItemActionListener(this), this);
-        getServer().getPluginManager().registerEvents(passiveListener, this);
-        passiveListener.startHoldTickTask();
 
         UItemCommand command = new UItemCommand(this);
         Objects.requireNonNull(getCommand("uitem")).setExecutor(command);
@@ -94,13 +85,16 @@ public final class UItemPlugin extends JavaPlugin {
         // Khởi động resource pack server
         startPackServer();
 
-        getLogger().info("=================================");
-        getLogger().info("  UItem v" + getDescription().getVersion() + " enabled!");
-        getLogger().info("  Loaded " + itemManager.getAllItems().size() + " custom items.");
-        getLogger().info("  Integrations: " + integrationManager.getStatus());
-        getLogger().info("  Scheduler mode: " + (SchedulerUtil.isFolia() ? "Folia" : "Paper/Spigot"));
+        getLogger().info("╔══════════════════════════════════════════════╗");
+        getLogger().info("║        ⚡ UItem v" + getDescription().getVersion() + " — Custom Item Engine");
+        getLogger().info("║        ✦ Author: iuaititi");
+        getLogger().info("╠══════════════════════════════════════════════╣");
+        getLogger().info("║  ■ Loaded: " + itemManager.getAllItems().size() + " custom items");
+        getLogger().info("║  ■ Integrations: " + integrationManager.getStatus());
+        getLogger().info("║  ■ Scheduler: " + (SchedulerUtil.isFolia() ? "🌐 Folia (Region)" : "☕ Paper/Spigot"));
+        getLogger().info("╚══════════════════════════════════════════════╝");
 
-        // Auto-export & auto-apply resource pack như Oraxen/ItemsAdder
+        // Auto-export & auto-apply resource pack
         if (getConfig().getBoolean("resourcepack.auto-generate", true)) {
             SchedulerUtil.runAsync(this, () -> {
                 try {
@@ -123,8 +117,6 @@ public final class UItemPlugin extends JavaPlugin {
 
         // Đăng ký join listener sau cùng
         registerResourcePackJoinListener();
-
-        getLogger().info("=================================");
     }
 
     @Override
@@ -139,10 +131,10 @@ public final class UItemPlugin extends JavaPlugin {
             recipeManager.saveRecipes();
         }
         UItemAPI.shutdown();
-        if (passiveManager != null) {
-            com.uitem.passive.PassiveManager.clearInstance();
-        }
-        getLogger().info("UItem disabled. All items have been saved.");
+        getLogger().info("╔══════════════════════════════════════════════╗");
+        getLogger().info("║   ✦ UItem disabled. All items saved.         ");
+        getLogger().info("║   ✦ See you next time, iuaititi!              ");
+        getLogger().info("╚══════════════════════════════════════════════╝");
         instance = null;
     }
 
@@ -260,14 +252,6 @@ public final class UItemPlugin extends JavaPlugin {
 
     public com.uitem.search.SearchManager getSearchManager() {
         return searchManager;
-    }
-
-    public PassiveManager getPassiveManager() {
-        return passiveManager;
-    }
-
-    public PassiveListener getPassiveListener() {
-        return passiveListener;
     }
 
     public ResourcePackServer getPackServer() {

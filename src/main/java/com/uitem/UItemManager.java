@@ -18,8 +18,6 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.uitem.passive.PassiveData;
-import com.uitem.passive.PassiveManager;
 import com.uitem.rarity.RarityConfig;
 
 /**
@@ -150,7 +148,7 @@ public class UItemManager {
             meta.displayName(miniMessage.deserialize(displayName));
         }
 
-        // Lore with rarity lore and passive lore
+        // Lore with rarity lore
         List<Component> loreComponents = new ArrayList<>();
         if (data.getLore() != null) {
             for (String line : data.getLore()) {
@@ -162,16 +160,6 @@ public class UItemManager {
             for (String line : rarityLore) {
                 loreComponents.add(miniMessage.deserialize(line));
             }
-        }
-        if (data.getPassives() != null && !data.getPassives().isEmpty()) {
-            loreComponents.add(Component.empty());
-            loreComponents.add(miniMessage.deserialize("<dark_gray>═══════════════════"));
-            loreComponents.add(miniMessage.deserialize("<gold><bold>Passive Abilities"));
-            PassiveManager pm = plugin.getPassiveManager();
-            for (PassiveData passive : data.getPassives()) {
-                loreComponents.add(miniMessage.deserialize(pm.getPassiveDescription(passive)));
-            }
-            loreComponents.add(miniMessage.deserialize("<dark_gray>═══════════════════"));
         }
         if (!loreComponents.isEmpty()) {
             meta.lore(loreComponents);
