@@ -333,11 +333,14 @@ public class CraftingGui implements InventoryHolder {
     }
 
     public void onClose() {
+        // Bug fix: Only return items from craft input slots, NOT the result preview slot.
+        // The result slot contains a preview of what would be crafted — it was never
+        // actually crafted, so returning it would allow item duplication.
         for (int slot : CRAFT_SLOTS) {
             returnItem(inventory.getItem(slot));
             inventory.setItem(slot, null);
         }
-        returnItem(inventory.getItem(RESULT_SLOT));
+        // Clear result slot WITHOUT returning it to prevent item duplication
         inventory.setItem(RESULT_SLOT, null);
     }
 

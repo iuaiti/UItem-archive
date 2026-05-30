@@ -318,4 +318,20 @@ public class RecipeEditorGui implements InventoryHolder {
     public void open() {
         player.openInventory(inventory);
     }
+
+    /**
+     * Called when the GUI is closed — returns craft slot items to the player
+     * to prevent permanent item loss.
+     */
+    public void onClose(Player player) {
+        for (int slot : CRAFT_SLOTS) {
+            ItemStack item = inventory.getItem(slot);
+            if (item != null && !item.getType().isAir()) {
+                for (ItemStack leftover : player.getInventory().addItem(item.clone()).values()) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+                }
+                inventory.setItem(slot, null);
+            }
+        }
+    }
 }

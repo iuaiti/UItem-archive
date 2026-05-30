@@ -45,6 +45,11 @@ public class GuiListener implements Listener {
         if (holder instanceof CraftingGui gui) {
             gui.onClose();
             CraftingGui.removeCraftingPlayer((org.bukkit.entity.Player) event.getPlayer());
+        } else if (holder instanceof RecipeEditorGui gui) {
+            // Bug fix: Return craft slot items to player when RecipeEditorGui is closed
+            // to prevent item loss. Previously, items placed in the recipe editor's
+            // crafting slots were permanently lost when the GUI was closed.
+            gui.onClose((org.bukkit.entity.Player) event.getPlayer());
         }
     }
 }

@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 
@@ -43,6 +44,10 @@ public class ResourcePackServer {
     public void stop() {
         if (server != null) {
             server.stop(0);
+            // Bug fix: shutdown executor to prevent thread leak when server restarts
+            if (server.getExecutor() instanceof ExecutorService es) {
+                es.shutdownNow();
+            }
             server = null;
         }
         running = false;
