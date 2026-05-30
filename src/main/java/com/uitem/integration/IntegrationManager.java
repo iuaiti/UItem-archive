@@ -65,10 +65,10 @@ public class IntegrationManager {
         }
 
         // ── Check ExecutableItems ──
-        executableItemsVersion = getPluginVersion("com.ssomar.executableitems.api.ExecutableItemsAPI", "ExecutableItems");
+        executableItemsVersion = getPluginVersion(null, "ExecutableItems");
         try {
-            Class.forName("com.ssomar.executableitems.api.ExecutableItemsAPI");
-            executableItemsIntegration = new ExecutableItemsIntegration();
+            ExecutableItemsIntegration testEi = new ExecutableItemsIntegration();
+            executableItemsIntegration = testEi;
             hasExecutableItems = true;
             plugin.getLogger().info("  ✔ ExecutableItems" + (executableItemsVersion != null ? " v" + executableItemsVersion : "") + " — hooked");
         } catch (Exception e) {
@@ -80,14 +80,16 @@ public class IntegrationManager {
      * Tìm version của plugin từ classpath bằng cách scan Bukkit plugins.
      */
     private String getPluginVersion(String className, String fallbackName) {
-        try {
-            Class<?> cls = Class.forName(className);
-            var packageInfo = cls.getPackage();
-            if (packageInfo != null) {
-                String implVersion = packageInfo.getImplementationVersion();
-                if (implVersion != null) return implVersion;
-            }
-        } catch (Exception ignored) {}
+        if (className != null) {
+            try {
+                Class<?> cls = Class.forName(className);
+                var packageInfo = cls.getPackage();
+                if (packageInfo != null) {
+                    String implVersion = packageInfo.getImplementationVersion();
+                    if (implVersion != null) return implVersion;
+                }
+            } catch (Exception ignored) {}
+        }
 
         // Fallback: scan plugin name
         try {

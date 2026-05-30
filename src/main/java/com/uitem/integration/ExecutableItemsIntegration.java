@@ -15,11 +15,25 @@ public class ExecutableItemsIntegration {
     private Method buildItemMethod;
     private Method getIdMethod;
 
-    public ExecutableItemsIntegration() throws Exception {
-        this.executableItemsAPIClass = Class.forName("com.ssomar.executableitems.api.ExecutableItemsAPI");
+    private static final String[] API_CLASS_PATHS = {
+        "com.ssomar.score.api.executableitems.ExecutableItemsAPI",
+        "com.ssomar.executableitems.api.ExecutableItemsAPI"
+    };
 
-        Class<?> managerInterface = Class.forName("com.ssomar.executableitems.api.ExecutableItemsManagerInterface");
-        Class<?> itemInterface = Class.forName("com.ssomar.executableitems.api.ExecutableItemInterface");
+    private static final String[] MANAGER_PATHS = {
+        "com.ssomar.score.api.executableitems.ExecutableItemsManagerInterface",
+        "com.ssomar.executableitems.api.ExecutableItemsManagerInterface"
+    };
+
+    private static final String[] ITEM_PATHS = {
+        "com.ssomar.score.api.executableitems.ExecutableItemInterface",
+        "com.ssomar.executableitems.api.ExecutableItemInterface"
+    };
+
+    public ExecutableItemsIntegration() throws Exception {
+        this.executableItemsAPIClass = tryLoad(API_CLASS_PATHS);
+        Class<?> managerInterface = tryLoad(MANAGER_PATHS);
+        Class<?> itemInterface = tryLoad(ITEM_PATHS);
 
         this.getManagerMethod = executableItemsAPIClass.getMethod("getExecutableItemsManager");
         this.isValidIDMethod = managerInterface.getMethod("isValidID", String.class);
@@ -27,6 +41,15 @@ public class ExecutableItemsIntegration {
         this.getItemByStackMethod = managerInterface.getMethod("getExecutableItem", ItemStack.class);
         this.buildItemMethod = itemInterface.getMethod("buildItem", int.class, Optional.class, Optional.class);
         this.getIdMethod = itemInterface.getMethod("getId");
+    }
+
+    private static Class<?> tryLoad(String[] paths) throws ClassNotFoundException {
+        for (String path : paths) {
+            try {
+                return Class.forName(path);
+            } catch (ClassNotFoundException ignored) {}
+        }
+        throw new ClassNotFoundException("Cannot find any of: " + String.join(", ", paths));
     }
 
     private Object getManager() throws Exception {
