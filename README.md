@@ -1,139 +1,310 @@
-# uitem - Custom Item and GUI Crafting Plugin
+# ⚡ UItem — Custom Item Engine
 
-A Minecraft plugin for Paper 1.21 that adds custom items with GUIs for crafting, browsing, and administration.
+> **Version:** 1.0.0  
+> **Author:** iuaititi  
+> **API:** Paper 1.21.4+  
+> **Folia:** ✔ Supported
 
-## Features
+---
 
-- **Custom Items**: Define custom items with unique names, lore, custom model data, rarity, and glow effects.
-- **Category System**: Organize items into categories for easy browsing.
-- **GUI System**:
-  - Main Menu: Browse categories
-  - Category GUI: View items in a category with pagination (54 slots per page)
-  - Crafting GUI: 3x3 crafting grid with real-time recipe validation
-  - Admin GUI: Manage items and categories
-- **Recipe System**: Create custom recipes for your items (shaped and shapeless).
-- **Admin Tools**: Add, edit, remove items and categories, and edit recipes.
-- **Persistence**: All data saved to YAML configuration files.
-- **Adventure API**: Uses the Adventure API for modern text component support.
-- **Performance Optimized**: Efficient data structures and minimal overhead.
+## 📦 Installation
 
-## Installation
+1. Place `UItem.jar` into your `plugins/` folder
+2. Restart the server
+3. Configuration files are auto-generated in `plugins/UItem/`
 
-1. Download the latest `uitem.jar` from the [Releases](https://github.com/yourusername/uitem/releases) page.
-2. Place the `.jar` file in your server's `plugins` folder.
-3. Start or restart your server.
-4. The plugin will generate default configuration files in `plugins/uitem/`.
+**Optional dependencies** (auto-hooked if present):
+- [Oraxen](https://www.spigotmc.org/resources/72448/)
+- [ItemsAdder](https://www.spigotmc.org/resources/73355/)
+- [ExecutableItems](https://www.spigotmc.org/resources/77578/)
 
-## Usage
+---
 
-### Commands
+## 🎮 Commands
 
-- `/crafting` - Opens the crafting GUI.
-- `/admin` - Opens the admin GUI (requires `uitem.admin` permission).
+### `/uitem` (alias: `/ui`)
 
-### Permissions
+| Command | Description | Permission |
+|---------|-------------|------------|
+| `/uitem give <id> [player] [amount]` | Give item to player | `uitem.give` |
+| `/uitem editor` | Open GUI editor | `uitem.editor` |
+| `/uitem list` | List items in chat | `uitem.editor` |
+| `/uitem reload` | Reload plugin | `uitem.reload` |
+| `/uitem rp generate` | Generate resource pack | `uitem.reload` |
+| `/uitem rp export` | Export resource pack zip | `uitem.reload` |
+| `/uitem rp apply` | Apply pack to player | `uitem.reload` |
+| `/uitem rp status` | View RP status | `uitem.reload` |
+| `/uitem craft` | Open crafting table | * |
+| `/uitem check` | Check held item | * |
+| `/uitem help` | Show help | * |
 
-- `uitem.admin` - Allows access to the admin GUI and admin commands.
+### `/crafting` (alias: `/craft`)
 
-### GUIs
+| Command | Description | Permission |
+|---------|-------------|------------|
+| `/crafting` | Open recipe list | `uitem.craft` |
+| `/crafting craft` | Open crafting table | `uitem.craft` |
 
-#### Main Menu
-- Click on a category icon to browse items in that category.
-- Click the "Crafting" button to open the crafting GUI.
-- Click the "Admin" button to open the admin GUI (if you have permission).
+---
 
-#### Category GUI
-- Displays items in the selected category with pagination.
-- Use the "Previous Page" and "Next Page" buttons to navigate.
-- Click on an item to view it (currently just a placeholder for future details).
+## 🔐 Permissions
 
-#### Crafting GUI
-- Place items in the 3x3 grid to craft.
-- The result slot shows the crafted item if a valid recipe is matched.
-- Click the result slot to take the crafted item (ingredients are consumed).
+| Node | Default | Description |
+|------|---------|-------------|
+| `uitem.admin` | op | Full access (includes all children) |
+| `uitem.give` | op | Give items |
+| `uitem.editor` | op | Open GUI editor |
+| `uitem.reload` | op | Reload + resource pack management |
+| `uitem.search` | op | Search items in GUI |
+| `uitem.craft` | op | Open crafting table |
 
-#### Admin GUI
-- **Add Item**: Opens the Add Item GUI to create a new custom item.
-- **Edit Item**: Opens the Edit Item GUI to modify an existing item.
-- **Remove Item**: Opens the Remove Item GUI to delete an item.
-- **Recipe Editor**: Opens the Recipe Editor GUI to set a recipe for an item.
+---
 
-## Configuration
+## 🛠 Features
 
-The plugin creates the following files in `plugins/uitem/`:
+### Item Properties
 
-- `config.yml` - Main configuration (currently not used for much, but can be extended).
-- `items.yml` - Stores all custom items.
-- `categories.yml` - Stores all categories.
+Each custom item supports:
+- **Material** — base vanilla material (e.g. DIAMOND_SWORD)
+- **Display Name** — MiniMessage format
+- **Lore** — MiniMessage format
+- **Enchantments** — 38 types supported
+- **Item Flags** — 8 flags available
+- **Custom Model Data** — for texture packs
+- **Unbreakable** — never breaks
+- **Glowing** — enchantment glint effect
+- **Max Durability** — custom durability cap
+- **Attributes** — damage, armor, speed modifiers
+- **Rarity** — COMMON → ULTRA (6 tiers)
+- **oraxen-id** — Oraxen integration
+- **itemsadder-id** — ItemsAdder integration
+- **executableitems-id** — ExecutableItems integration
+- **Recipe** — shaped / shapeless crafting
 
-### Example `items.yml`
+### Auto Resource Pack
+
+- Auto-generates model JSONs + textures
+- Auto-assigns CustomModelData
+- Built-in HTTP server to host the pack
+- ZIP export with SHA-1 hash
+- Auto-apply to players on join
+
+### Recipe System
+
+- Shaped & Shapeless recipes
+- Ingredients: vanilla materials OR UItem IDs
+- Craft: 1 / 8 / 64 / MAX
+- Auto-consumes ingredients
+
+### Folia Support
+
+Runs on Paper, Spigot, and Folia via `SchedulerUtil`.
+
+---
+
+## ⚡ ExecutableItems Integration
+
+When an item has `executableitems-id`:
 
 ```yaml
 items:
-  123e4567-e89b-12d3-a456-426614174000:
-    id: 123e4567-e89b-12d3-a456-426614174000
+  ruby_sword:
     material: DIAMOND_SWORD
-    name: '&eExcalibur'
-    lore:
-      - '&7A legendary sword'
-      - '&7Only the worthy can wield it'
-    custom_model_data: 123
-    rarity: LEGENDARY
-    glow: true
+    display-name: "<red>Ruby Sword"
+    executableitems-id: "Excalibur"
 ```
 
-### Example `categories.yml`
+- UItem delegates item building to ExecutableItems API
+- EI handles all activators / skills / passives automatically
+- UItem manages only the item registry, not skills
+
+### Developer API
+
+```java
+UItemAPI api = UItemAPI.get();
+
+boolean hasEI = api.hasExecutableItems();
+
+String eiId = api.getExecutableItemsIdByUItemId("ruby_sword");
+
+Optional<ItemStack> item = api.buildExecutableItemsItem("ruby_sword");
+
+String id = api.getExecutableItemsId(player.getItemInHand());
+```
+
+---
+
+## 📝 Public API
+
+### Getting the API
+
+```java
+if (UItemAPI.isAvailable()) {
+    UItemAPI api = UItemAPI.get();
+}
+```
+
+### Item Lookup
+
+```java
+Optional<UItemData> data = api.getItem("ruby_sword");
+Map<String, UItemData> all = api.getAllItems();
+boolean exists = api.hasItem("ruby_sword");
+```
+
+### Build ItemStack
+
+```java
+Optional<ItemStack> item = api.buildItem("ruby_sword");
+ItemStack item2 = api.buildItem(data);
+```
+
+### Identify Item
+
+```java
+boolean isUItem = api.isUItem(itemStack);
+Optional<String> id = api.getUItemId(itemStack);
+Optional<UItemData> data = api.getUItemData(itemStack);
+```
+
+### Management
+
+```java
+api.registerItem(new UItemData("my_item"), sender);
+api.removeItem("my_item", sender);
+api.giveItem(player, "ruby_sword", 1, sender);
+```
+
+### Events
+
+```java
+@EventHandler
+public void onUItemCreate(UItemCreateEvent event) { }
+@EventHandler
+public void onUItemDelete(UItemDeleteEvent event) { }
+@EventHandler
+public void onUItemGive(UItemGiveEvent event) {
+    event.setAmount(5);
+    event.setItemStack(newItem);
+}
+@EventHandler
+public void onUItemInteract(UItemInteractEvent event) { }
+@EventHandler
+public void onUItemPickup(UItemPickupEvent event) { }
+@EventHandler
+public void onUItemEquip(UItemEquipEvent event) { }
+```
+
+---
+
+## ⚙️ Config (config.yml)
+
+### Resource Pack
 
 ```yaml
-categories:
-  weapons:
-    name: weapons
-    display_name: '&eWeapons'
-    icon_item: DIAMOND_SWORD
-    items:
-      - 123e4567-e89b-12d3-a456-426614174000
-  armor:
-    name: armor
-    display_name: '&fArmor'
-    icon_item: DIAMOND_HELMET
-    items: []
+resourcepack:
+  auto-generate: true
+  auto-apply: true
+  auto-host: true
+  server-port: 9732
+  kick-on-fail: true
+  url: ""
+  pack-format: 34
+  namespace: "uitem"
+  output-zip: "UItem-ResourcePack.zip"
 ```
 
-## Development
+### Rarity
 
-### Building
-
-To build the plugin, you need:
-- JDK 17
-- Gradle 8.x
-
-Run the following command to build the JAR:
-
-```bash
-gradle clean jar
+```yaml
+rarity:
+  COMMON:
+    color: "<gray>"
+    prefix: ""
+    lore: []
+  UNCOMMON:
+    color: "<green>"
+    prefix: "<green>"
+    lore: ["<dark_gray>──────────────", "<green>Uncommon"]
+  RARE:
+    color: "<blue>"
+    prefix: "<blue>"
+    lore: ["<dark_gray>──────────────", "<blue>Rare"]
+  EPIC:
+    color: "<dark_purple>"
+    prefix: "<dark_purple>"
+    lore: ["<dark_gray>──────────────", "<dark_purple>Epic"]
+  LEGENDARY:
+    color: "<gold>"
+    prefix: "<gold>"
+    lore: ["<dark_gray>──────────────", "<gold>Legendary"]
+  ULTRA:
+    color: "<red>"
+    prefix: "<red>"
+    lore: ["<dark_gray>──────────────", "<red>✦ ULTRA ✦"]
 ```
 
-The compiled JAR will be in `build/libs/`.
+---
 
-### Dependencies
+## 📁 items.yml Structure
 
-- Paper API 1.21.0
-- Adventure API 4.13.0
+```yaml
+items:
+  ruby_sword:
+    material: DIAMOND_SWORD
+    display-name: "<gradient:#ff0000:#ff6600><bold>Ruby Sword</bold></gradient>"
+    lore:
+      - "<gray>A legendary sword forged from Ruby"
+      - ""
+      - "<gold>✦ Legendary"
+    enchantments:
+      sharpness: 5
+      unbreaking: 3
+      fire_aspect: 2
+    flags:
+      - HIDE_ENCHANTS
+      - HIDE_ATTRIBUTES
+    custom-model-data: 10001
+    unbreakable: true
+    glowing: false
+    max-durability: -1
+    attributes:
+      attr_0:
+        attribute: GENERIC_ATTACK_DAMAGE
+        amount: 15.0
+        operation: ADD_NUMBER
+        slot: HAND
+    rarity: EPIC
+    oraxen-id: ""
+    itemsadder-id: ""
+    executableitems-id: ""
+```
 
-## Contributing
+---
 
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/amazing-feature`).
-3. Commit your changes (`git commit -m 'Add some amazing feature'`).
-4. Push to the branch (`git push origin feature/amazing-feature`).
-5. Open a Pull Request.
+## 🖥 GUI Editor
 
-## License
+Use `/ui editor` to open the item management GUI.
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### ItemListGui
+- Lists all items (28 per page)
+- Left-click → edit item
+- Right-click → delete item
+- Search button → filter by name
+- Create button → new item
 
-## Contact
+### ItemEditorGui
+Edit all properties of a single item:
+- Material, Name, Lore, Enchantments, Flags
+- CMD, Unbreakable, Glowing, Durability
+- Attributes, Rarity
+- Oraxen / ItemsAdder / ExecutableItems ID
+- Crafting Recipe
 
-Your Name - [your.email@example.com](mailto:your.email@example.com)
+---
 
-Project Link: [https://github.com/yourusername/uitem](https://github.com/yourusername/uitem)
+## 🔧 Requirements
+
+- **Server:** Paper 1.21.4+ (or Spigot, Folia)
+- **Java:** 21
+- **Optional plugins:** Oraxen, ItemsAdder, ExecutableItems

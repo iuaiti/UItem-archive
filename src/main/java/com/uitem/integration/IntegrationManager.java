@@ -32,6 +32,7 @@ public class IntegrationManager {
 
     /**
      * Detect xem Oraxen, ItemsAdder và ExecutableItems có đang cài không.
+     * Dùng Class.forName() thay vì plugin name để tránh sai tên plugin.
      */
     public void detectIntegrations() {
         oraxenIntegration = null;
@@ -42,49 +43,59 @@ public class IntegrationManager {
         hasExecutableItems = false;
 
         // ── Check Oraxen ──
-        var oraxenPlugin = Bukkit.getPluginManager().getPlugin("Oraxen");
-        if (oraxenPlugin != null && oraxenPlugin.isEnabled()) {
-            oraxenVersion = oraxenPlugin.getDescription().getVersion();
-            try {
-                oraxenIntegration = new OraxenIntegration();
-                hasOraxen = true;
-                plugin.getLogger().info("  ✔ Oraxen v" + oraxenVersion + " — hooked");
-            } catch (Exception e) {
-                plugin.getLogger().warning("  ✘ Oraxen v" + oraxenVersion + " found but hook failed: " + e.getMessage());
-            }
-        } else {
+        oraxenVersion = getPluginVersion("io.th0rgal.oraxen.api.OraxenItems", "Oraxen");
+        try {
+            Class.forName("io.th0rgal.oraxen.api.OraxenItems");
+            oraxenIntegration = new OraxenIntegration();
+            hasOraxen = true;
+            plugin.getLogger().info("  ✔ Oraxen" + (oraxenVersion != null ? " v" + oraxenVersion : "") + " — hooked");
+        } catch (Exception e) {
             plugin.getLogger().info("  ○ Oraxen — not detected");
         }
 
         // ── Check ItemsAdder ──
-        var itemsAdderPlugin = Bukkit.getPluginManager().getPlugin("ItemsAdder");
-        if (itemsAdderPlugin != null && itemsAdderPlugin.isEnabled()) {
-            itemsAdderVersion = itemsAdderPlugin.getDescription().getVersion();
-            try {
-                itemsAdderIntegration = new ItemsAdderIntegration();
-                hasItemsAdder = true;
-                plugin.getLogger().info("  ✔ ItemsAdder v" + itemsAdderVersion + " — hooked");
-            } catch (Exception e) {
-                plugin.getLogger().warning("  ✘ ItemsAdder v" + itemsAdderVersion + " found but hook failed: " + e.getMessage());
-            }
-        } else {
+        itemsAdderVersion = getPluginVersion("dev.lone.itemsadder.api.CustomStack", "ItemsAdder");
+        try {
+            Class.forName("dev.lone.itemsadder.api.CustomStack");
+            itemsAdderIntegration = new ItemsAdderIntegration();
+            hasItemsAdder = true;
+            plugin.getLogger().info("  ✔ ItemsAdder" + (itemsAdderVersion != null ? " v" + itemsAdderVersion : "") + " — hooked");
+        } catch (Exception e) {
             plugin.getLogger().info("  ○ ItemsAdder — not detected");
         }
 
         // ── Check ExecutableItems ──
-        var eiPlugin = Bukkit.getPluginManager().getPlugin("ExecutableItems");
-        if (eiPlugin != null && eiPlugin.isEnabled()) {
-            executableItemsVersion = eiPlugin.getDescription().getVersion();
-            try {
-                executableItemsIntegration = new ExecutableItemsIntegration();
-                hasExecutableItems = true;
-                plugin.getLogger().info("  ✔ ExecutableItems v" + executableItemsVersion + " — hooked");
-            } catch (Exception e) {
-                plugin.getLogger().warning("  ✘ ExecutableItems v" + executableItemsVersion + " found but hook failed: " + e.getMessage());
-            }
-        } else {
+        executableItemsVersion = getPluginVersion("com.ssomar.executableitems.api.ExecutableItemsAPI", "ExecutableItems");
+        try {
+            Class.forName("com.ssomar.executableitems.api.ExecutableItemsAPI");
+            executableItemsIntegration = new ExecutableItemsIntegration();
+            hasExecutableItems = true;
+            plugin.getLogger().info("  ✔ ExecutableItems" + (executableItemsVersion != null ? " v" + executableItemsVersion : "") + " — hooked");
+        } catch (Exception e) {
             plugin.getLogger().info("  ○ ExecutableItems — not detected");
         }
+    }
+
+    /**
+     * Tìm version của plugin từ classpath bằng cách scan Bukkit plugins.
+     */
+    private String getPluginVersion(String className, String fallbackName) {
+        try {
+            Class<?> cls = Class.forName(className);
+            var packageInfo = cls.getPackage();
+            if (packageInfo != null) {
+                String implVersion = packageInfo.getImplementationVersion();
+                if (implVersion != null) return implVersion;
+            }
+        } catch (Exception ignored) {}
+
+        // Fallback: scan plugin name
+        try {
+            var plugin = Bukkit.getPluginManager().getPlugin(fallbackName);
+            if (plugin != null) return plugin.getDescription().getVersion();
+        } catch (Exception ignored) {}
+
+        return null;
     }
 
     /**
