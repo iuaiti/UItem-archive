@@ -21,6 +21,7 @@ com/uitem/chat/ChatInputManager$ChatInputRequest.class
 com/uitem/api/events/UItemCancellableEvent.class
 com/uitem/api/events/UItemCreateEvent.class
 com/uitem/gui/FlagGui.class
+com/uitem/UItemPlugin$2.class
 com/uitem/api/events/UItemPickupEvent.class
 com/uitem/gui/RecipeDetailGui.class
 com/uitem/UItemData.class

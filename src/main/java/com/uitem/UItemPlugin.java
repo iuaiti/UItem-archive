@@ -19,7 +19,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerResourcePackStatusEvent;
+import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.event.HandlerList;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.IOException;
@@ -120,6 +122,9 @@ public final class UItemPlugin extends JavaPlugin {
 
         // Đăng ký join listener sau cùng
         registerResourcePackJoinListener();
+
+        // Bắt plugin enable để re-detect integrations nếu plugin tới sau
+        registerIntegrationEnableListener();
     }
 
     @Override
@@ -244,6 +249,21 @@ public final class UItemPlugin extends JavaPlugin {
             }
         };
         getServer().getPluginManager().registerEvents(resourcePackJoinListener, this);
+    }
+
+    private void registerIntegrationEnableListener() {
+        getServer().getPluginManager().registerEvents(new Listener() {
+            @EventHandler
+            public void onPluginEnable(PluginEnableEvent event) {
+                Plugin p = event.getPlugin();
+                String name = p.getName();
+                if (name.equals("Oraxen") || name.equals("ItemsAdder") || name.equals("SCore") || name.equals("ExecutableItems")) {
+                    getLogger().info("[UItem] Detected " + name + " enabling — re-checking integrations...");
+                    integrationManager.detectIntegrations();
+                    getLogger().info("[UItem] Integrations: " + integrationManager.getStatus());
+                }
+            }
+        }, this);
     }
 
     public static UItemPlugin getInstance() {
