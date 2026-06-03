@@ -37,9 +37,9 @@
 | `/uitem rp export` | Export resource pack zip | `uitem.reload` |
 | `/uitem rp apply` | Apply pack to player | `uitem.reload` |
 | `/uitem rp status` | View RP status | `uitem.reload` |
-| `/uitem craft` | Open crafting table | * |
+| `/uitem craft` | Open crafting table | `craft` / `uitem.craft` |
+| `/uitem potion` | Open Potion Studio | `uitem.potion` |
 | `/uitem check` | Check held item | * |
-| `/uitem passive` | Open Passive Studio (GUI) | `uitem.passive` |
 | `/uitem help` | Show help | * |
 
 ### `/crafting` (alias: `/craft`)
@@ -61,10 +61,10 @@
 | `uitem.reload` | op | Reload + resource pack management |
 | `uitem.search` | op | Search items in GUI |
 | `uitem.craft` | op | Open crafting table |
-| `uitem.passive` | op | Passive Studio |
-| `uitem.passive.create` | op | Create passives |
-| `uitem.passive.edit` | op | Edit passives |
-| `uitem.passive.delete` | op | Delete passives |
+| `uitem.potion` | op | Potion Studio |
+| `uitem.potion.create` | op | Create potions |
+| `uitem.potion.edit` | op | Edit potions |
+| `uitem.potion.delete` | op | Delete potions |
 
 ---
 
@@ -319,12 +319,16 @@ Edit all properties of a single item:
 
 ---
 
-## ⚡ Passive Studio
+## ⚡ Item abilities / triggers
 
-GUI-based automations (trigger → conditions → actions). No config editing required.
+Attach rules per item or potion via GUI (**Ky nang / Trigger** in Item Editor).
 
-- Open: `/uitem passive`
-- Guide: [docs/HUONG-DAN.md § Passive Studio](docs/HUONG-DAN.md#6-passive-studio-hành-động-tự-động)
+- Triggers: hit, kill, damage taken, clicks, equip, drink (potions)
+- Guide: [docs/HUONG-DAN.md](docs/HUONG-DAN.md) (sections 6–7)
+
+## 🧪 Potion Studio
+
+- `/uitem potion` — custom potions, ON_DRINK abilities, recipe ingredients
 
 ---
 

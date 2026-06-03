@@ -258,7 +258,7 @@ public class UItemManager {
     }
 
     /**
-     * Preview trong GUI admin — co the hien ID / material / CMD.
+     * Preview trong GUI admin — có thể hiện ID / material / CMD.
      */
     public ItemStack buildPreviewItemStack(UItemData data, boolean showAdminMeta) {
         ItemStack item = buildItemStack(data);
@@ -275,10 +275,10 @@ public class UItemManager {
             lore.add(miniMessage.deserialize("<gray>ID: <white>" + data.getId()));
             Material previewMaterial = data.getMaterial() != null ? data.getMaterial() : Material.STONE;
             lore.add(miniMessage.deserialize("<gray>Material: <white>" + previewMaterial.name()));
-            lore.add(miniMessage.deserialize("<gray>CMD: <white>" + (data.getCustomModelData() > 0 ? data.getCustomModelData() : "Khong")));
+            lore.add(miniMessage.deserialize("<gray>CMD: <white>" + (data.getCustomModelData() > 0 ? data.getCustomModelData() : "Không")));
             lore.add(miniMessage.deserialize("<dark_gray>──────────────"));
-            lore.add(miniMessage.deserialize("<yellow>Click trai: <white>Chinh sua"));
-            lore.add(miniMessage.deserialize("<red>Click phai: <white>Xoa"));
+            lore.add(miniMessage.deserialize("<yellow>Click trái: <white>Chỉnh sửa"));
+            lore.add(miniMessage.deserialize("<red>Click phải: <white>Xóa"));
             meta.lore(lore);
             item.setItemMeta(meta);
         }

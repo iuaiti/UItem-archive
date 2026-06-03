@@ -33,17 +33,19 @@ minimessage-support: true
 
 # Integration settings
 
-# Hien thi item cho nguoi choi (khong phai GUI admin)
+# Display settings for items shown to players (not admin GUIs)
 display:
-  # Khong gan dong "ID: ..." / Material / CMD vao lore khi give, craft, pickup
+  # Do not append "ID: ..." / Material / CMD lines into lore on give, craft, pickup
   hide-item-id-in-game: true
-  # Chi hien thong tin ky thuat trong GUI admin (Item Library preview)
+  # Only show technical info inside admin GUI (Item Library preview)
   show-id-in-editor-preview: true
 
-# Ban che tao (/craft, /crafting) — giao dien giong ban che tao vanilla
+# Crafting GUI (/craft, /crafting craft) — titles follow language: en / vi
 craft:
-  # Tieu de GUI (MiniMessage hoac text thuan; de trong = "Ban che tao")
-  gui-title: "<white>Ban che tao"
+  gui-title-en: "<white>Crafting Table"
+  gui-title-vi: "<white>Bàn chế tạo"
+  # Legacy single key (used if locale-specific key is empty)
+  gui-title: ""
   vanilla-style: true
 
 # GUI search configuration
@@ -75,8 +77,7 @@ integration:
 debug: false
 
 # Resource pack engine (Oraxen / ItemsAdder style ~90%)
-# EN: drop textures in plugins/UItem/textures/<id>.png
-# VI: dat texture tai plugins/UItem/textures/<id>.png
+# Drop textures in plugins/UItem/textures/<id>.png
 # External packs: plugins/UItem/packs/import/*.zip
 resourcepack:
   auto-generate: true
@@ -85,7 +86,7 @@ resourcepack:
   generate-on-item-save: false
   server-port: 9732
   kick-on-fail: true
-  kick-message: "Không tải được resource packs, vui lòng vào lại\nUnable to load resource packs, please rejoin"
+  kick-message: "Unable to load resource packs, please rejoin"
   url: ""
   source-texture-folder: "textures"
   texture-search-folders:
@@ -105,7 +106,7 @@ resourcepack:
   output-zip: "UItem-ResourcePack.zip"
   description:
     en: "UItem Custom Pack | Premium items"
-    vi: "Goi tai nguyen UItem | Item cao cap"
+    vi: "Gói tài nguyên UItem | Item cao cấp"
   cmd:
     storage-file: "custom_model_data.yml"
 

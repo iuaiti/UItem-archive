@@ -1,6 +1,6 @@
 # UItem — Hướng dẫn sử dụng (GUI-first)
 
-> **Phiên bản:** 1.0.0 · **Tác giả:** iuaititi · **Paper** 1.21.4+ · **Java** 21  
+> **Phiên bản:** 1.0.0 · **Tác giả:** iuaititi · **Paper** 1.21.4 – 1.26.2 · **Folia** ✔ · **Java** 21  
 > **Giấy phép:** [All Rights Reserved](../LICENSE) — xem [GIAY-PHEP.md](GIAY-PHEP.md)
 
 Tài liệu này hướng dẫn **cách dùng trong game**, ưu tiên **GUI**, không bắt buộc sửa file config tay.
@@ -14,22 +14,23 @@ Tài liệu này hướng dẫn **cách dùng trong game**, ưu tiên **GUI**, k
 3. [Tạo Custom Item](#3-tạo-custom-item)
 4. [Resource Pack](#4-resource-pack)
 5. [Recipe & Crafting](#5-recipe--crafting)
-6. [Passive Studio](#6-passive-studio-hành-động-tự-động)
-7. [Quyền (Permissions)](#7-quyền-permissions)
-8. [Lệnh nhanh](#8-lệnh-nhanh)
-9. [Cấu trúc thư mục](#9-cấu-trúc-thư-mục)
-10. [Xử lý lỗi thường gặp](#10-xử-lý-lỗi-thường-gặp)
+6. [Kỹ năng / Trigger (item & potion)](#6-kỹ-năng--trigger-item--potion)
+7. [Potion Studio](#7-potion-studio)
+8. [Quyền (Permissions)](#8-quyền-permissions)
+9. [Lệnh nhanh](#9-lệnh-nhanh)
+10. [Cấu trúc thư mục](#10-cấu-trúc-thư-mục)
+11. [Xử lý lỗi thường gặp](#11-xử-lý-lỗi-thường-gặp)
 
 ---
 
 ## 1. Cài đặt
 
-1. Build hoặc lấy file `UItem.jar`.
+1. Build hoặc lấy file `UItem.jar` (chỉ dùng `plugin.yml`, **không** đặt `paper-plugin.yml` trong JAR).
 2. Copy vào `plugins/`.
-3. Khởi động server (Paper **1.21.4 – 1.26.2** hoặc **Folia** cùng dải phiên bản, Java 21).
+3. Khởi động server (Paper **1.21.4 – 1.26.2** hoặc **Folia**, Java 21).
 4. Thư mục tự tạo: `plugins/UItem/`.
 
-**Tùy chọn (tự nhận nếu có):** Oraxen, ItemsAdder, ExecutableItems.
+**Tùy chọn (tự nhận nếu có):** Oraxen, Nexo, ItemsAdder, ExecutableItems.
 
 ---
 
@@ -38,10 +39,10 @@ Tài liệu này hướng dẫn **cách dùng trong game**, ưu tiên **GUI**, k
 | Cách | Lệnh / Thao tác |
 |------|------------------|
 | Menu Studio | `/uitem editor` hoặc `/ui editor` |
-| Passive | `/uitem passive` hoặc nút **Passive Studio** trong hub |
-| Craft | `/craft` (cần quyền `craft`) |
+| Potion Studio | `/uitem potion` (hub → nút Brewing Stand) |
+| Craft | `/craft` hoặc `/uitem craft` (cần quyền `craft`) |
 
-Hub hiển thị: Item Library, Recipes, Resource Pack, Crafting, **Passive Studio**, tạo item mới.
+Hub hiển thị: Item Library, Recipes, Resource Pack, Crafting, Integrations, Potion Studio, tạo item mới.
 
 ---
 
@@ -49,217 +50,142 @@ Hub hiển thị: Item Library, Recipes, Resource Pack, Crafting, **Passive Stud
 
 ### Bước 1 — Tạo ID
 
-1. Mở hub → **+ New Item** (hoặc Item Library → tạo mới).
-2. Chat nhập ID: chỉ `a-z`, `0-9`, `_` (ví dụ: `ruby_sword`).
+Hub → **+ New Item** → nhập ID (chữ thường, `a-z`, `0-9`, `_`).
 
-### Bước 2 — Chỉnh trong Item Editor
+### Bước 2 — Chỉnh thuộc tính (Item Editor)
 
-| Nút GUI | Ý nghĩa |
-|---------|---------|
-| Material | Chọn block/item gốc |
-| Name / Lore | MiniMessage (`<green>`, `<bold>`, gradient…) |
-| Enchant / Flags | Phù phép, ẩn tooltip |
-| CMD | Custom Model Data (texture pack) |
-| Attributes | Sát thương, giáp, tốc độ… |
-| Rarity | Độ hiếm hiển thị |
+| Nút | Chức năng |
+|-----|-----------|
+| Material, Name, Lore | Hiển thị cơ bản |
+| Enchant / Flags / CMD | Enchant, ẩn tooltip, texture |
+| Attributes, Rarity | Chỉ số, độ hiếm |
+| Oraxen / Nexo / IA / EI ID | Lấy model từ plugin ngoài |
+| Recipe | Công thức chế tạo (có thể dùng **UItem potion** làm nguyên liệu) |
+| **Ky nang / Trigger** | Kỹ năng khi đánh, click, mặc đồ, … |
 
-Lưu tự động vào `plugins/UItem/items/<id>.yml` (không cần sửa tay).
-
-### Bước 3 — Give thử
-
-```
-/uitem give ruby_sword
-/uitem give ruby_sword TenNguoiChoi 1
-```
+Lưu → file `plugins/UItem/items/<id>.yml`.
 
 ---
 
 ## 4. Resource Pack
 
-### Cách nhanh (GUI)
+- Hub → **Resource Pack** hoặc `/uitem rp gui`
+- **Build** — generate + export zip
+- **Send all** — gửi pack cho người online
+- Texture: `plugins/UItem/textures/` · Import zip: `packs/import/`
 
-1. Hub → **Resource Pack** (hoặc `/uitem rp gui`).
-2. **BUILD PACK** — generate + merge + export zip.
-3. Bật trong `config.yml`:
-   - `resourcepack.auto-host: true` — host local
-   - `resourcepack.auto-apply: true` — gửi pack khi join
-
-### Texture
-
-- Đặt PNG: `plugins/UItem/textures/<ten>.png`
-- Pack ngoài: `plugins/UItem/packs/import/*.zip`
-
-### Lệnh
-
-| Lệnh | Việc làm |
-|------|----------|
-| `/uitem rp build` | Build đầy đủ |
-| `/uitem rp export` | Xuất zip |
-| `/uitem rp sendall` | Gửi cho online |
-| `/uitem rp status` | Xem URL, hash, CMD |
+Cấu hình: `config.yml` → `resourcepack.*` (`pack-format: -1` = tự khớp phiên bản server).
 
 ---
 
 ## 5. Recipe & Crafting
 
 1. **Item Editor** → mục recipe (hoặc Recipe list từ hub).
-2. Đặt nguyên liệu trên lưới 3×3, chọn kết quả.
-3. Player mở `/craft` để craft (cần quyền).
+2. Đặt nguyên liệu trên lưới 3×3; chọn **UItem**, **potion**, hoặc material vanilla.
+3. Player mở `/craft` để chế tạo (GUI tiêu đề vanilla, không lộ ID item).
 
 File lưu: `plugins/UItem/recipes/<id>.yml`
 
 ---
 
-## 6. Passive Studio (hành động tự động)
+## 6. Kỹ năng / Trigger (item & potion)
 
-Passive = **Khi nào** + **Điều kiện** + **Làm gì**.  
-Toàn bộ tạo bằng **wizard 5 bước**, không cần học YAML.
+Gắn trực tiếp vào **từng item** hoặc **potion** (không còn Passive Studio riêng).
 
-### Mở Passive Studio
+### Mở editor
 
-- `/uitem passive`
-- Hub → **Passive Studio** (BEACON)
+- **Item:** Item Editor → **Ky nang / Trigger**
+- **Potion:** Potion Editor → mục kỹ năng tương tự
 
-### Wizard 5 bước
+### Mỗi rule gồm
 
-```
-① Khi nào  →  ② Điều kiện  →  ③ Hành động  →  ④ Xem trước  →  ⑤ Lưu
-```
+| Thành phần | Mô tả |
+|------------|--------|
+| **Trigger** | ON_HIT, ON_KILL, ON_DAMAGE_TAKEN, ON_RIGHT/LEFT_CLICK, ON_EQUIP, ON_DRINK (potion) |
+| **Vị trí** | Tay chính, tay phụ, giáp, … |
+| **Cooldown / Chance %** | Giới hạn tần suất |
+| **Hành động** | DAMAGE, HEAL, POTION, LIGHTNING, THORNS, KNOCKBACK, MESSAGE, COMMAND |
 
-#### Bước 1 — Khi nào kích hoạt?
-
-Chọn một trigger, ví dụ:
-
-| Trigger | Ý nghĩa |
-|---------|---------|
-| Khi đập block | Đập block |
-| Khi đặt block | Đặt block |
-| Khi giết entity | Kill mob/player |
-| Khi vào server | Join |
-| Khi chat / lệnh | Chat hoặc command |
-| Khi câu / craft / enchant | … |
-
-#### Bước 2 — Điều kiện (tùy chọn)
-
-- Nút **+** → chọn loại (World, Block, Chance %, Permission, Máu, …).
-- Click từng dòng để **sửa giá trị** (chat hoặc nút %).
-- **Shift + click** → xóa điều kiện.
-- **Nâng cao** → ALL / ANY / NOT, cooldown toàn passive, delay.
-
-Không thêm điều kiện = **luôn chạy** khi trigger kích hoạt.
-
-#### Bước 3 — Hành động
-
-- Nút **+** → Give item, Heal, Message, Command, Sound, Title, …
-- Thứ tự trên GUI = thứ tự chạy.
-
-#### Bước 4 — Xem trước
-
-Đọc tóm tắt dạng:
-
-```
-Khi: Đập block
-Nếu (tất cả): Block = STONE, Tỉ lệ = 5%
-Thì: Cho DIAMOND x1
-```
-
-#### Bước 5 — Lưu
-
-- Nhập **ID** (vd: `stone_diamond`).
-- Tùy chọn **tên hiển thị**.
-- File tự lưu: `plugins/UItem/passives/<id>.yml`
-
-### Ví dụ có sẵn
-
-`stone_diamond` — đập **STONE**, **5%** nhận **DIAMOND** (tự copy lần đầu chạy).
-
-### Quản lý danh sách
-
-**Danh sách Passive**:
-
-| Thao tác | Cách |
-|----------|------|
-| Sửa | Click trái |
-| Xóa | Click phải → xác nhận |
-| Nhân bản | Shift + click trái → nhập ID mới |
-
-### Nâng cao (ẩn trong menu Nâng cao)
-
-| Tính năng | Mô tả |
-|-----------|--------|
-| ALL / ANY / NOT | Cách gộp nhiều điều kiện |
-| Cooldown (giây) | Chờ giữa mỗi lần chạy passive |
-| Chance % toàn passive | Tỉ lệ trước khi check điều kiện |
-| Delay (tick) | Trễ trước khi chạy chuỗi action |
-
-### YAML (chỉ để đọc / backup)
-
-GUI tự ghi, ví dụ:
+### YAML (trong file item/potion)
 
 ```yaml
-when:
-  trigger: block_break
-if:
-  mode: ALL
-  list:
-    - type: block_type
-      block: STONE
-    - type: chance
-      percent: 5
-then:
-  - type: give_item
-    material: DIAMOND
-    amount: 1
+abilities:
+  enabled: true
+  rules:
+    - trigger: ON_HIT
+      slot: EITHER_HAND
+      cooldown: 2
+      chance: 100
+      actions:
+        a0:
+          type: DAMAGE
+          params:
+            amount: "5"
 ```
 
-**Không bắt buộc** sửa file tay; sau khi sửa YAML, chạy `/uitem reload`.
+Sau khi sửa tay: `/uitem reload`.
+
+**ExecutableItems:** nếu item có `executableitems-id`, kỹ năng phức tạp nên để EI xử lý.
 
 ---
 
-## 7. Quyền (Permissions)
+## 7. Potion Studio
+
+| Lệnh | Mô tả |
+|------|--------|
+| `/uitem potion` | Hub potion |
+
+- Tạo / sửa potion uống, splash, lingering
+- Hiệu ứng, màu, lore, kỹ năng ON_DRINK
+- Dùng làm **nguyên liệu recipe** cho item khác
+
+File: `plugins/UItem/potions/<id>.yml`
+
+---
+
+## 8. Quyền (Permissions)
 
 | Quyền | Mô tả |
 |--------|--------|
 | `uitem.admin` | Toàn quyền (OP mặc định) |
 | `uitem.editor` | Mở editor item |
-| `uitem.give` | Give item |
+| `uitem.give` | Give item / potion |
 | `uitem.reload` | Reload + RP |
-| `uitem.passive` | Passive Studio |
-| `uitem.passive.create` | Tạo passive |
-| `uitem.passive.edit` | Sửa passive |
-| `uitem.passive.delete` | Xóa passive |
+| `uitem.search` | Tìm trong Item Library |
+| `uitem.potion` | Potion Studio |
+| `uitem.potion.create` / `.edit` / `.delete` | CRUD potion |
 | `craft` / `uitem.craft` | Bàn craft |
 
 LuckPerms ví dụ:
 
 ```
-/lp user <player> permission set uitem.passive true
+/lp user <player> permission set uitem.editor true
 /lp user <player> permission set craft true
 ```
 
 ---
 
-## 8. Lệnh nhanh
+## 9. Lệnh nhanh
 
 ```
 /uitem help
 /uitem list
 /uitem reload
-/uitem passive
+/uitem potion
 /uitem rp build
 /craft
 ```
 
 ---
 
-## 9. Cấu trúc thư mục
+## 10. Cấu trúc thư mục
 
 ```
 plugins/UItem/
 ├── config.yml
-├── items/           # Mỗi item một file .yml
+├── items/           # Mỗi item một file .yml (abilities: trong file item)
+├── potions/         # Custom potions
 ├── recipes/
-├── passives/        # Passive Studio
 ├── textures/        # PNG cho resource pack
 ├── packs/import/    # Zip pack ngoài
 └── resourcepack/    # Pack đã generate
@@ -267,21 +193,17 @@ plugins/UItem/
 
 ---
 
-## 10. Xử lý lỗi thường gặp
+## 11. Xử lý lỗi thường gặp
 
 | Triệu chứng | Gợi ý |
 |-------------|--------|
-| Không mở được GUI | Kiểm tra quyền `uitem.editor` / `uitem.passive` |
-| Passive không chạy | `/uitem reload`; xem `enabled: true`; tỉ lệ % / cooldown |
+| Plugin không enable, lỗi `getCommand` | Xóa `paper-plugin.yml` khỏi JAR; chỉ dùng `plugin.yml` |
+| Không mở được GUI | Quyền `uitem.editor` / `uitem.potion` |
+| Kỹ năng không chạy | `/uitem reload`; bật `abilities.enabled: true`; kiểm tra cooldown/chance |
 | Resource pack không tải | `/uitem rp status`; set `resourcepack.url` hoặc bật auto-host |
 | Build lỗi Java | Server cần **Java 21** |
 | Chat input bị kẹt | Gõ `cancel` để hủy nhập |
 
 ---
 
-## Liên hệ & bản quyền
-
-- **All Rights Reserved** — không redistribute file `.jar`.
-- Báo leak: **huy594481@gmail.com**
-
-*Bản tiếng Anh tóm tắt: [README.md](../README.md)*
+© 2026 iuaititi · [LICENSE](../LICENSE)

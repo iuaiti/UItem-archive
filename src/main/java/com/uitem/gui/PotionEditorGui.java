@@ -33,8 +33,8 @@ public class PotionEditorGui extends AbstractGui {
 
         setItem(10, createItem(Material.NAME_TAG, Messages.potionFieldName(),
                 List.of(
-                        "<gray>Hien tai: " + data.getDisplayName(),
-                        "<yellow>Click de doi ten (MiniMessage)"
+                        "<gray>Hiện tại: " + data.getDisplayName(),
+                        "<yellow>Click để đổi tên (MiniMessage)"
                 )), ev -> plugin.getChatInputManager().requestInput(player,
                 Messages.potionPromptName(), input -> {
                     data.setDisplayName(input);
@@ -43,9 +43,9 @@ public class PotionEditorGui extends AbstractGui {
 
         setItem(11, createItem(Material.WRITABLE_BOOK, Messages.potionFieldLore(),
                 List.of(
-                        "<gray>Dong: <white>" + data.getLore().size(),
-                        "<yellow>Click de them 1 dong lore",
-                        "<gray>Go 'clear' de xoa het lore"
+                        "<gray>Dòng: <white>" + data.getLore().size(),
+                        "<yellow>Click để thêm 1 dòng lore",
+                        "<gray>Gõ 'clear' để xóa hết lore"
                 )), ev -> plugin.getChatInputManager().requestInput(player,
                 Messages.potionPromptLore(), input -> {
                     if (input.equalsIgnoreCase("clear")) {
@@ -74,7 +74,7 @@ public class PotionEditorGui extends AbstractGui {
                 List.of(
                         "<gray>RGB: <white>" + r + ", " + g + ", " + b,
                         "<gray>Hex: <white>#" + String.format("%06X", data.getColorRgb()),
-                        "<yellow>Click: nhap #RRGGBB hoac r,g,b"
+                        "<yellow>Click: nhập #RRGGBB hoặc r,g,b"
                 )), ev -> plugin.getChatInputManager().requestInput(player,
                 Messages.potionPromptColor(), input -> {
                     int parsed = parseColorInput(input, data.getColorRgb());
@@ -84,16 +84,16 @@ public class PotionEditorGui extends AbstractGui {
 
         setItem(14, createItem(Material.BLAZE_POWDER, Messages.potionFieldEffects(),
                 List.of(
-                        "<gray>So hieu ung: <white>" + data.getEffects().size(),
-                        "<yellow>Click de quan ly hieu ung"
+                        "<gray>Số hiệu ứng: <white>" + data.getEffects().size(),
+                        "<yellow>Click để quản lý hiệu ứng"
                 )), ev -> new PotionEffectsGui(plugin, player, data).open());
 
         setItem(15, createItem(
                 data.isGlowing() ? Material.GLOWSTONE_DUST : Material.GUNPOWDER,
                 Messages.potionFieldGlow(),
                 List.of(
-                        "<gray>Trang thai: " + (data.isGlowing() ? "<green>Bat" : "<red>Tat"),
-                        "<yellow>Click de bat/tat"
+                        "<gray>Trạng thái: " + (data.isGlowing() ? "<green>BẬT" : "<red>TẮT"),
+                        "<yellow>Click để bật/tắt"
                 )), ev -> {
             data.setGlowing(!data.isGlowing());
             saveAndReopen();
@@ -102,41 +102,27 @@ public class PotionEditorGui extends AbstractGui {
         setItem(16, createItem(
                 data.isAbilitiesEnabled() && !data.getAbilities().isEmpty()
                         ? Material.SPLASH_POTION : Material.POTION,
-                "<gold><bold>Ky nang / Trigger</bold>",
+                "<gold><bold>Kỹ năng / Trigger</bold>",
                 List.of(
-                        "<gray>Trang thai: " + (data.isAbilitiesEnabled() ? "<green>BAT" : "<red>TAT"),
-                        "<gray>So rule: <white>" + data.getAbilities().size(),
+                        "<gray>Trạng thái: " + (data.isAbilitiesEnabled() ? "<green>BẬT" : "<red>TẮT"),
+                        "<gray>Số rule: <white>" + data.getAbilities().size(),
                         "",
-                        "<yellow>Click <gray>mo studio ky nang potion",
-                        "<gray>Cam tay danh, uong, bi danh, phan sat..."
+                        "<yellow>Click <gray>mở studio kỹ năng potion",
+                        "<gray>Cầm tay đánh, uống, bị đánh, phản sát..."
                 )), ev -> AbilityListGui.forPotion(plugin, player, data).open());
 
         setItem(22, GuiTheme.actionPrimary(Material.LIME_CONCRETE, Messages.potionSave(),
-                "<gray>Luu vao plugins/UItem/potions/"), ev -> {
+                "<gray>Lưu vào plugins/UItem/potions/"), ev -> {
             plugin.getPotionManager().save(data);
             player.sendMessage(TextUtil.success(Messages.potionSaved(data.getId())));
             GuiFeedback.success(player);
             saveAndReopen();
         });
 
-        List<String> usedIn = plugin.getRecipeManager().findRecipesUsingPotionIngredient(data.getId());
-        if (!usedIn.isEmpty()) {
-            List<String> chainLore = new ArrayList<>();
-            chainLore.add("<gray>Dung lam NL che item:");
-            int show = Math.min(4, usedIn.size());
-            for (int i = 0; i < show; i++) {
-                chainLore.add("<white>• " + usedIn.get(i));
-            }
-            if (usedIn.size() > show) {
-                chainLore.add("<dark_gray>... +" + (usedIn.size() - show));
-            }
-            setItem(40, createItem(Material.CRAFTING_TABLE, "<yellow>Che tao item", chainLore));
-        }
-
         setItem(45, createHomeButton(), ev -> new PotionHubGui(plugin, player).open());
         setItem(46, createBackButton(), ev -> new PotionListGui(plugin, player).open());
         setItem(49, GuiTheme.actionSecondary(Material.ENDER_PEARL, Messages.potionGiveSelf(),
-                "<gray>Nhan thu 1 binh de test"), ev -> {
+                "<gray>Nhấn thử 1 bình để test"), ev -> {
             ItemStack potion = plugin.getPotionManager().buildItemStack(data);
             for (ItemStack left : player.getInventory().addItem(potion).values()) {
                 player.getWorld().dropItemNaturally(player.getLocation(), left);

@@ -47,6 +47,9 @@ public class UItemData implements AbilityHolder {
     private boolean abilitiesEnabled = true;
     private List<ItemAbilityRule> abilities = new ArrayList<>();
 
+    /** Potion UItem gan vao item — dung item se ap hieu ung potion nay (khong phai NL recipe). */
+    private String linkedPotionId;
+
     public UItemData(String id) {
         this.id = id;
         this.material = Material.STONE;
@@ -249,6 +252,15 @@ public class UItemData implements AbilityHolder {
         this.abilities = abilities != null ? new ArrayList<>(abilities) : new ArrayList<>();
     }
 
+    public String getLinkedPotionId() {
+        return linkedPotionId;
+    }
+
+    public void setLinkedPotionId(String linkedPotionId) {
+        this.linkedPotionId = linkedPotionId != null && !linkedPotionId.isBlank()
+                ? linkedPotionId.trim() : null;
+    }
+
     /**
      * Deep clone UItemData.
      */
@@ -281,6 +293,7 @@ public class UItemData implements AbilityHolder {
         for (ItemAbilityRule rule : this.abilities) {
             clone.abilities.add(rule.copy());
         }
+        clone.linkedPotionId = this.linkedPotionId;
         return clone;
     }
 

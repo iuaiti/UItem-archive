@@ -6,6 +6,7 @@ folia-supported: true
 description: Ultimate Item - Custom items for Paper 1.21.4 through 1.26.2 (Folia supported)
 author: iuaititi
 softdepend: [Oraxen, Nexo, ItemsAdder, SCore, ExecutableItems]
+# Commands must stay in plugin.yml (do not add paper-plugin.yml — Paper loader blocks getCommand)
 license: All Rights Reserved (DSL v1.0 - No Redistribution)
 commands:
   uitem:
@@ -36,6 +37,7 @@ permissions:
       uitem.potion.create: true
       uitem.potion.edit: true
       uitem.potion.delete: true
+      uitem.search: true
   uitem.give:
     description: Allow giving custom items
     default: op

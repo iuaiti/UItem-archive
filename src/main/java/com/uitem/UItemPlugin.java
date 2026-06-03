@@ -8,7 +8,9 @@ import com.uitem.integration.IntegrationManager;
 import com.uitem.ability.EquipAbilityFallbackListener;
 import com.uitem.ability.ItemAbilityListener;
 import com.uitem.ability.PaperEquipAbilityListener;
+import com.uitem.util.Messages;
 import com.uitem.util.ServerVersionUtil;
+import com.uitem.listener.ItemLinkedPotionListener;
 import com.uitem.listener.UItemActionListener;
 import com.uitem.rarity.RarityConfig;
 import com.uitem.recipe.RecipeManager;
@@ -30,7 +32,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Objects;
 
 public final class UItemPlugin extends JavaPlugin {
 
@@ -94,6 +95,7 @@ public final class UItemPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(guiListener, this);
         getServer().getPluginManager().registerEvents(chatInputManager, this);
         getServer().getPluginManager().registerEvents(new UItemActionListener(this), this);
+        getServer().getPluginManager().registerEvents(new ItemLinkedPotionListener(this), this);
         getServer().getPluginManager().registerEvents(new ItemAbilityListener(this), this);
         if (ServerVersionUtil.supportsEntityEquipmentChangedEvent()) {
             getServer().getPluginManager().registerEvents(new PaperEquipAbilityListener(this), this);
@@ -101,15 +103,7 @@ public final class UItemPlugin extends JavaPlugin {
             getServer().getPluginManager().registerEvents(new EquipAbilityFallbackListener(this), this);
         }
 
-        UItemCommand command = new UItemCommand(this);
-        Objects.requireNonNull(getCommand("uitem")).setExecutor(command);
-        Objects.requireNonNull(getCommand("uitem")).setTabCompleter(command);
-
-        com.uitem.command.CraftingCommand craftingCommand = new com.uitem.command.CraftingCommand(this);
-        org.bukkit.command.PluginCommand craftCmd = getCommand("crafting");
-        if (craftCmd != null) {
-            craftCmd.setExecutor(craftingCommand);
-        }
+        registerPluginCommands();
 
         // Khởi động resource pack server
         startPackServer();
@@ -194,6 +188,33 @@ public final class UItemPlugin extends JavaPlugin {
         instance = null;
     }
 
+    private void registerPluginCommands() {
+        UItemCommand uitemCommand = new UItemCommand(this);
+        if (!bindCommand("uitem", uitemCommand, uitemCommand)) {
+            getLogger().severe("[UItem] Command 'uitem' missing from plugin.yml — disable paper-plugin.yml if present.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
+        com.uitem.command.CraftingCommand craftingCommand = new com.uitem.command.CraftingCommand(this);
+        if (!bindCommand("crafting", craftingCommand, craftingCommand)) {
+            getLogger().warning("[UItem] Command 'crafting' not registered — /craft may be unavailable.");
+        }
+    }
+
+    private boolean bindCommand(String name, org.bukkit.command.CommandExecutor executor,
+                                org.bukkit.command.TabCompleter tabCompleter) {
+        org.bukkit.command.PluginCommand cmd = getCommand(name);
+        if (cmd == null) {
+            return false;
+        }
+        cmd.setExecutor(executor);
+        if (tabCompleter != null) {
+            cmd.setTabCompleter(tabCompleter);
+        }
+        return true;
+    }
+
     private void startPackServer() {
         if (!getConfig().getBoolean("resourcepack.auto-host", true)) {
             getLogger().info("[UItem] Resource pack server disabled in config.");
@@ -241,11 +262,8 @@ public final class UItemPlugin extends JavaPlugin {
                     return;
                 }
 
-                player.sendTitle(
-                        "Loading resource packs, please wait",
-                        "Loading resource packs, please wait",
-                        5, 60, 10
-                );
+                String loadingTitle = Messages.isVietnamese() ? "Đang tải resource pack, vui lòng chờ" : "Loading resource packs, please wait";
+                player.sendTitle(loadingTitle, loadingTitle, 5, 60, 10);
 
                 byte[] finalHash = hash;
                 String finalUrl = url;
@@ -266,11 +284,19 @@ public final class UItemPlugin extends JavaPlugin {
                         || status == PlayerResourcePackStatusEvent.Status.FAILED_DOWNLOAD
                         || status == PlayerResourcePackStatusEvent.Status.INVALID_URL
                         || status == PlayerResourcePackStatusEvent.Status.FAILED_RELOAD) {
-                    String kickMessage = getConfig().getString(
-                            "resourcepack.kick-message",
-                            "Không tải được resource packs, vui lòng vào lại\nUnable to load resource packs, please rejoin"
-                    );
-                    event.getPlayer().kick(Component.text(kickMessage));
+                    String kickMessage = getConfig().getString("resourcepack.kick-message", "");
+                    if (kickMessage == null || kickMessage.isBlank()) {
+                        kickMessage = Messages.rpKickMessage();
+                    }
+                    // Support MiniMessage in kick message (e.g. colors, newlines via \n or actual)
+                    String normalized = kickMessage.replace("\\n", "\n");
+                    Component kickComp;
+                    try {
+                        kickComp = com.uitem.util.TextUtil.parse(normalized);
+                    } catch (Exception e) {
+                        kickComp = Component.text(normalized);
+                    }
+                    event.getPlayer().kick(kickComp);
                 }
             }
         };

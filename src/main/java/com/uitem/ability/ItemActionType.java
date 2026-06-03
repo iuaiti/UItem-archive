@@ -1,14 +1,14 @@
 package com.uitem.ability;
 
 public enum ItemActionType {
-    DAMAGE("Sat thuong muc tieu", "amount", "5"),
-    HEAL("Hoi mau ban than", "amount", "4"),
-    POTION("Hieu ung potion", "effect", "regeneration", "duration", "5", "amplifier", "0", "target", "SELF"),
-    LIGHTNING("Set set muc tieu"),
-    THORNS("Phan sat thuong %", "percent", "25"),
-    KNOCKBACK("Dua lui muc tieu", "strength", "1.2"),
-    MESSAGE("Tin nhan", "text", "<green>Kich hoat!"),
-    COMMAND("Lenh console", "command", "say {player} activated {item}");
+    DAMAGE("Sát thương mục tiêu", "amount", "5"),
+    HEAL("Hồi máu bản thân", "amount", "4"),
+    POTION("Hiệu ứng potion", "effect", "regeneration", "duration", "5", "amplifier", "0", "target", "SELF"),
+    LIGHTNING("Sét đánh mục tiêu"),
+    THORNS("Phản sát thương %", "percent", "25"),
+    KNOCKBACK("Đẩy lùi mục tiêu", "strength", "1.2"),
+    MESSAGE("Tin nhắn", "text", "<green>Kích hoạt!"),
+    COMMAND("Lệnh console", "command", "say {player} activated {item}");
 
     private final String label;
     private final String[] defaultParams;

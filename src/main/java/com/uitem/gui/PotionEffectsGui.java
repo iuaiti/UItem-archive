@@ -49,7 +49,7 @@ public class PotionEffectsGui extends AbstractGui {
                             "<gray>Cap do: <white>" + entry.getLevelDisplay(),
                             "<gray>Thoi gian: <white>" + entry.getDurationSeconds() + "s",
                             "<yellow>Trai: sua thoi gian",
-                            "<red>Phai: xoa hieu ung"
+                            "<red>Phải: xóa hiệu ứng"
                     )), ev -> {
                 if (ev.isRightClick()) {
                     effects.remove(index);
@@ -75,14 +75,14 @@ public class PotionEffectsGui extends AbstractGui {
         }
 
         setItem(31, GuiTheme.actionPrimary(Material.EMERALD, Messages.potionAddEffect(),
-                "<gray>Chon loai hieu ung"), ev -> {
+                "<gray>Chọn loại hiệu ứng"), ev -> {
             GuiFeedback.click(player);
             new PotionEffectPickerGui(plugin, player, data).open();
         });
 
         setItem(45, createBackButton(), ev -> new PotionEditorGui(plugin, player, data).open());
         setItem(49, GuiTheme.actionPrimary(Material.LIME_CONCRETE, Messages.potionSave(),
-                "<gray>Luu potion"), ev -> {
+                "<gray>Lưu potion"), ev -> {
             plugin.getPotionManager().save(data);
             player.sendMessage(TextUtil.success(Messages.potionSaved(data.getId())));
             new PotionEditorGui(plugin, player, data).open();

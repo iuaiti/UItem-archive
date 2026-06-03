@@ -2,7 +2,7 @@ package com.uitem.ability;
 
 import java.util.List;
 
-/** Item hoac potion UItem co the gan rule ky nang. */
+/** Item hoặc potion UItem có thể gán rule kỹ năng. */
 public interface AbilityHolder {
 
     String getAbilityId();

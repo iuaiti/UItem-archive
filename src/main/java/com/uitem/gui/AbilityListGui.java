@@ -8,6 +8,7 @@ import com.uitem.ability.ItemTrigger;
 import com.uitem.potion.UPotionData;
 import com.uitem.util.GuiFeedback;
 import com.uitem.util.GuiTheme;
+import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -25,7 +26,7 @@ public class AbilityListGui extends AbstractGui {
 
     private AbilityListGui(UItemPlugin plugin, Player player, AbilityHolder holder, String kindLabel,
                            Runnable onBack, Runnable persistFull, Runnable persistMemory) {
-        super(plugin, player, 54, GuiTheme.title("Ky nang — " + holder.getAbilityId()));
+        super(plugin, player, 54, GuiTheme.title("Kỹ năng — " + holder.getAbilityId()));
         this.holder = holder;
         this.kindLabel = kindLabel;
         this.onBack = onBack;
@@ -56,13 +57,13 @@ public class AbilityListGui extends AbstractGui {
 
         setItem(4, createItem(
                 holder.isAbilitiesEnabled() ? Material.LIME_DYE : Material.GRAY_DYE,
-                "<gold><bold>Ky nang " + kindLabel + "</bold>",
+                "<gold><bold>Kỹ năng " + kindLabel + "</bold>",
                 List.of(
-                        "<gray>Trang thai: " + (holder.isAbilitiesEnabled() ? "<green>BAT" : "<red>TAT"),
-                        "<gray>So rule: <white>" + holder.getAbilities().size(),
+                        "<gray>Trạng thái: " + (holder.isAbilitiesEnabled() ? "<green>BẬT" : "<red>TẮT"),
+                        "<gray>Số rule: <white>" + holder.getAbilities().size(),
                         "",
-                        "<yellow>Click <gray>bat/tat toan bo ky nang",
-                        "<gray>Danh, giet, bi danh, uong, click..."
+                        "<yellow>Click <gray>bật/tắt toàn bộ kỹ năng",
+                        "<gray>Đánh, giết, bị đánh, uống, click..."
                 )), ev -> {
             holder.setAbilitiesEnabled(!holder.isAbilitiesEnabled());
             GuiFeedback.click(player);
@@ -75,19 +76,19 @@ public class AbilityListGui extends AbstractGui {
             ItemAbilityRule rule = rules.get(i);
             int slotIndex = i;
             List<String> lore = new ArrayList<>();
-            lore.add("<gray>Kich hoat: <white>" + rule.getTrigger().label());
-            lore.add("<gray>Vi tri: <white>" + rule.getSlot().label());
+            lore.add("<gray>Kích hoạt: <white>" + rule.getTrigger().label());
+            lore.add("<gray>Vị trí: <white>" + rule.getSlot().label());
             lore.add("<gray>CD: <white>" + rule.getCooldownSeconds() + "s");
-            lore.add("<gray>Ti le: <white>" + rule.getChancePercent() + "%");
-            lore.add("<gray>Hanh dong: <white>" + rule.getActions().size());
+            lore.add("<gray>Tỉ lệ: <white>" + rule.getChancePercent() + "%");
+            lore.add("<gray>Hành động: <white>" + rule.getActions().size());
             lore.add("");
-            lore.add("<yellow>Click <gray>sua rule");
-            lore.add("<red>Shift+Click <gray>xoa rule");
+            lore.add("<yellow>Click <gray>sửa rule");
+            lore.add("<red>Shift+Click <gray>xóa rule");
             Material icon = "potion".equals(kindLabel) ? Material.SPLASH_POTION : Material.ENCHANTED_BOOK;
             setItem(slots[i], createItem(icon, "<aqua>Rule #" + (i + 1), lore), ev -> {
                 if (ev.isShiftClick()) {
                     rules.remove(slotIndex);
-                    player.sendMessage(TextUtil.success("Da xoa rule."));
+                    player.sendMessage(TextUtil.success("Rule deleted."));
                     saveAndRefresh();
                 } else {
                     GuiFeedback.click(player);
@@ -97,8 +98,8 @@ public class AbilityListGui extends AbstractGui {
         }
 
         setItem(48, createItem(Material.EMERALD,
-                "<green><bold>+ Them rule</bold>",
-                List.of("<yellow>Click de them")), ev -> {
+                "<green><bold>+ Thêm rule</bold>",
+                List.of("<yellow>Click để thêm")), ev -> {
             ItemAbilityRule rule = new ItemAbilityRule();
             rule.setRuleId("rule_" + holder.getAbilities().size());
             rule.setTrigger("potion".equals(kindLabel) ? ItemTrigger.ON_DRINK : ItemTrigger.ON_HIT);
@@ -115,9 +116,9 @@ public class AbilityListGui extends AbstractGui {
         });
 
         setItem(49, GuiTheme.actionPrimary(Material.LIME_CONCRETE, "SAVE",
-                "<gray>Luu vao file " + kindLabel), ev -> {
+                "<gray>Lưu vào file " + kindLabel), ev -> {
             persistFull.run();
-            player.sendMessage(TextUtil.success("Da luu ky nang cho '" + holder.getAbilityId() + "'"));
+            player.sendMessage(TextUtil.success("Saved ability for '" + holder.getAbilityId() + "'"));
             GuiFeedback.success(player);
             refresh();
         });

@@ -1,11 +1,10 @@
-# UItem Documentation
+# UItem documentation
 
-| Document | Language | Description |
-|----------|----------|-------------|
-| [HUONG-DAN.md](HUONG-DAN.md) | Tiếng Việt | **Main guide** — install, items, RP, recipes, Passive Studio |
-| [GIAY-PHEP.md](GIAY-PHEP.md) | Tiếng Việt | License summary (All Rights Reserved) |
-| [../LICENSE](../LICENSE) | English | Full legal license (DSL v1.0) |
-| [../README.md](../README.md) | English | Project overview |
-| [../README-vn.md](../README-vn.md) | Tiếng Việt | Project overview (VN) |
+| File | Language | Contents |
+|------|----------|----------|
+| [HUONG-DAN.md](HUONG-DAN.md) | Vietnamese | **Main guide** — install, items, RP, recipes, abilities, potions |
+| [GIAY-PHEP.md](GIAY-PHEP.md) | Vietnamese | License summary |
 
-**Quick start:** install JAR → `/uitem editor` → create item → `/uitem passive` for automations.
+**Quick start:** install JAR → `/uitem editor` → create item → **Ky nang / Trigger** for skills → `/uitem potion` for custom potions.
+
+**Important:** ship only `plugin.yml` (no `paper-plugin.yml` in the JAR) so `/uitem` commands register on Paper 1.21.8+.

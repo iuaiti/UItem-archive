@@ -3,6 +3,7 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.util.GuiTheme;
+import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -184,7 +185,7 @@ public class MaterialPickerGui extends AbstractGui {
                 plugin.getItemManager().registerItem(data);
                 plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.0f);
-                player.sendMessage(TextUtil.success("Set material = " + materialName));
+                player.sendMessage(TextUtil.success(Messages.materialSet(materialName)));
                 if (callback != null) callback.accept(materialName);
             });
         }

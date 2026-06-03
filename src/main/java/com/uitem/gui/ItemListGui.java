@@ -87,7 +87,7 @@ public class ItemListGui extends AbstractGui {
                     Messages.guiSearchHint1(),
                     Messages.guiSearchHint2(),
                     query != null && !query.isBlank()
-                            ? "<gray>Dang loc: <white>" + query : "<gray>Tim: id, ten, rarity, material"), event -> {
+                            ? "<gray>Đang lọc: <white>" + query : "<gray>Tìm: id, tên, rarity, material"), event -> {
                 GuiFeedback.click(player);
                 plugin.getChatInputManager().requestInput(player,
                         Messages.guiSearchPrompt(),
@@ -150,24 +150,24 @@ public class ItemListGui extends AbstractGui {
         UItemManager manager = plugin.getItemManager();
         String id = input.toLowerCase().replaceAll("[^a-z0-9_]", "_");
         if (id.isEmpty()) {
-            player.sendMessage(TextUtil.error("Invalid ID!"));
+            player.sendMessage(TextUtil.error(Messages.invalidId()));
             new ItemListGui(plugin, player, page).open();
             return;
         }
         if (manager.hasItem(id)) {
-            player.sendMessage(TextUtil.error("Item '" + id + "' already exists!"));
+            player.sendMessage(TextUtil.error(Messages.itemAlreadyExists(id)));
             new ItemListGui(plugin, player, page).open();
             return;
         }
         UItemData newData = new UItemData(id);
         boolean created = com.uitem.api.UItemAPI.get().registerItem(newData, player);
         if (!created) {
-            player.sendMessage(TextUtil.error("Cannot create item '" + id + "' (blocked by another plugin)."));
+            player.sendMessage(TextUtil.error(Messages.cannotCreateBlocked(id)));
             new ItemListGui(plugin, player, page).open();
             return;
         }
         plugin.getResourcePackManager().syncCmdsToLiveItems();
-        player.sendMessage(TextUtil.success("Created item '" + id + "'!"));
+        player.sendMessage(TextUtil.success(Messages.createdItem(id)));
         new ItemEditorGui(plugin, player, newData).open();
     }
 }

@@ -4,8 +4,8 @@ com/uitem/recipe/UItemRecipe$Ingredient.class
 com/uitem/recipe/RecipeManager.class
 com/uitem/resourcepack/ResourcePackSettings.class
 com/uitem/gui/AbstractGui.class
-com/uitem/gui/RecipeIngredientPickerGui$Mode.class
 com/uitem/integration/ExecutableItemsIntegration.class
+com/uitem/recipe/RecipeIngredientResolver.class
 com/uitem/storage/ExternalStorageSettings$StorageType.class
 com/uitem/gui/PotionListGui.class
 com/uitem/gui/ItemEditorGui.class
@@ -33,6 +33,7 @@ com/uitem/api/package-info.class
 com/uitem/util/TextUtil.class
 com/uitem/gui/MainHubGui.class
 com/uitem/api/events/UItemEquipEvent.class
+com/uitem/gui/ItemLinkedPotionPickerGui.class
 com/uitem/gui/RarityPickerGui.class
 com/uitem/api/events/UItemGiveEvent.class
 com/uitem/gui/PotionEffectsGui.class
@@ -90,6 +91,7 @@ com/uitem/ability/ItemAbilityListener.class
 com/uitem/ability/ItemAbilityYaml.class
 com/uitem/ability/AbilityEquipTriggers.class
 com/uitem/util/SchedulerUtil.class
+com/uitem/listener/ItemLinkedPotionListener.class
 com/uitem/search/SearchManager.class
 com/uitem/ability/PaperEquipAbilityListener.class
 com/uitem/ability/ItemAbilityAction.class

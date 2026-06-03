@@ -3,12 +3,12 @@ recipe:
   result-amount: 1
   shaped: true
   shape:
-    - " P "
+    - " I "
     - " S "
     - " S "
   ingredient-map:
-    P:
-      potion-id: heal_burst
+    I:
+      material: IRON_INGOT
       amount: 1
     S:
       material: STICK

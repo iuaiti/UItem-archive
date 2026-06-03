@@ -45,7 +45,11 @@ public class CraftingGui implements InventoryHolder {
         this.plugin = plugin;
         this.player = player;
         this.recipeManager = plugin.getRecipeManager();
-        String titleRaw = plugin.getConfig().getString("craft.gui-title", "");
+        String titleKey = Messages.isVietnamese() ? "craft.gui-title-vi" : "craft.gui-title-en";
+        String titleRaw = plugin.getConfig().getString(titleKey, "");
+        if (titleRaw == null || titleRaw.isBlank()) {
+            titleRaw = plugin.getConfig().getString("craft.gui-title", "");
+        }
         if (titleRaw == null || titleRaw.isBlank()) {
             titleRaw = Messages.craftGuiTitle();
         }
@@ -116,52 +120,68 @@ public class CraftingGui implements InventoryHolder {
         UItemRecipe recipe = findMatchingRecipe(matrix);
         if (recipe == null) return 0;
 
-        int max = 64;
         if (recipe.isShaped()) {
+            List<String> shape = recipe.getShape();
+            if (shape.size() != 3) return 0;
+            for (String row : shape) {
+                if (row == null || row.length() != 3) return 0;
+            }
+            int max = 64;
             for (Map.Entry<Character, UItemRecipe.Ingredient> e : recipe.getIngredientMap().entrySet()) {
                 char ch = e.getKey();
                 UItemRecipe.Ingredient ing = e.getValue();
-                int available = 0;
-                for (int i = 0; i < 9; i++) {
-                    int r = i / 3, c = i % 3;
-                    if (recipe.getShape().get(r).charAt(c) == ch) {
-                        ItemStack item = matrix[i];
-                        if (item != null && !item.getType().isAir()) {
-                            available = Math.max(available, item.getAmount());
+                int needed = ing.getAmount();
+                int canForSymbol = 64;
+                for (int r = 0; r < 3; r++) {
+                    for (int c = 0; c < 3; c++) {
+                        if (shape.get(r).charAt(c) == ch) {
+                            int idx = r * 3 + c;
+                            ItemStack item = matrix[idx];
+                            int amt = (item == null || item.getType().isAir()) ? 0 : item.getAmount();
+                            int thisPosCan = (needed > 0) ? (amt / needed) : 64;
+                            canForSymbol = Math.min(canForSymbol, thisPosCan);
                         }
                     }
                 }
-                int needed = ing.getAmount();
-                int canCraft = needed > 0 ? available / needed : 64;
-                max = Math.min(max, canCraft);
+                max = Math.min(max, canForSymbol);
             }
+            return Math.max(0, max);
         } else {
+            // Shapeless: simulate consume logic with temp available to get accurate count
             List<UItemRecipe.Ingredient> ings = recipe.getIngredients();
-            List<ItemStack> nonAir = new ArrayList<>();
+            if (ings.isEmpty()) return 64;
+            int[] avail = new int[9];
             for (int i = 0; i < 9; i++) {
-                if (matrix[i] != null && !matrix[i].getType().isAir()) {
-                    nonAir.add(matrix[i]);
-                }
+                ItemStack it = matrix[i];
+                avail[i] = (it == null || it.getType().isAir()) ? 0 : it.getAmount();
             }
-            List<UItemRecipe.Ingredient> remaining = new ArrayList<>(ings);
-            for (ItemStack item : nonAir) {
-                UItemRecipe.Ingredient matched = null;
-                for (UItemRecipe.Ingredient ing : remaining) {
-                    if (ing.matches(item)) {
-                        matched = ing;
-                        break;
+            int crafts = 0;
+            while (crafts < 64) {
+                List<UItemRecipe.Ingredient> remaining = new ArrayList<>(ings);
+                for (int i = 0; i < 9 && !remaining.isEmpty(); i++) {
+                    if (avail[i] <= 0) continue;
+                    // temp item with current avail for matches check
+                    ItemStack temp = matrix[i].clone();
+                    temp.setAmount(avail[i]);
+                    UItemRecipe.Ingredient matched = null;
+                    for (UItemRecipe.Ingredient ing : remaining) {
+                        if (ing.matches(temp)) {
+                            matched = ing;
+                            break;
+                        }
+                    }
+                    if (matched != null) {
+                        remaining.remove(matched);
+                        avail[i] -= matched.getAmount();
                     }
                 }
-                if (matched != null) {
-                    remaining.remove(matched);
-                    int ingAmount = matched.getAmount();
-                    int canCraft = ingAmount > 0 ? item.getAmount() / ingAmount : 64;
-                    max = Math.min(max, canCraft);
+                if (!remaining.isEmpty()) {
+                    break;
                 }
+                crafts++;
             }
+            return Math.max(0, crafts);
         }
-
-        return Math.max(0, max);
     }
 
     private UItemRecipe findMatchingRecipe(ItemStack[] matrix) {

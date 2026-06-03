@@ -3,6 +3,7 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.util.GuiTheme;
+import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -21,7 +22,7 @@ public class FlagGui extends AbstractGui {
     private final UItemData data;
 
     public FlagGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 36, GuiTheme.title("Flags · " + data.getId()));
+        super(plugin, player, 36, GuiTheme.title(Messages.flagEditorTitle(data.getId())));
         this.data = data;
     }
 
@@ -47,7 +48,7 @@ public class FlagGui extends AbstractGui {
             boolean isEnabled = data.getFlags().contains(flagName);
 
             Material iconMat = isEnabled ? Material.LIME_DYE : Material.RED_DYE;
-            String statusText = isEnabled ? "<green>✔ ON" : "<red>✘ OFF";
+            String statusText = isEnabled ? Messages.flagEditorOn() : Messages.flagEditorOff();
 
             ItemStack item = new ItemStack(iconMat);
             ItemMeta meta = item.getItemMeta();
@@ -59,7 +60,7 @@ public class FlagGui extends AbstractGui {
                         TextUtil.parse(""),
                         TextUtil.parse("<gray>" + getFlagDescription(flag)),
                         TextUtil.parse(""),
-                        TextUtil.parse("<yellow>Click to toggle")
+                        TextUtil.parse(Messages.flagEditorToggle())
                 ));
                 if (isEnabled) {
                     meta.setEnchantmentGlintOverride(true);

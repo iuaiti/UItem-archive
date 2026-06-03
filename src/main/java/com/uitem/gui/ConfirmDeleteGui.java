@@ -4,6 +4,7 @@ import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.util.GuiFeedback;
 import com.uitem.util.GuiTheme;
+import com.uitem.util.Messages;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
@@ -31,30 +32,29 @@ public class ConfirmDeleteGui extends AbstractGui {
         setItem(26, GuiTheme.accent());
 
         setItem(4, GuiTheme.header(Material.BARRIER, "Delete?",
-                List.of("<red>Ban sap xoa item nay",
+                List.of("<red>Bạn sắp xóa item này",
                         "<white>" + data.getId(),
-                        "<gray>Hanh dong khong the hoan tac")));
+                        "<gray>Hành động không thể hoàn tác")));
 
         setItem(13, plugin.getItemManager().buildItemStack(data));
 
         setItem(11, GuiTheme.actionDanger(Material.RED_CONCRETE,
-                "CONFIRM",
-                "<gray>Xoa vinh vien item nay"), event -> {
+                Messages.confirmDeleteYes(),
+                Messages.confirmDeleteWarn()), event -> {
             boolean deleted = com.uitem.api.UItemAPI.get().removeItem(data.getId(), player);
             if (!deleted) {
-                player.sendMessage(com.uitem.util.TextUtil.error(
-                        "Cannot delete item '" + data.getId() + "' (blocked by another plugin)."));
+                player.sendMessage(com.uitem.util.TextUtil.error(Messages.cannotDeleteBlocked(data.getId())));
                 new ItemListGui(plugin, player, returnPage).open();
                 return;
             }
-            player.sendMessage(com.uitem.util.TextUtil.success("Deleted item '" + data.getId() + "'!"));
+            player.sendMessage(com.uitem.util.TextUtil.success(Messages.deletedItem(data.getId())));
             GuiFeedback.deny(player);
             new ItemListGui(plugin, player, returnPage).open();
         });
 
         setItem(15, GuiTheme.actionSecondary(Material.LIME_CONCRETE,
-                "CANCEL",
-                "<gray>Quay lai danh sach"), event -> {
+                Messages.confirmDeleteNo(),
+                Messages.confirmDeleteBack()), event -> {
             GuiFeedback.click(player);
             new ItemListGui(plugin, player, returnPage).open();
         });

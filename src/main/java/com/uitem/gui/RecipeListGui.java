@@ -5,6 +5,7 @@ import com.uitem.UItemPlugin;
 import com.uitem.recipe.UItemRecipe;
 import com.uitem.util.GuiFeedback;
 import com.uitem.util.GuiTheme;
+import com.uitem.util.Messages;
 import com.uitem.util.RecipeDisplayUtil;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
@@ -32,7 +33,7 @@ public class RecipeListGui extends AbstractGui {
     }
 
     public RecipeListGui(UItemPlugin plugin, Player player, int page) {
-        super(plugin, player, 54, GuiTheme.title("Recipes"));
+        super(plugin, player, 54, GuiTheme.title(Messages.recipeListTitle()));
         this.page = page;
     }
 
@@ -47,11 +48,10 @@ public class RecipeListGui extends AbstractGui {
         if (page >= totalPages) page = totalPages - 1;
         if (page < 0) page = 0;
 
-        setItem(4, GuiTheme.header(Material.KNOWLEDGE_BOOK, "Recipes",
+        setItem(4, GuiTheme.header(Material.KNOWLEDGE_BOOK, Messages.recipeListHeader(),
                 List.of(
-                        "<gray>Click recipe de xem chi tiet",
-                        "<yellow>Trang: <white>" + (page + 1) + "<gray>/<white>" + totalPages,
-                        "<yellow>Tong: <white>" + list.size())));
+                        Messages.recipeListClick(),
+                        Messages.recipeListPageLine(page + 1, totalPages, list.size()))));
 
         int start = page * PER_PAGE;
         for (int i = 0; i < SLOTS.length; i++) {
@@ -77,8 +77,8 @@ public class RecipeListGui extends AbstractGui {
 
         if (player.hasPermission("craft") || player.hasPermission("uitem.craft")) {
             setItem(49, GuiTheme.actionPrimary(Material.CRAFTING_TABLE,
-                    "Crafting Table",
-                    "<gray>Mo ban che tao UItem"), ev -> {
+                    Messages.recipeListCraft(),
+                    Messages.recipeListCraftDesc()), ev -> {
                 GuiFeedback.click(player);
                 new CraftingGui(plugin, player).open();
             });
@@ -111,7 +111,7 @@ public class RecipeListGui extends AbstractGui {
     private ItemStack buildCraftListItem(String id, UItemRecipe recipe, UItemData data) {
         if (data == null) {
             return GuiTheme.button(Material.BARRIER, "<red>" + id,
-                    List.of("<gray>Item da bi xoa"));
+                    List.of("<gray>Item đã bị xóa"));
         }
         ItemStack item = plugin.getItemManager().buildItemStack(data);
         ItemMeta meta = item.getItemMeta();

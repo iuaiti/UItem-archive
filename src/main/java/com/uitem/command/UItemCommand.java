@@ -66,7 +66,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             case "potion", "potions" -> handlePotion(sender);
             case "check" -> handleCheck(sender);
             case "help" -> sendHelp(sender);
-            default -> sender.sendMessage(TextUtil.error("Invalid command. Use /" + label + " help"));
+            default -> sender.sendMessage(TextUtil.error(Messages.invalidCommand(label)));
         }
 
         return true;
@@ -74,12 +74,12 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleGive(CommandSender sender, String[] args) {
         if (!sender.hasPermission("uitem.give")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            sender.sendMessage(TextUtil.error(Messages.noPermission()));
             return;
         }
 
         if (args.length < 2) {
-            sender.sendMessage(TextUtil.error("Usage: /uitem give <id> [player] [amount]"));
+            sender.sendMessage(TextUtil.error(Messages.giveUsage()));
             return;
         }
 
@@ -93,14 +93,12 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             boolean success = com.uitem.api.UItemAPI.get().giveItem(
                     target.player(), itemId, target.amount(), sender);
             if (success) {
-                sender.sendMessage(TextUtil.success(
-                        "Gave " + target.player().getName() + " x" + target.amount() + " " + itemId));
+                sender.sendMessage(TextUtil.success(Messages.gaveItem(target.player().getName(), target.amount(), itemId)));
                 if (!sender.equals(target.player())) {
-                    target.player().sendMessage(TextUtil.success(
-                            "You received x" + target.amount() + " " + itemId));
+                    target.player().sendMessage(TextUtil.success(Messages.receivedItem(target.amount(), itemId)));
                 }
             } else {
-                sender.sendMessage(TextUtil.error("Cannot give item (may have been blocked by another plugin)."));
+                sender.sendMessage(TextUtil.error(Messages.cannotGive()));
             }
             return;
         }
@@ -112,25 +110,23 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             for (org.bukkit.inventory.ItemStack left : target.player().getInventory().addItem(potion).values()) {
                 target.player().getWorld().dropItemNaturally(target.player().getLocation(), left);
             }
-            sender.sendMessage(TextUtil.success(
-                    "Gave " + target.player().getName() + " x" + target.amount() + " potion " + itemId));
+            sender.sendMessage(TextUtil.success(Messages.potionGiveSent(target.player().getName(), target.amount(), itemId)));
             if (!sender.equals(target.player())) {
-                target.player().sendMessage(TextUtil.success(
-                        "You received x" + target.amount() + " potion " + itemId));
+                target.player().sendMessage(TextUtil.success(Messages.potionGiveReceived(target.amount(), itemId)));
             }
             return;
         }
 
-        sender.sendMessage(TextUtil.error("Item or potion '" + itemId + "' does not exist!"));
+        sender.sendMessage(TextUtil.error(Messages.itemNotFound(itemId)));
     }
 
     private void handlePotion(CommandSender sender) {
         if (!sender.hasPermission("uitem.potion") && !sender.hasPermission("uitem.admin")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            sender.sendMessage(TextUtil.error(Messages.noPermission()));
             return;
         }
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
+            sender.sendMessage(TextUtil.error(Messages.playersOnly()));
             return;
         }
         new com.uitem.gui.PotionHubGui(plugin, player).open();
@@ -142,7 +138,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             if (sender instanceof Player player) {
                 return new GiveTarget(player, 1);
             }
-            sender.sendMessage(TextUtil.error("Console must specify a player: /uitem give <id> <player> [amount]"));
+            sender.sendMessage(TextUtil.error(Messages.consoleNeedPlayer()));
             return null;
         }
 
@@ -154,14 +150,14 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             if (sender instanceof Player player) {
                 return new GiveTarget(player, amountFromToken);
             }
-            sender.sendMessage(TextUtil.error("Console must specify a player: /uitem give <id> <player> [amount]"));
+            sender.sendMessage(TextUtil.error(Messages.consoleNeedPlayer()));
             return null;
         }
 
         // /uitem give <id> <player> [amount]
         Player target = Bukkit.getPlayerExact(token);
         if (target == null) {
-            sender.sendMessage(TextUtil.error("Player '" + token + "' is not online!"));
+            sender.sendMessage(TextUtil.error(Messages.playerNotFound(token)));
             return null;
         }
 
@@ -169,7 +165,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         if (args.length >= 4) {
             Integer parsed = tryParseAmount(args[3]);
             if (parsed == null) {
-                sender.sendMessage(TextUtil.error("Invalid amount! Must be an integer from 1 to 64."));
+                sender.sendMessage(TextUtil.error(Messages.invalidAmount()));
                 return null;
             }
             amount = parsed;
@@ -192,12 +188,12 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleEditor(CommandSender sender) {
         if (!sender.hasPermission("uitem.editor")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            sender.sendMessage(TextUtil.error(Messages.noPermission()));
             return;
         }
 
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
+            sender.sendMessage(TextUtil.error(Messages.playersOnly()));
             return;
         }
 
@@ -243,7 +239,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                     }
                 } catch (Exception e) {
                     SchedulerUtil.runSync(plugin, sender,
-                            () -> sender.sendMessage(TextUtil.error("Cannot generate/export resource pack: " + e.getMessage())));
+                            () -> sender.sendMessage(TextUtil.error(Messages.rpGenerateFailed(e.getMessage()))));
                 }
             });
         } else if (autoApply && url != null && !url.isBlank()) {
@@ -252,37 +248,37 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             }
         }
 
-        sender.sendMessage(TextUtil.success("Reloaded UItem! Loaded " + plugin.getItemManager().getAllItems().size() + " items."));
+        sender.sendMessage(TextUtil.success(Messages.reloaded(plugin.getItemManager().getAllItems().size())));
     }
 
     private void handleCheck(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
+            sender.sendMessage(TextUtil.error(Messages.playersOnly()));
             return;
         }
 
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item == null || item.getType() == Material.AIR) {
-            sender.sendMessage(TextUtil.error("You are not holding any item!"));
+            sender.sendMessage(TextUtil.error(Messages.notHoldingItem()));
             return;
         }
 
         var api = com.uitem.api.UItemAPI.get();
         if (api.isUItem(item)) {
             String id = api.getUItemId(item).orElse("unknown");
-            sender.sendMessage(TextUtil.success("✔ Item is a valid UItem!"));
+            sender.sendMessage(TextUtil.success(Messages.validUItem()));
             sender.sendMessage(TextUtil.prefixed("<green>ID: <white>" + id));
             sender.sendMessage(TextUtil.prefixed("<green>Type: <white>" + item.getType().name()));
         } else {
-            sender.sendMessage(TextUtil.error("✗ Item is NOT a valid UItem!"));
-            sender.sendMessage(TextUtil.prefixed("<red>Missing PDC tag 'uitem_id'. This item was not obtained through /uitem give."));
-            sender.sendMessage(TextUtil.prefixed("<red>Use <white>/uitem give <id> <player><red> to get properly tagged items."));
+            sender.sendMessage(TextUtil.error(Messages.notUItem()));
+            sender.sendMessage(TextUtil.prefixed("<red>" + Messages.missingPDC()));
+            sender.sendMessage(TextUtil.prefixed("<red>" + Messages.useGiveToGet()));
         }
     }
 
     private void handleCraft(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
+            sender.sendMessage(TextUtil.error(Messages.playersOnly()));
             return;
         }
         new com.uitem.gui.CraftingGui(plugin, player).open();
@@ -290,13 +286,13 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleList(CommandSender sender) {
         if (!sender.hasPermission("uitem.editor")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            sender.sendMessage(TextUtil.error(Messages.noPermission()));
             return;
         }
 
         var items = plugin.getItemManager().getAllItems();
         if (items.isEmpty()) {
-            sender.sendMessage(TextUtil.info("No custom items yet. Use /uitem editor to create one."));
+            sender.sendMessage(TextUtil.info(Messages.noItemsYet()));
             return;
         }
 
@@ -445,33 +441,18 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(Component.text(""));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <gray>— Ultimate Item Plugin"));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpTitle()));
         sender.sendMessage(Component.text(""));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem give <id> [player] [amount] <dark_gray>— <gray>Give item or potion"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem editor <dark_gray>— <gray>Open editor GUI"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem list <dark_gray>— <gray>List items"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem rp <build|generate|export|gui|sendall> <dark_gray>— <gray>Resource pack (Oraxen/Nexo/IA)"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem check <dark_gray>— <gray>Check if held item is a valid UItem"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem potion <dark_gray>— <gray>Potion Studio (GUI)"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem craft <dark_gray>— <gray>Open UItem crafting table"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/crafting <dark_gray>— <gray>List all crafting recipes"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/crafting craft <dark_gray>— <gray>Open UItem crafting table"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem reload <dark_gray>— <gray>Reload plugin"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem help <dark_gray>— <gray>Show help"));
-        sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/ui <dark_gray>— <gray>Short alias for /uitem"));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpGive()));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpEditor()));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpList()));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpRp()));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpCheck()));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpCraft()));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpCraftingCmd()));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpReload()));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpHelp()));
+        sender.sendMessage(miniMessage.deserialize(Messages.helpUi()));
         sender.sendMessage(Component.text(""));
     }
 

@@ -7,7 +7,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Tu khoa tim kiem theo nguoi choi (Item Library / Potion List).
+ * Từ khóa tìm kiếm theo người chơi (Item Library / Potion List).
  */
 public class SearchManager {
 

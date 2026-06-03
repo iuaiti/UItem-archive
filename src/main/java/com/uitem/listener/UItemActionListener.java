@@ -30,7 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Fire API events cho plugin khac (khong chay ky nang item — xem {@link com.uitem.ability.ItemAbilityListener}).
+ * Fire API events cho plugin khác (không chạy kỹ năng item — xem {@link com.uitem.ability.ItemAbilityListener}).
  *
  * <ul>
  *   <li>{@link UItemInteractEvent} — click voi UItem tren tay</li>

@@ -80,17 +80,17 @@ public class IntegrationsGui extends AbstractGui {
         Material icon = hooked ? material : Material.GRAY_STAINED_GLASS_PANE;
         List<String> lore = new ArrayList<>();
         if (hooked) {
-            lore.add("<green>Da ket noi");
+            lore.add("<green>Đã kết nối");
             if (version != null) {
-                lore.add("<gray>Phien ban: <white>v" + version);
+                lore.add("<gray>Phiên bản: <white>v" + version);
             }
         } else {
-            lore.add("<red>Chua cai hoac API loi");
-            lore.add("<dark_gray>Cai plugin " + name + " len server");
+            lore.add("<red>Chưa cài hoặc API lỗi");
+            lore.add("<dark_gray>Cài plugin " + name + " lên server");
         }
         lore.add("");
         lore.add("<gray>Trong Item Editor:");
-        lore.add("<yellow>Shift+Click <gray>→ lay ID tu item tren tay");
+        lore.add("<yellow>Shift+Click <gray>→ lấy ID từ item trên tay");
         if (hooked) {
             return GuiTheme.glowing(icon, name, lore);
         }

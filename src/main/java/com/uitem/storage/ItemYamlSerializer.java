@@ -91,6 +91,8 @@ public final class ItemYamlSerializer {
                 ItemAbilityYaml.loadInto(data, abilitiesSec);
             }
 
+            data.setLinkedPotionId(section.getString("linked-potion", null));
+
             return data;
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "Error loading item '" + id + "'", e);
@@ -185,6 +187,12 @@ public final class ItemYamlSerializer {
             ItemAbilityYaml.saveFrom(data, config.createSection("abilities"));
         } else {
             config.set("abilities", null);
+        }
+
+        if (data.getLinkedPotionId() != null) {
+            config.set("linked-potion", data.getLinkedPotionId());
+        } else {
+            config.set("linked-potion", null);
         }
     }
 

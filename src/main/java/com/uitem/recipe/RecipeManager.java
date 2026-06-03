@@ -109,49 +109,6 @@ public class RecipeManager {
         return out;
     }
 
-    /** Potion UItem IDs dung lam NL trong cong thuc che ra {@code resultItemId}. */
-    public List<String> listPotionIngredientsForResult(String resultItemId) {
-        UItemRecipe recipe = getRecipe(resultItemId);
-        if (recipe == null) {
-            return List.of();
-        }
-        List<String> out = new ArrayList<>();
-        if (recipe.isShaped()) {
-            for (UItemRecipe.Ingredient ing : recipe.getIngredientMap().values()) {
-                addPotionId(out, ing);
-            }
-        } else {
-            for (UItemRecipe.Ingredient ing : recipe.getIngredients()) {
-                addPotionId(out, ing);
-            }
-        }
-        return out;
-    }
-
-    private static void addPotionId(List<String> out, UItemRecipe.Ingredient ing) {
-        if (ing != null && ing.getPotionId() != null && !ing.getPotionId().isBlank()) {
-            String id = ing.getPotionId().toLowerCase(Locale.ROOT);
-            if (!out.contains(id)) {
-                out.add(id);
-            }
-        }
-    }
-
-    public List<String> findRecipesUsingPotionIngredient(String potionId) {
-        if (potionId == null || potionId.isBlank()) {
-            return List.of();
-        }
-        String id = potionId.toLowerCase(Locale.ROOT);
-        List<String> out = new ArrayList<>();
-        for (Map.Entry<String, UItemRecipe> entry : recipes.entrySet()) {
-            if (recipeUsesPotion(entry.getValue(), id)) {
-                out.add(entry.getKey());
-            }
-        }
-        out.sort(String.CASE_INSENSITIVE_ORDER);
-        return out;
-    }
-
     private static boolean recipeUsesUItem(UItemRecipe recipe, String uitemId) {
         if (recipe == null) {
             return false;
@@ -166,26 +123,6 @@ public class RecipeManager {
         }
         for (UItemRecipe.Ingredient ing : recipe.getIngredients()) {
             if (ing != null && uitemId.equalsIgnoreCase(ing.getUitemId())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean recipeUsesPotion(UItemRecipe recipe, String potionId) {
-        if (recipe == null) {
-            return false;
-        }
-        if (recipe.isShaped()) {
-            for (UItemRecipe.Ingredient ing : recipe.getIngredientMap().values()) {
-                if (ing != null && potionId.equalsIgnoreCase(ing.getPotionId())) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        for (UItemRecipe.Ingredient ing : recipe.getIngredients()) {
-            if (ing != null && potionId.equalsIgnoreCase(ing.getPotionId())) {
                 return true;
             }
         }

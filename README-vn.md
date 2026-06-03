@@ -37,9 +37,9 @@
 | `/uitem rp export` | Export resource pack zip | `uitem.reload` |
 | `/uitem rp apply` | Apply pack cho player | `uitem.reload` |
 | `/uitem rp status` | Xem trạng thái RP | `uitem.reload` |
-| `/uitem craft` | Mở bàn chế tạo | * |
+| `/uitem craft` | Mở bàn chế tạo | `craft` / `uitem.craft` |
+| `/uitem potion` | Potion Studio | `uitem.potion` |
 | `/uitem check` | Kiểm tra item đang cầm | * |
-| `/uitem passive` | Mở Passive Studio (GUI) | `uitem.passive` |
 | `/uitem help` | Xem hướng dẫn | * |
 
 ### `/crafting` (bí danh: `/craft`)
@@ -61,10 +61,10 @@
 | `uitem.reload` | op | Reload + quản lý resource pack |
 | `uitem.search` | op | Tìm kiếm item trong GUI |
 | `uitem.craft` | op | Mở bàn chế tạo |
-| `uitem.passive` | op | Passive Studio |
-| `uitem.passive.create` | op | Tạo passive |
-| `uitem.passive.edit` | op | Sửa passive |
-| `uitem.passive.delete` | op | Xóa passive |
+| `uitem.potion` | op | Potion Studio |
+| `uitem.potion.create` | op | Tạo potion |
+| `uitem.potion.edit` | op | Sửa potion |
+| `uitem.potion.delete` | op | Xóa potion |
 
 ---
 
@@ -84,10 +84,11 @@ Mỗi custom item có thể có:
 - **Max Durability** — độ bền tối đa
 - **Attributes** — chỉ số (damage, armor, speed...)
 - **Rarity** — độ hiếm (COMMON → ULTRA)
-- **oraxen-id** — tích hợp Oraxen
-- **itemsadder-id** — tích hợp ItemsAdder
-- **executableitems-id** — tích hợp ExecutableItems
-- **Recipe** — công thức chế tạo (shaped/shapeless)
+- **oraxen-id / nexo-id** — Oraxen, Nexo
+- **itemsadder-id** — ItemsAdder
+- **executableitems-id** — ExecutableItems (kỹ năng nâng cao do EI)
+- **abilities** — kỹ năng trigger tích hợp sẵn
+- **Recipe** — công thức chế tạo (shaped/shapeless; có thể dùng potion làm NL)
 
 ### Resource Pack tự động
 
@@ -320,12 +321,18 @@ Chỉnh sửa tất cả thuộc tính của 1 item:
 
 ---
 
-## ⚡ Passive Studio
+## ⚡ Kỹ năng / Trigger (item & potion)
 
-Tạo hành động tự động **chỉ bằng GUI** (khi nào → điều kiện → làm gì).
+Gắn rule trực tiếp vào item hoặc potion qua GUI (**Ky nang / Trigger** trong Item Editor).
 
-- Mở: `/uitem passive` hoặc nút **Passive Studio** trong hub
-- Chi tiết từng bước: **[docs/HUONG-DAN.md](docs/HUONG-DAN.md)** (mục 6)
+- Trigger: đánh, giết, bị đánh, click, mặc đồ, uống potion
+- Hành động: damage, heal, potion, sét, phản damage, knockback, message, lệnh console
+- Chi tiết: **[docs/HUONG-DAN.md](docs/HUONG-DAN.md)** (mục 6–7)
+
+## 🧪 Potion Studio
+
+- `/uitem potion` — tạo potion custom, hiệu ứng, kỹ năng ON_DRINK
+- Dùng potion làm nguyên liệu recipe cho item khác
 
 ---
 

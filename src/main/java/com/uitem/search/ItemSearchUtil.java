@@ -4,7 +4,7 @@ import com.uitem.UItemData;
 import com.uitem.util.TextUtil;
 
 /**
- * Loc item trong Item Library theo tu khoa.
+ * Lọc item trong Item Library theo từ khóa.
  */
 public final class ItemSearchUtil {
 

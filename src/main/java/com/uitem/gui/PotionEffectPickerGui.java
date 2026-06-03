@@ -47,7 +47,7 @@ public class PotionEffectPickerGui extends AbstractGui {
         setItem(4, GuiTheme.header(Material.SPIDER_EYE, Messages.potionPickerTitle(),
                 List.of(
                         "<yellow>Trang: <white>" + (page + 1) + "<gray>/<white>" + totalPages,
-                        "<gray>Click de them (mac dinh 10s, cap 1)"
+                        "<gray>Click để thêm (mặc định 10s, cấp 1)"
                 )));
 
         int start = page * PER_PAGE;

@@ -103,7 +103,7 @@ public class RecipeDetailGui extends AbstractGui {
         if (player.hasPermission("craft") || player.hasPermission("uitem.craft")) {
             setItem(SLOT_CRAFT, GuiTheme.actionPrimary(Material.CRAFTING_TABLE,
                     "Craft",
-                    "<gray>Mo ban che tao"), ev -> {
+                    "<gray>Mở bàn chế tạo"), ev -> {
                 GuiFeedback.click(player);
                 new CraftingGui(plugin, player).open();
             });

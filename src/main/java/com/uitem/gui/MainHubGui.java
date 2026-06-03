@@ -73,7 +73,7 @@ public class MainHubGui extends AbstractGui {
 
         setItem(SLOT_RECIPES, GuiTheme.actionSecondary(Material.KNOWLEDGE_BOOK,
                 "Recipes",
-                "<gray>Danh sach cong thuc che tao",
+                "<gray>Danh sách công thức chế tạo",
                 "<yellow>" + recipes + " recipes"), ev -> {
             GuiFeedback.click(player);
             new RecipeListGui(plugin, player).open();
@@ -82,7 +82,7 @@ public class MainHubGui extends AbstractGui {
         if (player.hasPermission("craft") || player.hasPermission("uitem.craft")) {
             setItem(SLOT_CRAFT, GuiTheme.actionPrimary(Material.CRAFTING_TABLE,
                     Messages.craftGuiTitle(),
-                    "<gray>Mo ban che tao",
+                    "<gray>Mở bàn chế tạo",
                     "<yellow>Can quyen craft"), ev -> {
                 GuiFeedback.click(player);
                 new CraftingGui(plugin, player).open();
@@ -120,44 +120,44 @@ public class MainHubGui extends AbstractGui {
 
         setItem(SLOT_CREATE, GuiTheme.actionPrimary(Material.EMERALD,
                 "+ New Item",
-                "<gray>Tao custom item moi",
-                "<yellow>Nhap ID de bat dau"), ev -> {
+                Messages.guiCreateHint(),
+                Messages.guiCreateHint2()), ev -> {
             GuiFeedback.click(player);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Nhap ID item moi <gray>(a-z, 0-9, _):",
+                    Messages.guiCreatePrompt(),
                     input -> {
                         String id = input.toLowerCase().replaceAll("[^a-z0-9_]", "_");
                         if (id.isEmpty()) {
-                            player.sendMessage(TextUtil.error("ID khong hop le!"));
+                            player.sendMessage(TextUtil.error(Messages.invalidId()));
                             open();
                             return;
                         }
                         if (plugin.getItemManager().hasItem(id)) {
-                            player.sendMessage(TextUtil.error("Item '" + id + "' da ton tai!"));
+                            player.sendMessage(TextUtil.error(Messages.itemAlreadyExists(id)));
                             open();
                             return;
                         }
                         var newData = new com.uitem.UItemData(id);
                         boolean created = com.uitem.api.UItemAPI.get().registerItem(newData, player);
                         if (!created) {
-                            player.sendMessage(TextUtil.error("Khong the tao item (bi chan boi plugin khac)."));
+                            player.sendMessage(TextUtil.error(Messages.cannotCreateBlocked(id)));
                             open();
                             return;
                         }
                         plugin.getResourcePackManager().syncCmdsToLiveItems();
-                        player.sendMessage(TextUtil.success("Da tao item '" + id + "'!"));
+                        player.sendMessage(TextUtil.success(Messages.createdItem(id)));
                         new ItemEditorGui(plugin, player, newData).open();
                     });
         });
 
         setItem(49, GuiTheme.button(Material.BOOK,
-                "<gray><bold>Huong dan",
+                "<gray><bold>Help",
                 List.of(
-                        "<gray>/uitem editor <dark_gray>- Menu nay",
+                        "<gray>/uitem editor <dark_gray>- This menu",
                         "<gray>/uitem give <id> <dark_gray>- Give item",
-                        "<gray>/craft <dark_gray>- Ban che tao",
+                        "<gray>/craft <dark_gray>- Crafting table",
                         "",
-                        "<dark_gray>Ho tro MiniMessage trong ten & lore"
+                        "<dark_gray>MiniMessage supported in name & lore"
                 )));
     }
 }

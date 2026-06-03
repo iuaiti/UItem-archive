@@ -72,7 +72,7 @@ public final class ResourcePackSettings {
         this.descriptionEn = config.getString("resourcepack.description.en",
                 "UItem Custom Resource Pack | Premium items");
         this.descriptionVi = config.getString("resourcepack.description.vi",
-                "Goi tai nguyen UItem | Item tuy chinh");
+                "Gói tài nguyên UItem | Item tùy chỉnh");
     }
 
     private static String normalize(String folder) {

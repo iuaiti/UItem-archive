@@ -3,6 +3,7 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.util.GuiTheme;
+import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -33,7 +34,7 @@ public class LoreEditorGui extends AbstractGui {
     };
 
     public LoreEditorGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 54, GuiTheme.title("Lore · " + data.getId()));
+        super(plugin, player, 54, GuiTheme.title(Messages.loreEditorTitle(data.getId())));
         this.data = data;
         this.page = 0;
         this.selectedLine = -1;
@@ -44,11 +45,11 @@ public class LoreEditorGui extends AbstractGui {
         fillBorder(6);
 
         // Title
-        setItem(4, GuiTheme.header(Material.WRITABLE_BOOK, "Lore Editor",
+        setItem(4, GuiTheme.header(Material.WRITABLE_BOOK, Messages.loreEditorHeader(),
                 List.of(
-                        "<gray>Edit item description",
-                        "<yellow>Left: <white>Edit  <yellow>Right: <white>Delete",
-                        "<yellow>Shift+Click: <white>Insert line above"
+                        Messages.loreEditorDesc(),
+                        Messages.loreEditorLeftClick(),
+                        Messages.loreEditorShiftClick()
                 )));
 
         List<String> lore = data.getLore();
@@ -66,14 +67,14 @@ public class LoreEditorGui extends AbstractGui {
             ItemStack item = new ItemStack(Material.PAPER);
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
-                meta.displayName(TextUtil.parse("<white>Line " + (lineIndex + 1)));
+                meta.displayName(TextUtil.parse(Messages.loreEditorLine(lineIndex + 1)));
                 meta.lore(List.of(
-                        TextUtil.parse("<gray>Content:"),
-                        TextUtil.parse(line.isEmpty() ? "<dark_gray>(empty)" : line),
+                        TextUtil.parse(Messages.loreEditorContent()),
+                        TextUtil.parse(line.isEmpty() ? Messages.loreEditorEmpty() : line),
                         TextUtil.parse(""),
-                        TextUtil.parse("<yellow>Left click: <white>Edit"),
-                        TextUtil.parse("<red>Right click: <white>Delete"),
-                        TextUtil.parse("<aqua>Shift+Click: <white>Insert blank line")
+                        TextUtil.parse(Messages.loreEditorEdit()),
+                        TextUtil.parse(Messages.loreEditorDelete()),
+                        TextUtil.parse(Messages.loreEditorInsert())
                 ));
                 item.setItemMeta(meta);
             }
@@ -116,13 +117,13 @@ public class LoreEditorGui extends AbstractGui {
 
         // Nút THÊM DÒNG MỚI (slot 49)
         setItem(49, createItem(Material.EMERALD,
-                "<green><bold>+ Add new line</bold>",
+                Messages.loreEditorAddButton(),
                 List.of(
-                        "<gray>Add a new line at the end of lore"
+                        Messages.loreEditorAddDesc()
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Enter new line content <gray>(supports MiniMessage):",
+                    Messages.loreEditorAddPrompt(),
                     input -> {
                         data.getLore().add(input);
                         plugin.getItemManager().registerItem(data);
@@ -133,9 +134,9 @@ public class LoreEditorGui extends AbstractGui {
 
         // Nút XÓA TẤT CẢ (slot 47)
         setItem(47, createItem(Material.BARRIER,
-                "<red><bold>Clear all lore</bold>",
+                Messages.loreEditorClearButton(),
                 List.of(
-                        "<gray>Delete all lore lines"
+                        Messages.loreEditorClearDesc()
                 )), event -> {
             data.getLore().clear();
             plugin.getItemManager().registerItem(data);

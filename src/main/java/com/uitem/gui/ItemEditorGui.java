@@ -66,11 +66,11 @@ public class ItemEditorGui extends AbstractGui {
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Enter display name <gray>(supports MiniMessage):",
+                    Messages.guiDisplayNamePrompt(),
                     input -> {
                         data.setDisplayName(input);
                         saveAndReopen();
-                        player.sendMessage(TextUtil.success("Renamed to: " + input));
+                        player.sendMessage(TextUtil.success(Messages.renamedTo(input)));
                     });
         });
 
@@ -132,9 +132,9 @@ public class ItemEditorGui extends AbstractGui {
                             int cmd = Integer.parseInt(input.trim());
                             data.setCustomModelData(cmd);
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Custom Model Data = " + cmd));
+                            player.sendMessage(TextUtil.success(Messages.cmdSet(String.valueOf(cmd))));
                         } catch (NumberFormatException e) {
-                            player.sendMessage(TextUtil.error("Invalid number!"));
+                            player.sendMessage(TextUtil.error(Messages.invalidNumber()));
                             new ItemEditorGui(plugin, player, data).open();
                         }
                     });
@@ -174,9 +174,9 @@ public class ItemEditorGui extends AbstractGui {
                             int dur = Integer.parseInt(input.trim());
                             data.setMaxDurability(dur);
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Max durability = " + (dur > 0 ? dur : (dur == 0 ? "No bar" : "Default"))));
+                            player.sendMessage(TextUtil.success(Messages.durabilitySet(dur > 0 ? String.valueOf(dur) : (dur == 0 ? Messages.durabilityNoBar() : Messages.durabilityDefault()))));
                         } catch (NumberFormatException e) {
-                            player.sendMessage(TextUtil.error("Invalid number!"));
+                            player.sendMessage(TextUtil.error(Messages.invalidNumber()));
                             new ItemEditorGui(plugin, player, data).open();
                         }
                     });
@@ -217,12 +217,12 @@ public class ItemEditorGui extends AbstractGui {
                         if (input.equalsIgnoreCase("clear")) {
                             data.getAttributes().clear();
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Removed all attributes!"));
+                            player.sendMessage(TextUtil.success(Messages.guiAttributesCleared()));
                             return;
                         }
                         String[] parts = input.trim().split("\\s+");
                         if (parts.length < 4) {
-                            player.sendMessage(TextUtil.error("Format: attribute amount operation slot"));
+                            player.sendMessage(TextUtil.error(Messages.guiAttributesError()));
                             new ItemEditorGui(plugin, player, data).open();
                             return;
                         }
@@ -233,7 +233,7 @@ public class ItemEditorGui extends AbstractGui {
                             String slot = parts[3].toUpperCase();
                             data.getAttributes().add(new UItemData.AttributeData(attr, amount, operation, slot));
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Added attribute " + attr + "!"));
+                            player.sendMessage(TextUtil.success(Messages.guiAttributesAdded(attr)));
                         } catch (Exception e) {
                             player.sendMessage(TextUtil.error("Error: " + e.getMessage()));
                             new ItemEditorGui(plugin, player, data).open();
@@ -246,7 +246,7 @@ public class ItemEditorGui extends AbstractGui {
         setItem(21, createItem(Material.NETHER_STAR,
                 Messages.guiRarityField(),
                 List.of(
-                        "<gray>Hien tai: " + (currentRarity != null
+                        "<gray>Hiện tại: " + (currentRarity != null
                                 ? RarityConfig.getRarityColor(currentRarity) + currentRarity
                                 : "<gray>" + Messages.guiRarityNone()),
                         "",
@@ -283,13 +283,13 @@ public class ItemEditorGui extends AbstractGui {
         setItem(24, createItem(
                 data.isAbilitiesEnabled() && !data.getAbilities().isEmpty()
                         ? Material.ENCHANTED_BOOK : Material.BOOK,
-                "<gold><bold>Ky nang / Trigger</bold>",
+                "<gold><bold>Kỹ năng / Trigger</bold>",
                 List.of(
-                        "<gray>Trang thai: " + (data.isAbilitiesEnabled() ? "<green>BAT" : "<red>TAT"),
-                        "<gray>So rule: <white>" + data.getAbilities().size(),
+                        "<gray>Trạng thái: " + (data.isAbilitiesEnabled() ? "<green>BẬT" : "<red>TẮT"),
+                        "<gray>Số rule: <white>" + data.getAbilities().size(),
                         "",
-                        "<yellow>Click <gray>mo studio ky nang",
-                        "<gray>Danh trung, giet quai, bi danh, phan sat, click..."
+                        "<yellow>Click <gray>mở studio kỹ năng",
+                        "<gray>Đánh trúng, giết quái, bị đánh, phản sát, click..."
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             AbilityListGui.forItem(plugin, player, data).open();
@@ -298,14 +298,10 @@ public class ItemEditorGui extends AbstractGui {
         // === Recipe (slot 25) - Open Recipe Editor ===
         boolean hasRecipe = plugin.getRecipeManager().hasRecipe(data.getId());
         List<String> recipeLore = new ArrayList<>();
-        recipeLore.add(hasRecipe ? "<green>Co cong thuc che tao" : "<red>Chua co cong thuc");
+        recipeLore.add(hasRecipe ? "<green>" + Messages.guiRecipeHas() : "<red>" + Messages.guiRecipeNone());
         if (hasRecipe) {
             UItemRecipe recipe = plugin.getRecipeManager().getRecipe(data.getId());
             if (recipe != null) {
-                List<String> potionNl = plugin.getRecipeManager().listPotionIngredientsForResult(data.getId());
-                if (!potionNl.isEmpty()) {
-                    recipeLore.add("<gray>Potion NL: <light_purple>" + String.join(", ", potionNl));
-                }
                 recipeLore.add("<dark_gray>---");
                 for (String line : RecipeDisplayUtil.describeIngredients(recipe)) {
                     recipeLore.add(line);
@@ -318,33 +314,50 @@ public class ItemEditorGui extends AbstractGui {
                     + (usedIn.size() > 3 ? "..." : ""));
         }
         recipeLore.add("");
-        recipeLore.add("<yellow>Click <gray>sua cong thuc (item + potion NL)");
+        recipeLore.add("<yellow>Click <gray>sửa công thức (item / material)");
         setItem(25, createItem(
                 hasRecipe ? Material.CRAFTING_TABLE : Material.FURNACE,
-                "<gold><bold>Cong thuc che tao</bold>",
+                Messages.guiRecipeField(),
                 recipeLore), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new RecipeEditorGui(plugin, player, data).open();
         });
 
         boolean hasPotions = !plugin.getPotionManager().getAll().isEmpty();
+        String linkedPotion = data.getLinkedPotionId();
         List<String> potionBtnLore = new ArrayList<>();
-        potionBtnLore.add(Messages.itemEditorPotionIngredientDesc());
-        potionBtnLore.add("<gray>Dat potion vao o 3x3 roi Save");
-        if (!hasPotions) {
-            potionBtnLore.add("<red>Tao potion truoc (/uitem potion)");
+        potionBtnLore.add(Messages.itemEditorLinkedPotionDesc());
+        if (linkedPotion != null) {
+            potionBtnLore.add(Messages.itemEditorLinkedPotionCurrent(linkedPotion));
         } else {
-            potionBtnLore.add("<yellow>Click <gray>mo cong thuc + chon potion");
+            potionBtnLore.add(Messages.itemEditorLinkedPotionNone());
         }
-        setItem(31, createItem(Material.SPLASH_POTION,
-                Messages.itemEditorPotionIngredientBtn(),
+        potionBtnLore.add("");
+        potionBtnLore.add(Messages.itemEditorLinkedPotionClick());
+        if (linkedPotion != null) {
+            potionBtnLore.add(Messages.itemEditorLinkedPotionClear());
+        }
+        if (!hasPotions) {
+            potionBtnLore.add("<red>Tạo potion trước (/uitem potion)");
+        }
+        setItem(31, createItem(
+                linkedPotion != null ? Material.LINGERING_POTION : Material.POTION,
+                Messages.itemEditorLinkedPotionBtn(),
                 potionBtnLore), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            if (!hasPotions) {
-                player.sendMessage(TextUtil.error("Chua co potion UItem. Vao /uitem potion de tao."));
+            if (event.isShiftClick()) {
+                if (data.getLinkedPotionId() != null) {
+                    data.setLinkedPotionId(null);
+                    saveAndReopen();
+                    player.sendMessage(TextUtil.success(Messages.itemEditorLinkedPotionRemoved()));
+                }
                 return;
             }
-            new RecipeEditorGui(plugin, player, data, true).open();
+            if (!hasPotions) {
+                player.sendMessage(TextUtil.error(Messages.itemEditorNoPotions()));
+                return;
+            }
+            new ItemLinkedPotionPickerGui(plugin, player, data, 0).open();
         });
 
         setItem(45, createHomeButton(), event -> {
@@ -359,20 +372,20 @@ public class ItemEditorGui extends AbstractGui {
 
         setItem(49, GuiTheme.actionPrimary(Material.LIME_CONCRETE,
                 "SAVE",
-                "<gray>Luu thay doi vao file",
-                "<yellow>Click de luu"), event -> {
+                Messages.guiSaveDesc(),
+                Messages.guiSaveClick()), event -> {
             plugin.getItemManager().registerItem(data);
             plugin.getResourcePackManager().syncCmdsToLiveItems();
             plugin.getStorageManager().saveAllNow(plugin.getItemManager());
-            player.sendMessage(TextUtil.success("Saved item '" + data.getId() + "'!"));
+            player.sendMessage(TextUtil.success(Messages.savedItem(data.getId())));
             GuiFeedback.success(player);
             refresh();
         });
 
         setItem(52, GuiTheme.actionDanger(Material.RED_CONCRETE,
                 "DELETE",
-                "<gray>Xoa item nay",
-                "<red>Khong the hoan tac"), event -> {
+                Messages.guiDeleteDesc(),
+                Messages.confirmDeleteWarn()), event -> {
             GuiFeedback.click(player, false);
             new ConfirmDeleteGui(plugin, player, data, 0).open();
         });
@@ -438,12 +451,12 @@ public class ItemEditorGui extends AbstractGui {
             if (event.isShiftClick()) {
                 String picked = plugin.getIntegrationManager().detectIdFromHand(player, integrationKey);
                 if (picked == null || picked.isBlank()) {
-                    player.sendMessage(TextUtil.error("Khong nhan dien duoc ID — cam item plugin tren tay chinh."));
+                    player.sendMessage(TextUtil.error("Could not detect ID — hold the plugin item in main hand."));
                     return;
                 }
                 idSetter.accept(picked);
                 saveAndReopen();
-                player.sendMessage(TextUtil.success("Da gan ID: " + picked));
+                player.sendMessage(TextUtil.success("Picked ID: " + picked));
                 return;
             }
             plugin.getChatInputManager().requestInput(player, chatPrompt, input -> {

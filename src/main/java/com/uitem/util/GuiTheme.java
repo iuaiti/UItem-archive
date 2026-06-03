@@ -102,21 +102,21 @@ public final class GuiTheme {
                 List.of(
                         "",
                         "<white><bold>Ultimate Item Studio</bold>",
-                        "<gray>Quan ly custom item chuyen nghiep",
+                        "<gray>Quản lý custom item chuyên nghiệp",
                         "",
                         DIVIDER,
                         "<gray>Items: <white>" + itemCount,
                         "<gray>Recipes: <white>" + recipeCount,
                         DIVIDER,
                         "",
-                        "<gradient:#7bed9f:#2ed573><bold>» Click de bat dau</bold></gradient>"
+                        "<gradient:#7bed9f:#2ed573><bold>» Click để bắt đầu</bold></gradient>"
                 ));
     }
 
     public static ItemStack navBack() {
         return button(Material.SPECTRAL_ARROW,
                 "<yellow><bold>← Back</bold>",
-                List.of("<gray>Quay lai menu truoc"));
+                List.of("<gray>Quay lại menu trước"));
     }
 
     public static ItemStack navHome() {

@@ -1,6 +1,7 @@
 package com.uitem.chat;
 
 import com.uitem.UItemPlugin;
+import com.uitem.util.Messages;
 import com.uitem.util.SchedulerUtil;
 import com.uitem.util.TextUtil;
 import io.papermc.paper.event.player.AsyncChatEvent;
@@ -43,7 +44,7 @@ public class ChatInputManager implements Listener {
 
         player.closeInventory();
         player.sendMessage(TextUtil.prefixed(prompt));
-        player.sendMessage(TextUtil.info("Type 'cancel' to abort."));
+        player.sendMessage(TextUtil.info(Messages.chatCancelHint()));
     }
 
     /**
@@ -78,7 +79,7 @@ public class ChatInputManager implements Listener {
             if (!player.isOnline()) {
                 return;
             }
-            if (input.equalsIgnoreCase("cancel")) {
+            if (input.equalsIgnoreCase(Messages.chatCancel()) || input.equalsIgnoreCase("cancel")) {
                 player.sendMessage(TextUtil.info("Cancelled."));
                 return;
             }

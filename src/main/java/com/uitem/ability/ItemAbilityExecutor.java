@@ -59,7 +59,7 @@ public final class ItemAbilityExecutor {
             case THORNS -> applyThorns(ctx, action.paramDouble("percent", 25));
             case KNOCKBACK -> applyKnockback(ctx, action.paramDouble("strength", 1.2));
             case MESSAGE -> ctx.player().sendMessage(TextUtil.parse(
-                    action.param("text", "<green>Kich hoat!")));
+                    action.param("text", "<green>Kích hoạt!")));
             case COMMAND -> runCommand(ctx, action.param("command", ""));
             default -> {
             }

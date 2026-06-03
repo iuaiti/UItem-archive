@@ -30,10 +30,10 @@ public class RarityPickerGui extends AbstractGui {
         String current = data.getRarity();
         setItem(4, GuiTheme.header(Material.NETHER_STAR, Messages.guiRarityField(),
                 List.of(
-                        "<gray>Hien tai: " + (current != null
+                        "<gray>Hiện tại: " + (current != null
                                 ? RarityConfig.getRarityColor(current) + current
                                 : "<gray>" + Messages.guiRarityNone()),
-                        "<yellow>Click mot do hiem ben duoi"
+                        "<yellow>Click một độ hiếm bên dưới"
                 )));
 
         List<String> keys = new ArrayList<>(RarityConfig.getKeys());
@@ -49,9 +49,9 @@ public class RarityPickerGui extends AbstractGui {
             }
             lore.add("");
             if (key.equalsIgnoreCase(current)) {
-                lore.add("<green>Dang chon");
+                lore.add("<green>Đang chọn");
             } else {
-                lore.add("<yellow>Click de chon");
+                lore.add("<yellow>Click để chọn");
             }
             setItem(slots[i], createItem(icon,
                     (entry != null ? entry.color() : "<white>") + "<bold>" + key + "</bold>",
@@ -64,8 +64,8 @@ public class RarityPickerGui extends AbstractGui {
             });
         }
 
-        setItem(40, createItem(Material.BARRIER, "<red><bold>Xoa do hiem</bold>",
-                List.of("<gray>Dat ve khong co rarity")), ev -> {
+        setItem(40, createItem(Material.BARRIER, "<red><bold>Xóa độ hiếm</bold>",
+                List.of("<gray>Đặt về không có rarity")), ev -> {
             data.setRarity(null);
             plugin.getItemManager().registerItem(data);
             player.sendMessage(TextUtil.success(Messages.guiRarityRemoved()));

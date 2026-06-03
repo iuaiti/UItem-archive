@@ -4,6 +4,7 @@ import com.uitem.UItemPlugin;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
+import org.bukkit.entity.Player;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -185,5 +186,19 @@ public final class PotionManager {
         }
         return item.getItemMeta().getPersistentDataContainer()
                 .get(potionKey, PersistentDataType.STRING);
+    }
+
+    /** Ap dung hieu ung tu UPotionData len nguoi choi (dung khi item co linked-potion). */
+    public void applyEffectsToPlayer(Player player, UPotionData data) {
+        if (player == null || data == null) {
+            return;
+        }
+        for (UPotionEffectEntry entry : data.getEffects()) {
+            PotionEffectType type = PotionEffectTypes.resolve(entry.getTypeKey());
+            PotionEffect effect = entry.toBukkit(type);
+            if (effect != null) {
+                player.addPotionEffect(effect, true);
+            }
+        }
     }
 }

@@ -29,7 +29,7 @@ public class PotionConfirmDeleteGui extends AbstractGui {
                 List.of("<gray>ID: <white>" + data.getId())));
 
         setItem(11, GuiTheme.actionDanger(Material.RED_CONCRETE, Messages.potionDeleteConfirm(),
-                "<red>Hanh dong khong the hoan tac"), ev -> {
+                "<red>Hành động không thể hoàn tác"), ev -> {
             GuiFeedback.click(player);
             plugin.getPotionManager().remove(data.getId());
             player.sendMessage(TextUtil.success(Messages.potionDeleted(data.getId())));
@@ -37,7 +37,7 @@ public class PotionConfirmDeleteGui extends AbstractGui {
         });
 
         setItem(15, GuiTheme.actionSecondary(Material.LIME_CONCRETE, Messages.potionDeleteCancel(),
-                "<gray>Quay lai danh sach"), ev -> {
+                "<gray>Quay lại danh sách"), ev -> {
             GuiFeedback.click(player);
             new PotionListGui(plugin, player, returnPage).open();
         });

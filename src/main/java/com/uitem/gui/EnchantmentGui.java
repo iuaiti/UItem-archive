@@ -3,6 +3,7 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.util.GuiTheme;
+import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -36,7 +37,7 @@ public class EnchantmentGui extends AbstractGui {
     }
 
     public EnchantmentGui(UItemPlugin plugin, Player player, UItemData data, int page) {
-        super(plugin, player, 54, GuiTheme.title("Enchants · " + data.getId()));
+        super(plugin, player, 54, GuiTheme.title(Messages.enchEditorTitle(data.getId())));
         this.data = data;
         this.page = page;
     }
@@ -47,13 +48,13 @@ public class EnchantmentGui extends AbstractGui {
 
         // Title
         setItem(4, createItem(Material.ENCHANTING_TABLE,
-                "<light_purple><bold>Enchantment Editor</bold>",
+                Messages.enchEditorHeader(),
                 List.of(
-                        "<gray>Edit enchantments for this item",
+                        Messages.enchEditorDesc(),
                         "",
-                        "<yellow>Left click: <white>Increase level",
-                        "<yellow>Right click: <white>Decrease level",
-                        "<yellow>Shift+Click: <white>Remove entirely"
+                        Messages.enchEditorLeft(),
+                        Messages.enchEditorRight(),
+                        Messages.enchEditorShift()
                 )));
 
         List<Enchantment> enchants = plugin.getItemManager().getCommonEnchantments();
@@ -83,17 +84,17 @@ public class EnchantmentGui extends AbstractGui {
                 }
 
                 List<String> lore = new ArrayList<>();
-                lore.add("<dark_gray>Key: " + enchKey);
+                lore.add(Messages.enchEditorKey(enchKey));
                 lore.add("");
                 if (hasEnchant) {
-                    lore.add("<green>✔ Added - Level " + currentLevel);
+                    lore.add(Messages.enchEditorAdded(currentLevel));
                 } else {
-                    lore.add("<red>✘ Not added");
+                    lore.add(Messages.enchEditorNotAdded());
                 }
                 lore.add("");
-                lore.add("<yellow>Left click: <white>Increase level");
-                lore.add("<yellow>Right click: <white>Decrease level");
-                lore.add("<yellow>Shift+Click: <white>Remove");
+                lore.add(Messages.enchEditorLeft());
+                lore.add(Messages.enchEditorRight());
+                lore.add(Messages.enchEditorShift());
 
                 meta.lore(lore.stream().map(TextUtil::parse).toList());
                 item.setItemMeta(meta);
