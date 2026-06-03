@@ -45,4 +45,20 @@ public class OraxenIntegration {
             return null;
         }
     }
+
+    public String getIdFromItem(ItemStack item) {
+        if (item == null || item.getType().isAir()) {
+            return null;
+        }
+        try {
+            Method getIdByItem = oraxenItemsClass.getMethod("getIdByItem", ItemStack.class);
+            Object id = getIdByItem.invoke(null, item);
+            if (id instanceof String s && !s.isBlank()) {
+                return s;
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

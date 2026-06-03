@@ -181,32 +181,29 @@ public final class GuiTheme {
     }
 
     /**
-     * Frame for CraftingGui (non-AbstractGui inventory).
+     * Frame for CraftingGui — vanilla-style (khong branding UItem).
      */
     public static void frameCraftingInventory(Inventory inventory, int size, int[] emptySlots, int... extraEmpty) {
-        ItemStack border = border();
-        ItemStack accent = accent();
-        ItemStack filler = filler();
+        ItemStack pane = pane(Material.LIGHT_GRAY_STAINED_GLASS_PANE, " ");
+        ItemStack tableIcon = button(Material.CRAFTING_TABLE,
+                Messages.craftGuiTitle(),
+                List.of(
+                        Messages.craftGuiHintPlace(),
+                        Messages.craftGuiHintTake()
+                ));
 
         for (int i = 0; i < size; i++) {
-            inventory.setItem(i, border.clone());
+            inventory.setItem(i, pane.clone());
         }
-
-        int[] hollow = emptySlots;
-        for (int slot : hollow) {
+        for (int slot : emptySlots) {
             inventory.setItem(slot, null);
         }
         for (int slot : extraEmpty) {
             inventory.setItem(slot, null);
         }
-
-        inventory.setItem(4, header(Material.CRAFTING_TABLE, "Crafting",
-                List.of("<gray>Dat nguyen lieu vao o ben trai",
-                        "<gray>Nhan ket qua de nhan item")));
-        inventory.setItem(13, filler.clone());
-        inventory.setItem(14, accent.clone());
-        inventory.setItem(15, accent.clone());
-        inventory.setItem(22, accent.clone());
-        inventory.setItem(31, filler.clone());
+        inventory.setItem(4, tableIcon);
+        inventory.setItem(13, pane.clone());
+        inventory.setItem(22, pane.clone());
+        inventory.setItem(31, pane.clone());
     }
 }

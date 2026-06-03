@@ -589,15 +589,16 @@ public class ResourcePackManager {
         }
 
         byte[] useHash = finalHash == null ? null : finalHash.clone();
-        Runnable task = () -> {
+        if (!player.isOnline()) {
+            return;
+        }
+        SchedulerUtil.runForEntity(plugin, player, () -> {
             if (useHash != null) {
                 player.setResourcePack(url, useHash);
             } else {
                 player.setResourcePack(url);
             }
-        };
-
-        SchedulerUtil.runSync(plugin, task);
+        });
     }
 
     private void writeText(File file, String content) {

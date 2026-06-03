@@ -6,7 +6,11 @@ import com.uitem.api.UItemAPI;
 import com.uitem.api.events.UItemEquipEvent;
 import com.uitem.api.events.UItemInteractEvent;
 import com.uitem.api.events.UItemPickupEvent;
+import com.uitem.gui.AbstractGui;
+import com.uitem.gui.CraftingGui;
+import com.uitem.gui.RecipeEditorGui;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,59 +18,57 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Listener bắt các action liên quan đến UItem và fire custom events.
+ * Fire API events cho plugin khac (khong chay ky nang item — xem {@link com.uitem.ability.ItemAbilityListener}).
  *
- * <p>Các event được fire:
  * <ul>
- *   <li>{@link UItemInteractEvent} — khi player click với UItem trên tay</li>
- *   <li>{@link UItemPickupEvent}   — khi player nhặt UItem</li>
- *   <li>{@link UItemEquipEvent}    — khi player mặc/tháo UItem (thay đổi slot armor/offhand)</li>
+ *   <li>{@link UItemInteractEvent} — click voi UItem tren tay</li>
+ *   <li>{@link UItemPickupEvent} — nhac UItem</li>
+ *   <li>{@link UItemEquipEvent} — mac/thao UItem (giap + tay phu)</li>
  * </ul>
  */
 public class UItemActionListener implements Listener {
 
-    private final UItemPlugin plugin;
-
     public UItemActionListener(@NotNull UItemPlugin plugin) {
-        this.plugin = plugin;
+        // plugin giu de mo rong (config toggle API, v.v.)
     }
 
-    // ================================================================
-    // Interact: RIGHT/LEFT click với UItem
-    // ================================================================
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = false)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerInteract(@NotNull PlayerInteractEvent event) {
-        Player player = event.getPlayer();
+        if (event.getAction() == Action.PHYSICAL) {
+            return;
+        }
 
-        // Determine which hand triggered this event
         EquipmentSlot usedHand = event.getHand();
-        if (usedHand == null) return;
+        if (usedHand == null) {
+            return;
+        }
 
-        // Get the item from the triggering hand
-        ItemStack usedItem = (usedHand == EquipmentSlot.HAND)
+        Player player = event.getPlayer();
+        ItemStack usedItem = usedHand == EquipmentSlot.HAND
                 ? player.getInventory().getItemInMainHand()
                 : player.getInventory().getItemInOffHand();
 
         UItemData data = getUItemData(usedItem);
-        if (data == null) return;
-
-        Action action = event.getAction();
-        if (action == Action.PHYSICAL) return; // pressure plate / trampling — bỏ qua
+        if (data == null) {
+            return;
+        }
 
         UItemInteractEvent uiEvent = new UItemInteractEvent(
                 data,
                 player,
-                action,
+                event.getAction(),
                 usedItem.clone(),
                 usedHand,
                 event.getClickedBlock(),
@@ -79,17 +81,17 @@ public class UItemActionListener implements Listener {
         }
     }
 
-    // ================================================================
-    // Pickup: nhặt UItem từ dưới đất
-    // ================================================================
-
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPickup(@NotNull EntityPickupItemEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
 
         Item itemEntity = event.getItem();
         UItemData data = getUItemData(itemEntity.getItemStack());
-        if (data == null) return;
+        if (data == null) {
+            return;
+        }
 
         UItemPickupEvent uiEvent = new UItemPickupEvent(data, player, itemEntity);
         Bukkit.getPluginManager().callEvent(uiEvent);
@@ -99,78 +101,167 @@ public class UItemActionListener implements Listener {
         }
     }
 
-    // ================================================================
-    // Equip: mặc/tháo UItem qua InventoryClickEvent (tương thích mọi Paper/Spigot)
-    // Bắt: click trực tiếp vào armor slot, shift-click auto-equip,
-    //       và numberkey swap vào armor slot.
-    // ================================================================
-
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onInventoryClick(@NotNull InventoryClickEvent event) {
-        if (!(event.getWhoClicked() instanceof Player player)) return;
+    public void onSwapHands(@NotNull PlayerSwapHandItemsEvent event) {
+        Player player = event.getPlayer();
+        // Sau khi swap: main = getMainHandItem(), off = getOffHandItem()
+        ItemStack afterMain = event.getMainHandItem();
+        ItemStack afterOff = event.getOffHandItem();
+        ItemStack beforeMain = afterOff;
+        ItemStack beforeOff = afterMain;
 
-        switch (event.getAction()) {
-            // Click trực tiếp / swap vào slot armor
-            case PLACE_ALL, PLACE_ONE, PLACE_SOME, SWAP_WITH_CURSOR -> {
-                if (event.getSlotType() != InventoryType.SlotType.ARMOR) return;
-                ItemStack wearing = event.getCurrentItem();  // đang mặc (có thể null)
-                ItemStack equipping = event.getCursor();     // sắp mặc vào
-
-                EquipmentSlot slot = rawSlotToEquipmentSlot(event.getRawSlot());
-                if (slot == null) return;
-
-                // Item vừa mặc vào
-                if (equipping != null && !equipping.getType().isAir()) {
-                    UItemData data = getUItemData(equipping);
-                    if (data != null) fireEquipEvent(event, player, data, slot, wearing, equipping, true);
-                }
-                // Item vừa tháo ra
-                if (wearing != null && !wearing.getType().isAir()) {
-                    UItemData data = getUItemData(wearing);
-                    if (data != null) fireEquipEvent(event, player, data, slot, wearing, equipping, false);
-                }
-            }
-
-            // Lấy item ra khỏi slot armor
-            case PICKUP_ALL, PICKUP_HALF, PICKUP_ONE, PICKUP_SOME -> {
-                if (event.getSlotType() != InventoryType.SlotType.ARMOR) return;
-                ItemStack wearing = event.getCurrentItem();
-                if (wearing == null || wearing.getType().isAir()) return;
-
-                UItemData data = getUItemData(wearing);
-                if (data == null) return;
-
-                EquipmentSlot slot = rawSlotToEquipmentSlot(event.getRawSlot());
-                if (slot == null) return;
-
-                fireEquipEvent(event, player, data, slot, wearing, null, false);
-            }
-
-            // Shift-click tự động equip/unequip armor
-            case MOVE_TO_OTHER_INVENTORY -> {
-                ItemStack clicked = event.getCurrentItem();
-                if (clicked == null || clicked.getType().isAir()) return;
-
-                UItemData data = getUItemData(clicked);
-                if (data == null) return;
-
-                // Xác định slot từ material type (shift-click không cho biết slot đích trực tiếp)
-                EquipmentSlot slot = materialToArmorSlot(clicked);
-                if (slot == null) return;
-
-                // Kiểm tra đang equip (từ inventory lên) hay unequip (từ armor slot xuống)
-                boolean equipping = event.getSlotType() != InventoryType.SlotType.ARMOR;
-                ItemStack current = player.getInventory().getItem(slot);
-
-                fireEquipEvent(event, player, data, slot, equipping ? current : clicked,
-                        equipping ? clicked : null, equipping);
-            }
-
-            default -> { /* bỏ qua các action khác */ }
+        if (handleSlotChange(event, player, EquipmentSlot.HAND, beforeMain, afterMain)) {
+            event.setCancelled(true);
+        } else if (handleSlotChange(event, player, EquipmentSlot.OFF_HAND, beforeOff, afterOff)) {
+            event.setCancelled(true);
         }
     }
 
-    private void fireEquipEvent(
+    /**
+     * @return true neu can cancel hanh dong (swap tay)
+     */
+    private boolean handleSlotChange(
+            @NotNull Cancellable cancellable,
+            @NotNull Player player,
+            @NotNull EquipmentSlot slot,
+            @Nullable ItemStack before,
+            @Nullable ItemStack after) {
+
+        UItemData beforeData = getUItemData(before);
+        UItemData afterData = getUItemData(after);
+        boolean cancel = false;
+
+        if (beforeData != null && afterData == null) {
+            cancel |= fireEquipCancellable(cancellable, player, beforeData, slot, before, air(), false);
+        }
+        if (afterData != null) {
+            cancel |= fireEquipCancellable(cancellable, player, afterData, slot, before, after, true);
+        }
+        return cancel;
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onInventoryClick(@NotNull InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return;
+        }
+        if (isUItemGuiOpen(event)) {
+            return;
+        }
+
+        switch (event.getAction()) {
+            case PLACE_ALL, PLACE_ONE, PLACE_SOME, SWAP_WITH_CURSOR -> handlePlaceOnArmor(event, player);
+            case PICKUP_ALL, PICKUP_HALF, PICKUP_ONE, PICKUP_SOME -> handlePickupFromArmor(event, player);
+            case HOTBAR_SWAP, HOTBAR_MOVE_AND_READD -> handleHotbarSwapOnArmor(event, player);
+            case MOVE_TO_OTHER_INVENTORY -> handleShiftClick(event, player);
+            default -> { }
+        }
+    }
+
+    private void handlePlaceOnArmor(@NotNull InventoryClickEvent event, @NotNull Player player) {
+        if (event.getSlotType() != InventoryType.SlotType.ARMOR) {
+            return;
+        }
+        EquipmentSlot slot = rawSlotToEquipmentSlot(event.getRawSlot());
+        if (slot == null) {
+            return;
+        }
+
+        ItemStack wearing = event.getCurrentItem();
+        ItemStack equipping = event.getCursor();
+
+        if (equipping != null && !equipping.getType().isAir()) {
+            UItemData data = getUItemData(equipping);
+            if (data != null) {
+                dispatchEquip(event, player, data, slot, wearing, equipping, true);
+            }
+        }
+        if (wearing != null && !wearing.getType().isAir()) {
+            UItemData data = getUItemData(wearing);
+            if (data != null) {
+                dispatchEquip(event, player, data, slot, wearing, equipping, false);
+            }
+        }
+    }
+
+    private void handlePickupFromArmor(@NotNull InventoryClickEvent event, @NotNull Player player) {
+        if (event.getSlotType() != InventoryType.SlotType.ARMOR) {
+            return;
+        }
+        ItemStack wearing = event.getCurrentItem();
+        if (wearing == null || wearing.getType().isAir()) {
+            return;
+        }
+
+        UItemData data = getUItemData(wearing);
+        if (data == null) {
+            return;
+        }
+
+        EquipmentSlot slot = rawSlotToEquipmentSlot(event.getRawSlot());
+        if (slot == null) {
+            return;
+        }
+
+        dispatchEquip(event, player, data, slot, wearing, null, false);
+    }
+
+    private void handleHotbarSwapOnArmor(@NotNull InventoryClickEvent event, @NotNull Player player) {
+        if (event.getSlotType() != InventoryType.SlotType.ARMOR) {
+            return;
+        }
+        EquipmentSlot slot = rawSlotToEquipmentSlot(event.getRawSlot());
+        if (slot == null) {
+            return;
+        }
+
+        ItemStack wearing = event.getCurrentItem();
+        int hotbar = event.getHotbarButton();
+        if (hotbar < 0 || hotbar > 8) {
+            return;
+        }
+        ItemStack hotbarItem = player.getInventory().getItem(hotbar);
+
+        if (wearing != null && !wearing.getType().isAir()) {
+            UItemData oldData = getUItemData(wearing);
+            if (oldData != null) {
+                dispatchEquip(event, player, oldData, slot, wearing, hotbarItem, false);
+            }
+        }
+        if (hotbarItem != null && !hotbarItem.getType().isAir()) {
+            UItemData newData = getUItemData(hotbarItem);
+            if (newData != null) {
+                dispatchEquip(event, player, newData, slot, wearing, hotbarItem, true);
+            }
+        }
+    }
+
+    private void handleShiftClick(@NotNull InventoryClickEvent event, @NotNull Player player) {
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType().isAir()) {
+            return;
+        }
+
+        UItemData data = getUItemData(clicked);
+        if (data == null) {
+            return;
+        }
+
+        EquipmentSlot slot = materialToArmorSlot(clicked);
+        if (slot == null) {
+            return;
+        }
+
+        boolean equipping = event.getSlotType() != InventoryType.SlotType.ARMOR;
+        ItemStack current = player.getInventory().getItem(slot);
+
+        dispatchEquip(event, player, data, slot,
+                equipping ? current : clicked,
+                equipping ? clicked : null,
+                equipping);
+    }
+
+    private void dispatchEquip(
             @NotNull InventoryClickEvent clickEvent,
             @NotNull Player player,
             @NotNull UItemData data,
@@ -179,16 +270,12 @@ public class UItemActionListener implements Listener {
             @Nullable ItemStack newItem,
             boolean equipping) {
 
-        // isEquipping() trong UItemEquipEvent được suy ra từ newItem có phải AIR không,
-        // nên truyền AIR khi tháo ra để event tự detect đúng.
-        ItemStack safeNew = (newItem == null || newItem.getType().isAir())
-                ? new ItemStack(org.bukkit.Material.AIR)
-                : newItem.clone();
-
         UItemEquipEvent uiEvent = new UItemEquipEvent(
-                data, player, slot,
-                (oldItem == null || oldItem.getType().isAir()) ? null : oldItem.clone(),
-                safeNew
+                data,
+                player,
+                slot,
+                cloneOrNull(oldItem),
+                equipping ? cloneOrAir(newItem) : air()
         );
         Bukkit.getPluginManager().callEvent(uiEvent);
         if (uiEvent.isCancelled()) {
@@ -196,43 +283,94 @@ public class UItemActionListener implements Listener {
         }
     }
 
-    /**
-     * Map raw slot index trong PlayerInventory sang EquipmentSlot armor.
-     * Slot 5=helmet, 6=chestplate, 7=leggings, 8=boots trong inventory view.
-     */
+    private boolean fireEquipCancellable(
+            @NotNull Cancellable source,
+            @NotNull Player player,
+            @NotNull UItemData data,
+            @NotNull EquipmentSlot slot,
+            @Nullable ItemStack oldItem,
+            @Nullable ItemStack newItem,
+            boolean equipping) {
+
+        UItemEquipEvent uiEvent = new UItemEquipEvent(
+                data,
+                player,
+                slot,
+                cloneOrNull(oldItem),
+                equipping ? cloneOrAir(newItem) : air()
+        );
+        Bukkit.getPluginManager().callEvent(uiEvent);
+        if (uiEvent.isCancelled()) {
+            source.setCancelled(true);
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isUItemGuiOpen(@NotNull InventoryClickEvent event) {
+        InventoryHolder top = event.getView().getTopInventory().getHolder();
+        return top instanceof AbstractGui
+                || top instanceof CraftingGui
+                || top instanceof RecipeEditorGui;
+    }
+
     @Nullable
-    private EquipmentSlot rawSlotToEquipmentSlot(int rawSlot) {
+    private static EquipmentSlot rawSlotToEquipmentSlot(int rawSlot) {
         return switch (rawSlot) {
             case 5 -> EquipmentSlot.HEAD;
             case 6 -> EquipmentSlot.CHEST;
             case 7 -> EquipmentSlot.LEGS;
             case 8 -> EquipmentSlot.FEET;
+            case 40 -> EquipmentSlot.OFF_HAND;
             default -> null;
         };
     }
 
-    /**
-     * Đoán armor slot từ material khi shift-click (không có thông tin slot đích).
-     */
     @Nullable
-    private EquipmentSlot materialToArmorSlot(@NotNull ItemStack item) {
+    private static EquipmentSlot materialToArmorSlot(@NotNull ItemStack item) {
         String name = item.getType().name();
         if (name.endsWith("_HELMET") || name.endsWith("_SKULL")
                 || name.equals("CARVED_PUMPKIN") || name.equals("PLAYER_HEAD")) {
             return EquipmentSlot.HEAD;
         }
-        if (name.endsWith("_CHESTPLATE") || name.equals("ELYTRA")) return EquipmentSlot.CHEST;
-        if (name.endsWith("_LEGGINGS")) return EquipmentSlot.LEGS;
-        if (name.endsWith("_BOOTS"))    return EquipmentSlot.FEET;
+        if (name.endsWith("_CHESTPLATE") || name.equals("ELYTRA")) {
+            return EquipmentSlot.CHEST;
+        }
+        if (name.endsWith("_LEGGINGS")) {
+            return EquipmentSlot.LEGS;
+        }
+        if (name.endsWith("_BOOTS")) {
+            return EquipmentSlot.FEET;
+        }
         return null;
     }
 
-    /**
-     * Lấy UItemData từ ItemStack, trả về null nếu không phải UItem.
-     */
     @Nullable
-    private UItemData getUItemData(@Nullable ItemStack item) {
-        if (!UItemAPI.isAvailable()) return null;
+    private static UItemData getUItemData(@Nullable ItemStack item) {
+        if (!UItemAPI.isAvailable()) {
+            return null;
+        }
         return UItemAPI.get().getUItemData(item).orElse(null);
+    }
+
+    @Nullable
+    private static ItemStack cloneOrNull(@Nullable ItemStack stack) {
+        if (stack == null || stack.getType().isAir()) {
+            return null;
+        }
+        return stack.clone();
+    }
+
+    @NotNull
+    private static ItemStack cloneOrAir(@Nullable ItemStack stack) {
+        if (stack == null || stack.getType().isAir()) {
+            return air();
+        }
+        return stack.clone();
+    }
+
+    @NotNull
+    private static ItemStack air() {
+        return new ItemStack(Material.AIR);
     }
 }

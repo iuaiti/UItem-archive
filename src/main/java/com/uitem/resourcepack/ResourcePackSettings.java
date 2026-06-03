@@ -1,6 +1,7 @@
 package com.uitem.resourcepack;
 
 import com.uitem.UItemPlugin;
+import com.uitem.util.ServerVersionUtil;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.io.File;
@@ -15,6 +16,7 @@ public final class ResourcePackSettings {
     private final boolean importExternalPacks;
     private final boolean mergeVanillaOverrides;
     private final boolean pullOraxenTextures;
+    private final boolean pullNexoTextures;
     private final boolean pullItemsAdderTextures;
     private final boolean generateOnItemSave;
     private final File sourceTextureDir;
@@ -42,6 +44,7 @@ public final class ResourcePackSettings {
         this.importExternalPacks = config.getBoolean("resourcepack.import-external-packs", true);
         this.mergeVanillaOverrides = config.getBoolean("resourcepack.merge-vanilla-overrides", true);
         this.pullOraxenTextures = config.getBoolean("resourcepack.pull-oraxen-textures", true);
+        this.pullNexoTextures = config.getBoolean("resourcepack.pull-nexo-textures", true);
         this.pullItemsAdderTextures = config.getBoolean("resourcepack.pull-itemsadder-textures", true);
         this.generateOnItemSave = config.getBoolean("resourcepack.generate-on-item-save", false);
         this.serverPort = config.getInt("resourcepack.server-port", 9732);
@@ -63,7 +66,9 @@ public final class ResourcePackSettings {
         this.baseModelFolder = normalize(config.getString("resourcepack.base-model-folder", "assets/minecraft/models/item"));
         this.outputZipName = config.getString("resourcepack.output-zip", "UItem-ResourcePack.zip");
         this.cmdStorageFile = config.getString("resourcepack.cmd.storage-file", "custom_model_data.yml");
-        this.packFormat = Math.max(1, config.getInt("resourcepack.pack-format", 34));
+        int configuredFormat = config.getInt("resourcepack.pack-format", -1);
+        int resolved = configuredFormat >= 0 ? configuredFormat : ServerVersionUtil.defaultPackFormat();
+        this.packFormat = Math.max(1, resolved);
         this.descriptionEn = config.getString("resourcepack.description.en",
                 "UItem Custom Resource Pack | Premium items");
         this.descriptionVi = config.getString("resourcepack.description.vi",
@@ -84,6 +89,7 @@ public final class ResourcePackSettings {
     public boolean importExternalPacks() { return importExternalPacks; }
     public boolean mergeVanillaOverrides() { return mergeVanillaOverrides; }
     public boolean pullOraxenTextures() { return pullOraxenTextures; }
+    public boolean pullNexoTextures() { return pullNexoTextures; }
     public boolean pullItemsAdderTextures() { return pullItemsAdderTextures; }
     public boolean generateOnItemSave() { return generateOnItemSave; }
     public File sourceTextureDir() { return sourceTextureDir; }

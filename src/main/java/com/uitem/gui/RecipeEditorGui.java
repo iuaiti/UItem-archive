@@ -3,6 +3,8 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.recipe.UItemRecipe;
+import com.uitem.util.Messages;
+import com.uitem.util.SchedulerUtil;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -22,6 +24,8 @@ public class RecipeEditorGui implements InventoryHolder {
     private static final int RESULT_SLOT = 23;
     private static final int GUI_SIZE = 45;
 
+    private static final int PICK_UITEM_SLOT = 15;
+    private static final int PICK_POTION_SLOT = 16;
     private static final int SAVE_SHAPED_SLOT = 38;
     private static final int SAVE_SHAPELESS_SLOT = 40;
     private static final int CLEAR_SLOT = 42;
@@ -31,11 +35,17 @@ public class RecipeEditorGui implements InventoryHolder {
     private final UItemData data;
     private Inventory inventory;
     private UItemRecipe existingRecipe;
+    private final boolean openPotionPickerOnOpen;
 
     public RecipeEditorGui(UItemPlugin plugin, Player player, UItemData data) {
+        this(plugin, player, data, false);
+    }
+
+    public RecipeEditorGui(UItemPlugin plugin, Player player, UItemData data, boolean openPotionPickerOnOpen) {
         this.plugin = plugin;
         this.player = player;
         this.data = data;
+        this.openPotionPickerOnOpen = openPotionPickerOnOpen;
         this.existingRecipe = plugin.getRecipeManager().getRecipe(data.getId());
         this.inventory = org.bukkit.Bukkit.createInventory(this, GUI_SIZE,
                 TextUtil.parse("<gold>Recipe: <white>" + data.getId()));
@@ -78,14 +88,35 @@ public class RecipeEditorGui implements InventoryHolder {
         ItemStack preview = plugin.getItemManager().buildPreviewItemStack(data);
         inventory.setItem(RESULT_SLOT, preview);
         inventory.setItem(RESULT_SLOT + 9, createInfoItem(Material.KNOWLEDGE_BOOK,
-                "<gold><bold>Guide</bold>",
+                "<gold><bold>Huong dan</bold>",
                 List.of(
-                        "<gray>Place ingredients in the left slots",
-                        "<gray>Result is this item",
+                        Messages.recipeEditorGuide1(),
+                        Messages.recipeEditorGuide2(),
+                        Messages.recipeEditorGuide3(),
+                        Messages.recipeEditorGuide4(),
                         "",
-                        "<green>Shaped: <gray>save with shape pattern",
-                        "<aqua>Shapeless: <gray>save without shape pattern"
+                        "<green>Shaped <gray>— giu hinh dang 3x3"
                 )));
+
+        inventory.setItem(PICK_UITEM_SLOT, createInfoItem(Material.CHEST,
+                Messages.recipePickerButton(),
+                List.of(
+                        Messages.recipePickerButtonDesc(),
+                        "<gray>Item UItem lam NL"
+                )));
+
+        boolean hasPotions = !plugin.getPotionManager().getAll().isEmpty();
+        Material potionBtnMat = hasPotions ? Material.BREWING_STAND : Material.GLASS_BOTTLE;
+        List<String> potionBtnLore = new ArrayList<>();
+        potionBtnLore.add(Messages.recipePickerPotionButtonDesc());
+        potionBtnLore.add("<gray>Potion UItem lam NL che <white>" + data.getId());
+        potionBtnLore.add("<gray>Vi du: <white>heal_burst <gray>+ kiem → item moi");
+        if (!hasPotions) {
+            potionBtnLore.add("");
+            potionBtnLore.add("<red>Chua co potion — tao o Potion Studio");
+        }
+        inventory.setItem(PICK_POTION_SLOT, createInfoItem(potionBtnMat,
+                Messages.recipePickerPotionButton(), potionBtnLore));
 
         inventory.setItem(SAVE_SHAPED_SLOT, createInfoItem(Material.GREEN_STAINED_GLASS_PANE,
                 "<green><bold>Save Shaped</bold>",
@@ -98,12 +129,20 @@ public class RecipeEditorGui implements InventoryHolder {
                 List.of("<gray>Delete current recipe")));
 
         if (existingRecipe != null) {
+            List<String> statusLore = new ArrayList<>();
+            statusLore.add("<gray>Type: " + (existingRecipe.isShaped() ? "Shaped" : "Shapeless"));
+            statusLore.add("<gray>Amount: " + existingRecipe.getResultAmount());
+            appendUsedAsIngredient(statusLore);
             inventory.setItem(44, createInfoItem(Material.LIME_DYE,
-                    "<green><bold>Has recipe</bold>",
-                    List.of(
-                            "<gray>Type: " + (existingRecipe.isShaped() ? "Shaped" : "Shapeless"),
-                            "<gray>Amount: " + existingRecipe.getResultAmount()
-                    )));
+                    "<green><bold>Co cong thuc</bold>", statusLore));
+        } else {
+            List<String> chainLore = new ArrayList<>();
+            chainLore.add("<gray>Chua co cong thuc");
+            appendUsedAsIngredient(chainLore);
+            if (chainLore.size() > 1) {
+                inventory.setItem(44, createInfoItem(Material.PAPER,
+                        "<yellow>Duoc dung lam NL", chainLore));
+            }
         }
 
         int backSlot = 36;
@@ -148,10 +187,98 @@ public class RecipeEditorGui implements InventoryHolder {
             refresh();
             return;
         }
+        if (slot == PICK_UITEM_SLOT) {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            new RecipeIngredientPickerGui(plugin, player, this, data.getId(),
+                    RecipeIngredientPickerGui.Mode.ITEM, 0).open();
+            return;
+        }
+        if (slot == PICK_POTION_SLOT) {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            new RecipeIngredientPickerGui(plugin, player, this, data.getId(),
+                    RecipeIngredientPickerGui.Mode.POTION, 0).open();
+            return;
+        }
         if (slot == 36) {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new ItemEditorGui(plugin, player, data).open();
             return;
+        }
+    }
+
+    /**
+     * Them 1 item UItem vao o nguyen lieu trong (tu picker).
+     *
+     * @return true neu da dat vao o trong hoac stack
+     */
+    public boolean addIngredientFromPicker(String uitemId) {
+        if (uitemId == null || uitemId.isBlank()) {
+            return false;
+        }
+        com.uitem.UItemData ingData = plugin.getItemManager().getItem(uitemId);
+        if (ingData == null) {
+            return false;
+        }
+        ItemStack stack = plugin.getItemManager().buildItemStack(ingData);
+        stack.setAmount(1);
+        return placeIngredient(stack);
+    }
+
+    public boolean addPotionFromPicker(String potionId) {
+        if (potionId == null || potionId.isBlank()) {
+            return false;
+        }
+        var potionData = plugin.getPotionManager().get(potionId);
+        if (potionData == null) {
+            return false;
+        }
+        ItemStack stack = plugin.getPotionManager().buildItemStack(potionData);
+        stack.setAmount(1);
+        return placeIngredient(stack);
+    }
+
+    private boolean placeIngredient(ItemStack stack) {
+        if (stack == null || stack.getType().isAir()) {
+            return false;
+        }
+        UItemRecipe.Ingredient incoming = ingredientFromStack(stack);
+        for (int craftSlot : CRAFT_SLOTS) {
+            ItemStack existing = inventory.getItem(craftSlot);
+            if (existing == null || existing.getType().isAir()) {
+                inventory.setItem(craftSlot, stack.clone());
+                return true;
+            }
+            if (ingredientFromStack(existing).equals(incoming)) {
+                existing.setAmount(existing.getAmount() + 1);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private UItemRecipe.Ingredient ingredientFromStack(ItemStack item) {
+        if (isUPotion(item)) {
+            return UItemRecipe.Ingredient.potion(getPotionId(item), item.getAmount());
+        }
+        if (isUItem(item)) {
+            return new UItemRecipe.Ingredient(getUItemId(item), item.getAmount());
+        }
+        return new UItemRecipe.Ingredient(item.getType(), item.getAmount());
+    }
+
+    private void appendUsedAsIngredient(List<String> lore) {
+        List<String> usedIn = plugin.getRecipeManager().findRecipesUsingIngredient(data.getId());
+        if (usedIn.isEmpty()) {
+            return;
+        }
+        lore.add("");
+        lore.add("<gray>Dung lam NL cho:");
+        int show = Math.min(4, usedIn.size());
+        for (int i = 0; i < show; i++) {
+            lore.add("<white>• " + usedIn.get(i));
+        }
+        if (usedIn.size() > show) {
+            lore.add("<dark_gray>... +" + (usedIn.size() - show) + " recipe");
         }
     }
 
@@ -219,13 +346,7 @@ public class RecipeEditorGui implements InventoryHolder {
                     char match = findMatchingChar(item, ingMap);
                     if (match == 0) {
                         match = nextChar++;
-                        UItemRecipe.Ingredient ing;
-                        if (isUItem(item)) {
-                            String uitemId = getUItemId(item);
-                            ing = new UItemRecipe.Ingredient(uitemId, item.getAmount());
-                        } else {
-                            ing = new UItemRecipe.Ingredient(item.getType(), item.getAmount());
-                        }
+                        UItemRecipe.Ingredient ing = ingredientFromStack(item);
                         ingMap.put(match, ing);
                     }
                     row.append(match);
@@ -245,13 +366,7 @@ public class RecipeEditorGui implements InventoryHolder {
         for (int i = 0; i < 9; i++) {
             ItemStack item = matrix[i];
             if (item != null && !item.getType().isAir()) {
-                UItemRecipe.Ingredient ing;
-                if (isUItem(item)) {
-                    ing = new UItemRecipe.Ingredient(getUItemId(item), item.getAmount());
-                } else {
-                    ing = new UItemRecipe.Ingredient(item.getType(), item.getAmount());
-                }
-                ings.add(ing);
+                ings.add(ingredientFromStack(item));
             }
         }
 
@@ -279,6 +394,14 @@ public class RecipeEditorGui implements InventoryHolder {
         return item.getItemMeta().getPersistentDataContainer()
                 .get(plugin.getItemManager().getUItemKey(),
                         org.bukkit.persistence.PersistentDataType.STRING);
+    }
+
+    private boolean isUPotion(ItemStack item) {
+        return plugin.getPotionManager().isUPotion(item);
+    }
+
+    private String getPotionId(ItemStack item) {
+        return plugin.getPotionManager().getIdFromItem(item);
     }
 
     private void refresh() {
@@ -317,6 +440,11 @@ public class RecipeEditorGui implements InventoryHolder {
 
     public void open() {
         player.openInventory(inventory);
+        if (openPotionPickerOnOpen) {
+            SchedulerUtil.runSync(plugin, player, () -> new RecipeIngredientPickerGui(
+                    plugin, player, this, data.getId(),
+                    RecipeIngredientPickerGui.Mode.POTION, 0).open());
+        }
     }
 
     /**

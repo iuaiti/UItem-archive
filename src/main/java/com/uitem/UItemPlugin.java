@@ -5,6 +5,10 @@ import com.uitem.chat.ChatInputManager;
 import com.uitem.command.UItemCommand;
 import com.uitem.gui.GuiListener;
 import com.uitem.integration.IntegrationManager;
+import com.uitem.ability.EquipAbilityFallbackListener;
+import com.uitem.ability.ItemAbilityListener;
+import com.uitem.ability.PaperEquipAbilityListener;
+import com.uitem.util.ServerVersionUtil;
 import com.uitem.listener.UItemActionListener;
 import com.uitem.rarity.RarityConfig;
 import com.uitem.recipe.RecipeManager;
@@ -40,7 +44,7 @@ public final class UItemPlugin extends JavaPlugin {
     private com.uitem.search.SearchManager searchManager;
     private ResourcePackServer packServer;
     private RecipeManager recipeManager;
-    private com.uitem.passive.PassiveBootstrap passiveBootstrap;
+    private com.uitem.potion.PotionManager potionManager;
     private Listener resourcePackJoinListener;
 
     @Override
@@ -52,6 +56,16 @@ public final class UItemPlugin extends JavaPlugin {
         }
 
         saveDefaultConfig();
+
+        if (!ServerVersionUtil.isSupportedRange()) {
+            getLogger().warning("Server version " + ServerVersionUtil.displayVersion()
+                    + " is outside the tested range "
+                    + ServerVersionUtil.MIN_MAJOR + "." + ServerVersionUtil.MIN_MINOR + "."
+                    + ServerVersionUtil.MIN_PATCH + " – "
+                    + ServerVersionUtil.MAX_MAJOR + "." + ServerVersionUtil.MAX_MINOR + "."
+                    + ServerVersionUtil.MAX_PATCH
+                    + ". The plugin will still load; report issues on GitHub.");
+        }
 
         this.storageManager = new StorageManager(this);
         this.itemManager = new UItemManager(this);
@@ -67,10 +81,7 @@ public final class UItemPlugin extends JavaPlugin {
         resourcePackManager.syncCmdsToLiveItems();
 
         this.recipeManager = new RecipeManager(this, this.itemManager);
-
-        this.passiveBootstrap = new com.uitem.passive.PassiveBootstrap(this);
-        passiveBootstrap.enable(this);
-        ensureDefaultPassiveFile();
+        this.potionManager = new com.uitem.potion.PotionManager(this);
 
         RarityConfig.load(this);
 
@@ -83,6 +94,12 @@ public final class UItemPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(guiListener, this);
         getServer().getPluginManager().registerEvents(chatInputManager, this);
         getServer().getPluginManager().registerEvents(new UItemActionListener(this), this);
+        getServer().getPluginManager().registerEvents(new ItemAbilityListener(this), this);
+        if (ServerVersionUtil.supportsEntityEquipmentChangedEvent()) {
+            getServer().getPluginManager().registerEvents(new PaperEquipAbilityListener(this), this);
+        } else {
+            getServer().getPluginManager().registerEvents(new EquipAbilityFallbackListener(this), this);
+        }
 
         UItemCommand command = new UItemCommand(this);
         Objects.requireNonNull(getCommand("uitem")).setExecutor(command);
@@ -102,8 +119,10 @@ public final class UItemPlugin extends JavaPlugin {
         getLogger().info("║        ✦ Author: iuaititi");
         getLogger().info("╠══════════════════════════════════════════════╣");
         getLogger().info("║  ■ Loaded: " + itemManager.getAllItems().size() + " custom items");
-        getLogger().info("║  ■ Passives: " + passiveBootstrap.manager().all().size());
+        getLogger().info("║  ■ Potions: " + potionManager.getAll().size());
         getLogger().info("║  ■ Integrations: " + integrationManager.getStatus());
+        getLogger().info("║  ■ Minecraft: " + ServerVersionUtil.displayVersion()
+                + (ServerVersionUtil.isSupportedRange() ? " (supported)" : " (untested)"));
         getLogger().info("║  ■ Scheduler: " + (SchedulerUtil.isFolia() ? "🌐 Folia (Region)" : "☕ Paper/Spigot"));
         getLogger().info("╚══════════════════════════════════════════════╝");
 
@@ -118,11 +137,9 @@ public final class UItemPlugin extends JavaPlugin {
                     if (getConfig().getBoolean("resourcepack.auto-apply", true) && packServer != null && packServer.isRunning()) {
                         String url = packServer.getPackUrl();
                         byte[] hash = resourcePackManager.getLastPackHash();
-                        SchedulerUtil.runSync(UItemPlugin.this, () -> {
-                            for (Player p : Bukkit.getOnlinePlayers()) {
-                                resourcePackManager.applyResourcePack(p, url, hash);
-                            }
-                        });
+                        for (Player p : Bukkit.getOnlinePlayers()) {
+                            resourcePackManager.applyResourcePack(p, url, hash);
+                        }
                     }
                 } catch (IOException e) {
                     getLogger().warning("Could not generate/export resource pack: " + e.getMessage());
@@ -134,7 +151,7 @@ public final class UItemPlugin extends JavaPlugin {
         registerResourcePackJoinListener();
 
         // Bắt plugin enable để re-detect integrations nếu plugin tới sau
-        registerIntegrationEnableListener();
+        new com.uitem.integration.IntegrationHookListener(this).register();
     }
 
     @Override
@@ -232,8 +249,7 @@ public final class UItemPlugin extends JavaPlugin {
 
                 byte[] finalHash = hash;
                 String finalUrl = url;
-                SchedulerUtil.runSync(UItemPlugin.this, () ->
-                        resourcePackManager.applyResourcePack(player, finalUrl, finalHash));
+                resourcePackManager.applyResourcePack(player, finalUrl, finalHash);
             }
 
             @EventHandler
@@ -259,21 +275,6 @@ public final class UItemPlugin extends JavaPlugin {
             }
         };
         getServer().getPluginManager().registerEvents(resourcePackJoinListener, this);
-    }
-
-    private void registerIntegrationEnableListener() {
-        getServer().getPluginManager().registerEvents(new Listener() {
-            @EventHandler
-            public void onPluginEnable(PluginEnableEvent event) {
-                Plugin p = event.getPlugin();
-                String name = p.getName();
-                if (name.equals("Oraxen") || name.equals("ItemsAdder") || name.equals("SCore") || name.equals("ExecutableItems")) {
-                    getLogger().info("[UItem] Detected " + name + " enabling — re-checking integrations...");
-                    integrationManager.detectIntegrations();
-                    getLogger().info("[UItem] Integrations: " + integrationManager.getStatus());
-                }
-            }
-        }, this);
     }
 
     public static UItemPlugin getInstance() {
@@ -316,15 +317,7 @@ public final class UItemPlugin extends JavaPlugin {
         return recipeManager;
     }
 
-    public com.uitem.passive.PassiveBootstrap getPassiveBootstrap() {
-        return passiveBootstrap;
-    }
-
-    private void ensureDefaultPassiveFile() {
-        File target = new File(getDataFolder(), "passives/stone_diamond.yml");
-        if (!target.exists()) {
-            saveResource("passives/stone_diamond.yml", false);
-            passiveBootstrap.manager().loadAll();
-        }
+    public com.uitem.potion.PotionManager getPotionManager() {
+        return potionManager;
     }
 }

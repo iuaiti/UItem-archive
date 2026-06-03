@@ -62,7 +62,7 @@ public class ResourcePackGui extends AbstractGui {
             SchedulerUtil.runAsync(plugin, () -> {
                 try {
                     File zip = rpm.exportZip();
-                    SchedulerUtil.runSync(plugin, () -> {
+                    SchedulerUtil.runSync(plugin, player, () -> {
                         player.sendMessage(TextUtil.success(Messages.rpExported(zip.getAbsolutePath())));
                         if (rpm.getLastPackHashHex() != null) {
                             player.sendMessage(TextUtil.prefixed("<gold>SHA-1: <white>" + rpm.getLastPackHashHex()));
@@ -70,7 +70,7 @@ public class ResourcePackGui extends AbstractGui {
                         open();
                     });
                 } catch (Exception ex) {
-                    SchedulerUtil.runSync(plugin, () ->
+                    SchedulerUtil.runSync(plugin, player, () ->
                             player.sendMessage(TextUtil.error(Messages.rpExportFailed(ex.getMessage()))));
                 }
             });
@@ -111,7 +111,7 @@ public class ResourcePackGui extends AbstractGui {
         SchedulerUtil.runAsync(plugin, () -> {
             try {
                 File zip = plugin.getResourcePackManager().rebuildAll();
-                SchedulerUtil.runSync(plugin, () -> {
+                SchedulerUtil.runSync(plugin, target, () -> {
                     target.sendMessage(TextUtil.success(Messages.rpRegenerated()));
                     target.sendMessage(TextUtil.success(Messages.rpExported(zip.getAbsolutePath())));
                     String url = plugin.getResourcePackManager().resolvePackUrl();
@@ -122,7 +122,7 @@ public class ResourcePackGui extends AbstractGui {
                     new ResourcePackGui(plugin, target).open();
                 });
             } catch (Exception e) {
-                SchedulerUtil.runSync(plugin, () ->
+                SchedulerUtil.runSync(plugin, target, () ->
                         target.sendMessage(TextUtil.error(Messages.rpGenerateFailed(e.getMessage()))));
             }
         });

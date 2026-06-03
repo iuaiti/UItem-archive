@@ -33,6 +33,19 @@ minimessage-support: true
 
 # Integration settings
 
+# Hien thi item cho nguoi choi (khong phai GUI admin)
+display:
+  # Khong gan dong "ID: ..." / Material / CMD vao lore khi give, craft, pickup
+  hide-item-id-in-game: true
+  # Chi hien thong tin ky thuat trong GUI admin (Item Library preview)
+  show-id-in-editor-preview: true
+
+# Ban che tao (/craft, /crafting) — giao dien giong ban che tao vanilla
+craft:
+  # Tieu de GUI (MiniMessage hoac text thuan; de trong = "Ban che tao")
+  gui-title: "<white>Ban che tao"
+  vanilla-style: true
+
 # GUI search configuration
 gui:
   search:
@@ -44,11 +57,18 @@ permissions:
   search: "uitem.search"  # Permission required to use the search feature
 
 integration:
-  # Priority when both Oraxen and ItemsAdder are present
-  # Values: "oraxen", "itemsadder"
+  # Legacy: single plugin listed first (others follow in default order)
   priority: "oraxen"
 
-  # Auto-detect plugins
+  # Order when building base item from external IDs (first ID that resolves wins)
+  # Values: oraxen, nexo, itemsadder, executableitems
+  priority-order:
+    - nexo
+    - oraxen
+    - itemsadder
+    - executableitems
+
+  # Auto-detect plugins on enable / reload
   auto-detect: true
 
 # Debug mode - log additional information
@@ -74,8 +94,10 @@ resourcepack:
   import-external-packs: true
   merge-vanilla-overrides: true
   pull-oraxen-textures: true
+  pull-nexo-textures: true
   pull-itemsadder-textures: true
-  pack-format: 34
+  # Pack format: set a fixed number, or use -1 to auto-match the running server (1.21.4→34 … 1.26.x→64)
+  pack-format: -1
   namespace: "uitem"
   base-model-folder: "assets/minecraft/models/item"
   model-folder: "assets/uitem/models/item"

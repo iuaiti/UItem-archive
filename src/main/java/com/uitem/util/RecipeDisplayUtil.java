@@ -57,6 +57,9 @@ public final class RecipeDisplayUtil {
     }
 
     public static String formatIngredient(UItemRecipe.Ingredient ing) {
+        if (ing.getPotionId() != null) {
+            return "<light_purple>potion:" + ing.getPotionId() + (ing.getAmount() > 1 ? " x" + ing.getAmount() : "");
+        }
         if (ing.getUitemId() != null) {
             return ing.getUitemId() + (ing.getAmount() > 1 ? " x" + ing.getAmount() : "");
         }

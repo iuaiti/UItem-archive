@@ -2,8 +2,11 @@
 
 > **Version:** 1.0.0  
 > **Author:** iuaititi  
-> **API:** Paper 1.21.4+  
-> **Folia:** ✔ Supported
+> **API:** Paper **1.21.4 – 1.26.2** (Java 21)
+> **Folia:** ✔ Fully supported (`SchedulerUtil` — entity / region / global schedulers)
+> **License:** **All Rights Reserved** — [LICENSE](LICENSE) · [Terms (VI)](docs/GIAY-PHEP.md)
+
+📖 **Documentation:** [Full guide (Vietnamese)](docs/HUONG-DAN.md) · [Docs index](docs/README.md)
 
 ---
 
@@ -36,6 +39,7 @@
 | `/uitem rp status` | View RP status | `uitem.reload` |
 | `/uitem craft` | Open crafting table | * |
 | `/uitem check` | Check held item | * |
+| `/uitem passive` | Open Passive Studio (GUI) | `uitem.passive` |
 | `/uitem help` | Show help | * |
 
 ### `/crafting` (alias: `/craft`)
@@ -57,6 +61,10 @@
 | `uitem.reload` | op | Reload + resource pack management |
 | `uitem.search` | op | Search items in GUI |
 | `uitem.craft` | op | Open crafting table |
+| `uitem.passive` | op | Passive Studio |
+| `uitem.passive.create` | op | Create passives |
+| `uitem.passive.edit` | op | Edit passives |
+| `uitem.passive.delete` | op | Delete passives |
 
 ---
 
@@ -98,7 +106,7 @@ Each custom item supports:
 
 ### Folia Support
 
-Runs on Paper, Spigot, and Folia via `SchedulerUtil`.
+Runs on Paper, Spigot, and **Folia**. On Folia, player GUIs, item give, resource packs, and abilities use each player's **entity scheduler**; console commands and file I/O use global/async schedulers.
 
 ---
 
@@ -305,6 +313,26 @@ Edit all properties of a single item:
 
 ## 🔧 Requirements
 
-- **Server:** Paper 1.21.4+ (or Spigot, Folia)
+- **Server:** Paper **1.21.4 – 1.26.2** (Spigot/Folia also work via `SchedulerUtil`; equip abilities use Paper events when available)
 - **Java:** 21
 - **Optional plugins:** Oraxen, ItemsAdder, ExecutableItems
+
+---
+
+## ⚡ Passive Studio
+
+GUI-based automations (trigger → conditions → actions). No config editing required.
+
+- Open: `/uitem passive`
+- Guide: [docs/HUONG-DAN.md § Passive Studio](docs/HUONG-DAN.md#6-passive-studio-hành-động-tự-động)
+
+---
+
+## © License — All Rights Reserved
+
+Copyright (c) 2026 **iuaititi**. All rights reserved.
+
+- You may run UItem on servers you own or manage.
+- You may **not** redistribute, modify, decompile, or resell the plugin.
+- Full terms: [LICENSE](LICENSE) · Vietnamese summary: [docs/GIAY-PHEP.md](docs/GIAY-PHEP.md)
+- Report violations: huy594481@gmail.com

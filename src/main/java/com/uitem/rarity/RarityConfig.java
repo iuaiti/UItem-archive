@@ -25,6 +25,13 @@ public class RarityConfig {
             List<String> lore = rs.getStringList("lore");
             rarities.put(name, new RarityEntry(name, color, prefix, lore));
         }
+        if (rarities.isEmpty()) {
+            createDefaults();
+        }
+    }
+
+    public static void reload(UItemPlugin plugin) {
+        load(plugin);
     }
 
     private static void createDefaults() {

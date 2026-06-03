@@ -27,7 +27,8 @@ public class StorageManager {
     private static final List<String> DEFAULT_ITEM_RESOURCES = List.of(
             "items/ruby_sword.yml",
             "items/magic_apple.yml",
-            "items/fire_blade.yml"
+            "items/fire_blade.yml",
+            "items/vial_blade.yml"
     );
 
     private final UItemPlugin plugin;

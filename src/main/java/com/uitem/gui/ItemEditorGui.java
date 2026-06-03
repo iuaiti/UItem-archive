@@ -3,8 +3,12 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.rarity.RarityConfig;
+import com.uitem.integration.IntegrationManager;
+import com.uitem.recipe.UItemRecipe;
 import com.uitem.util.GuiFeedback;
 import com.uitem.util.GuiTheme;
+import com.uitem.util.Messages;
+import com.uitem.util.RecipeDisplayUtil;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -14,6 +18,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * GUI chỉnh sửa một custom item.
@@ -238,125 +243,108 @@ public class ItemEditorGui extends AbstractGui {
 
         // === Rarity (slot 21) ===
         String currentRarity = data.getRarity();
-        String rarityDisplay = currentRarity != null ? currentRarity : "None";
         setItem(21, createItem(Material.NETHER_STAR,
-                "<gold><bold>Rarity</bold>",
+                Messages.guiRarityField(),
                 List.of(
-                        "<gray>Current: " + (currentRarity != null ? RarityConfig.getRarityColor(currentRarity) + currentRarity : "<gray>None"),
+                        "<gray>Hien tai: " + (currentRarity != null
+                                ? RarityConfig.getRarityColor(currentRarity) + currentRarity
+                                : "<gray>" + Messages.guiRarityNone()),
                         "",
-                        "<yellow>Click to choose rarity",
-                        "<gray>COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, ULTRA"
+                        Messages.guiRarityClick(),
+                        Messages.guiRarityHints()
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            player.closeInventory();
-            StringBuilder msg = new StringBuilder("<gold>Available rarities:<dark_gray> ");
-            for (String r : RarityConfig.getKeys()) {
-                msg.append("\n").append(RarityConfig.getRarityColor(r)).append("▸ ").append(r);
-            }
-            msg.append("\n\n<yellow>Enter rarity name (or 'none' to remove):");
-            plugin.getChatInputManager().requestInput(player,
-                    msg.toString(),
-                    input -> {
-                        if (input.equalsIgnoreCase("none")) {
-                            data.setRarity(null);
-                            saveAndReopen();
-                            player.sendMessage(TextUtil.success("Removed rarity!"));
-                            return;
-                        }
-                        String upper = input.toUpperCase().trim();
-                        if (RarityConfig.getKeys().contains(upper)) {
-                            data.setRarity(upper);
-                            saveAndReopen();
-                            player.sendMessage(TextUtil.success("Set rarity = " + upper));
-                        } else {
-                            player.sendMessage(TextUtil.error("Rarity '" + input + "' does not exist!"));
-                            new ItemEditorGui(plugin, player, data).open();
-                        }
-                    });
+            new RarityPickerGui(plugin, player, data).open();
         });
 
-        // === ExecutableItems ID (slot 22) - only show if ExecutableItems is present ===
-        if (plugin.getIntegrationManager().hasExecutableItems()) {
-            setItem(22, createItem(Material.BLAZE_POWDER,
-                    "<gold><bold>⚡ ExecutableItems</bold>",
-                    List.of(
-                            "<gray>Current: <white>" + (data.getExecutableItemsId() != null ? data.getExecutableItemsId() : "None"),
-                            "",
-                            "<yellow>Click to set ExecutableItems ID",
-                            "<gray>Skills/Passives will be handled by EI"
-                    )), event -> {
-                plugin.getChatInputManager().requestInput(player,
-                        "<yellow>Enter ExecutableItems item ID <gray>(or 'none' to remove):",
-                        input -> {
-                            if (input.equalsIgnoreCase("none")) {
-                                data.setExecutableItemsId(null);
-                            } else {
-                                data.setExecutableItemsId(input.trim());
-                            }
-                            saveAndReopen();
-                        });
-            });
+        IntegrationManager integrations = plugin.getIntegrationManager();
+        if (integrations.hasNexo()) {
+            bindExternalIdSlot(20, Material.AMETHYST_SHARD, Messages.guiNexoField(),
+                    data.getNexoId(), Messages.guiNexoClick(), Messages.guiNexoHint(),
+                    Messages.guiNexoPick(), Messages.guiNexoPrompt(), IntegrationManager.NEXO, data::setNexoId);
+        }
+        if (integrations.hasOraxen()) {
+            bindExternalIdSlot(21, Material.DIAMOND, Messages.guiOraxenField(),
+                    data.getOraxenId(), Messages.guiOraxenClick(), Messages.guiOraxenHint(),
+                    Messages.guiOraxenPick(), Messages.guiOraxenPrompt(), IntegrationManager.ORAXEN, data::setOraxenId);
+        }
+        if (integrations.hasItemsAdder()) {
+            bindExternalIdSlot(22, Material.EMERALD, Messages.guiIaField(),
+                    data.getItemsAdderId(), Messages.guiIaClick(), Messages.guiIaHint(),
+                    Messages.guiIaPick(), Messages.guiIaPrompt(), IntegrationManager.ITEMSADDER, data::setItemsAdderId);
+        }
+        if (integrations.hasExecutableItems()) {
+            bindExternalIdSlot(23, Material.BLAZE_POWDER, Messages.guiEIIdField(),
+                    data.getExecutableItemsId(), Messages.guiEIIdClick(), Messages.guiEIIdHint(),
+                    Messages.guiEIIdPick(), Messages.guiEIIdPrompt(), IntegrationManager.EXECUTABLEITEMS,
+                    data::setExecutableItemsId);
         }
 
-        // === Oraxen ID (slot 23) - only show if Oraxen is present ===
-        if (plugin.getIntegrationManager().hasOraxen()) {
-            setItem(23, createItem(Material.DIAMOND,
-                    "<aqua><bold>Oraxen ID</bold>",
-                    List.of(
-                            "<gray>Current: <white>" + (data.getOraxenId() != null ? data.getOraxenId() : "None"),
-                            "",
-                            "<yellow>Click to set Oraxen item ID",
-                            "<gray>Use item from Oraxen as base"
-                    )), event -> {
-                plugin.getChatInputManager().requestInput(player,
-                        "<yellow>Enter Oraxen item ID <gray>(or 'none' to remove):",
-                        input -> {
-                            if (input.equalsIgnoreCase("none")) {
-                                data.setOraxenId(null);
-                            } else {
-                                data.setOraxenId(input.trim());
-                            }
-                            saveAndReopen();
-                        });
-            });
-        }
-
-        // === ItemsAdder ID (slot 24) - only show if ItemsAdder is present ===
-        if (plugin.getIntegrationManager().hasItemsAdder()) {
-            setItem(24, createItem(Material.EMERALD,
-                    "<green><bold>ItemsAdder ID</bold>",
-                    List.of(
-                            "<gray>Current: <white>" + (data.getItemsAdderId() != null ? data.getItemsAdderId() : "None"),
-                            "",
-                            "<yellow>Click to set ItemsAdder item ID",
-                            "<gray>Use item from ItemsAdder as base"
-                    )), event -> {
-                plugin.getChatInputManager().requestInput(player,
-                        "<yellow>Enter ItemsAdder namespaced ID <gray>(or 'none' to remove):",
-                        input -> {
-                            if (input.equalsIgnoreCase("none")) {
-                                data.setItemsAdderId(null);
-                            } else {
-                                data.setItemsAdderId(input.trim());
-                            }
-                            saveAndReopen();
-                        });
-            });
-        }
+        setItem(24, createItem(
+                data.isAbilitiesEnabled() && !data.getAbilities().isEmpty()
+                        ? Material.ENCHANTED_BOOK : Material.BOOK,
+                "<gold><bold>Ky nang / Trigger</bold>",
+                List.of(
+                        "<gray>Trang thai: " + (data.isAbilitiesEnabled() ? "<green>BAT" : "<red>TAT"),
+                        "<gray>So rule: <white>" + data.getAbilities().size(),
+                        "",
+                        "<yellow>Click <gray>mo studio ky nang",
+                        "<gray>Danh trung, giet quai, bi danh, phan sat, click..."
+                )), event -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            AbilityListGui.forItem(plugin, player, data).open();
+        });
 
         // === Recipe (slot 25) - Open Recipe Editor ===
         boolean hasRecipe = plugin.getRecipeManager().hasRecipe(data.getId());
+        List<String> recipeLore = new ArrayList<>();
+        recipeLore.add(hasRecipe ? "<green>Co cong thuc che tao" : "<red>Chua co cong thuc");
+        if (hasRecipe) {
+            UItemRecipe recipe = plugin.getRecipeManager().getRecipe(data.getId());
+            if (recipe != null) {
+                List<String> potionNl = plugin.getRecipeManager().listPotionIngredientsForResult(data.getId());
+                if (!potionNl.isEmpty()) {
+                    recipeLore.add("<gray>Potion NL: <light_purple>" + String.join(", ", potionNl));
+                }
+                recipeLore.add("<dark_gray>---");
+                for (String line : RecipeDisplayUtil.describeIngredients(recipe)) {
+                    recipeLore.add(line);
+                }
+            }
+        }
+        List<String> usedIn = plugin.getRecipeManager().findRecipesUsingIngredient(data.getId());
+        if (!usedIn.isEmpty()) {
+            recipeLore.add("<gray>NL item cho: <white>" + String.join(", ", usedIn.subList(0, Math.min(3, usedIn.size())))
+                    + (usedIn.size() > 3 ? "..." : ""));
+        }
+        recipeLore.add("");
+        recipeLore.add("<yellow>Click <gray>sua cong thuc (item + potion NL)");
         setItem(25, createItem(
                 hasRecipe ? Material.CRAFTING_TABLE : Material.FURNACE,
-                "<gold><bold>Crafting Recipe</bold>",
-                List.of(
-                        hasRecipe ? "<green>Has recipe" : "<red>No recipe",
-                        "",
-                        "<yellow>Click to edit recipe",
-                        "<gray>Set shaped/shapeless crafting recipe"
-                )), event -> {
+                "<gold><bold>Cong thuc che tao</bold>",
+                recipeLore), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new RecipeEditorGui(plugin, player, data).open();
+        });
+
+        boolean hasPotions = !plugin.getPotionManager().getAll().isEmpty();
+        List<String> potionBtnLore = new ArrayList<>();
+        potionBtnLore.add(Messages.itemEditorPotionIngredientDesc());
+        potionBtnLore.add("<gray>Dat potion vao o 3x3 roi Save");
+        if (!hasPotions) {
+            potionBtnLore.add("<red>Tao potion truoc (/uitem potion)");
+        } else {
+            potionBtnLore.add("<yellow>Click <gray>mo cong thuc + chon potion");
+        }
+        setItem(31, createItem(Material.SPLASH_POTION,
+                Messages.itemEditorPotionIngredientBtn(),
+                potionBtnLore), event -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            if (!hasPotions) {
+                player.sendMessage(TextUtil.error("Chua co potion UItem. Vao /uitem potion de tao."));
+                return;
+            }
+            new RecipeEditorGui(plugin, player, data, true).open();
         });
 
         setItem(45, createHomeButton(), event -> {
@@ -434,5 +422,38 @@ public class ItemEditorGui extends AbstractGui {
             count++;
         }
         return sb.toString();
+    }
+
+    private void bindExternalIdSlot(int slot, Material icon, String title, String currentId,
+                                    String clickHint, String useHint, String pickHint, String chatPrompt,
+                                    String integrationKey, Consumer<String> idSetter) {
+        String display = currentId != null ? currentId : Messages.guiOraxenCurrent();
+        setItem(slot, createItem(icon, title, List.of(
+                "<gray>Current: <white>" + display,
+                "",
+                clickHint,
+                useHint,
+                pickHint
+        )), event -> {
+            if (event.isShiftClick()) {
+                String picked = plugin.getIntegrationManager().detectIdFromHand(player, integrationKey);
+                if (picked == null || picked.isBlank()) {
+                    player.sendMessage(TextUtil.error("Khong nhan dien duoc ID — cam item plugin tren tay chinh."));
+                    return;
+                }
+                idSetter.accept(picked);
+                saveAndReopen();
+                player.sendMessage(TextUtil.success("Da gan ID: " + picked));
+                return;
+            }
+            plugin.getChatInputManager().requestInput(player, chatPrompt, input -> {
+                if (input.equalsIgnoreCase("none")) {
+                    idSetter.accept(null);
+                } else {
+                    idSetter.accept(input.trim());
+                }
+                saveAndReopen();
+            });
+        });
     }
 }

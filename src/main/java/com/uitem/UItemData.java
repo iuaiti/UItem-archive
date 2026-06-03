@@ -1,5 +1,8 @@
 package com.uitem;
 
+import com.uitem.ability.AbilityHolder;
+import com.uitem.ability.ItemAbilityRule;
+
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -13,7 +16,7 @@ import java.util.*;
  * Data class đại diện cho một custom item trong UItem.
  * Chứa toàn bộ thông tin cần thiết để build một ItemStack.
  */
-public class UItemData {
+public class UItemData implements AbilityHolder {
 
     private final String id;
     private Material material;
@@ -27,10 +30,11 @@ public class UItemData {
     private int maxDurability; // -1 = use default material durability
     private List<AttributeData> attributes;
 
-    // Oraxen/ItemsAdder/ExecutableItems integration
+    // External item plugins (Oraxen / Nexo / ItemsAdder / ExecutableItems)
     private String rarity;
 
     private String oraxenId;
+    private String nexoId;
     private String itemsAdderId;
     private String executableItemsId;
 
@@ -39,6 +43,9 @@ public class UItemData {
     private String modelParent;
     private List<String> textureLayers;
     private boolean excludeFromPack;
+
+    private boolean abilitiesEnabled = true;
+    private List<ItemAbilityRule> abilities = new ArrayList<>();
 
     public UItemData(String id) {
         this.id = id;
@@ -54,6 +61,7 @@ public class UItemData {
         this.attributes = new ArrayList<>();
         this.rarity = null;
         this.oraxenId = null;
+        this.nexoId = null;
         this.itemsAdderId = null;
         this.executableItemsId = null;
         this.texturePath = null;
@@ -65,6 +73,11 @@ public class UItemData {
     // === Getters & Setters ===
 
     public String getId() {
+        return id;
+    }
+
+    @Override
+    public String getAbilityId() {
         return id;
     }
 
@@ -164,6 +177,14 @@ public class UItemData {
         this.oraxenId = oraxenId;
     }
 
+    public String getNexoId() {
+        return nexoId;
+    }
+
+    public void setNexoId(String nexoId) {
+        this.nexoId = nexoId;
+    }
+
     public String getItemsAdderId() {
         return itemsAdderId;
     }
@@ -212,6 +233,22 @@ public class UItemData {
         this.excludeFromPack = excludeFromPack;
     }
 
+    public boolean isAbilitiesEnabled() {
+        return abilitiesEnabled;
+    }
+
+    public void setAbilitiesEnabled(boolean abilitiesEnabled) {
+        this.abilitiesEnabled = abilitiesEnabled;
+    }
+
+    public List<ItemAbilityRule> getAbilities() {
+        return abilities;
+    }
+
+    public void setAbilities(List<ItemAbilityRule> abilities) {
+        this.abilities = abilities != null ? new ArrayList<>(abilities) : new ArrayList<>();
+    }
+
     /**
      * Deep clone UItemData.
      */
@@ -232,12 +269,18 @@ public class UItemData {
         }
         clone.rarity = this.rarity;
         clone.oraxenId = this.oraxenId;
+        clone.nexoId = this.nexoId;
         clone.itemsAdderId = this.itemsAdderId;
         clone.executableItemsId = this.executableItemsId;
         clone.texturePath = this.texturePath;
         clone.modelParent = this.modelParent;
         clone.textureLayers = this.textureLayers != null ? new ArrayList<>(this.textureLayers) : new ArrayList<>();
         clone.excludeFromPack = this.excludeFromPack;
+        clone.abilitiesEnabled = this.abilitiesEnabled;
+        clone.abilities = new ArrayList<>();
+        for (ItemAbilityRule rule : this.abilities) {
+            clone.abilities.add(rule.copy());
+        }
         return clone;
     }
 

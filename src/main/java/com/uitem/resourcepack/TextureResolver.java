@@ -51,6 +51,9 @@ public final class TextureResolver {
         if (settings.pullItemsAdderTextures() && data.getItemsAdderId() != null) {
             found.addAll(findItemsAdderTexture(data.getItemsAdderId()));
         }
+        if (settings.pullNexoTextures() && data.getNexoId() != null) {
+            found.addAll(findNexoTexture(data.getNexoId()));
+        }
 
         return found;
     }
@@ -106,6 +109,22 @@ public final class TextureResolver {
             Path p = plugins.toPath().resolve(base);
             tryFindTexture(list, p, oraxenId);
             tryFindTexture(list, p.resolve("item"), oraxenId);
+        }
+        return list;
+    }
+
+    private List<Path> findNexoTexture(String nexoId) {
+        List<Path> list = new ArrayList<>();
+        File plugins = Bukkit.getPluginsFolder();
+        String[] bases = {
+                "Nexo/pack/textures",
+                "Nexo/pack/assets/nexo/textures",
+                "nexo/pack/textures"
+        };
+        for (String base : bases) {
+            Path p = plugins.toPath().resolve(base);
+            tryFindTexture(list, p, nexoId);
+            tryFindTexture(list, p.resolve("item"), nexoId);
         }
         return list;
     }

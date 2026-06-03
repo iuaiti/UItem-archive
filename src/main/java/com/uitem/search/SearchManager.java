@@ -1,35 +1,54 @@
 package com.uitem.search;
 
 import org.bukkit.entity.Player;
+
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages per‑player search queries for the item list GUI.
- * Uses a thread‑safe map because chat input callbacks may be executed
- * asynchronously. All methods are lightweight and safe to call from any
- * thread.
+ * Tu khoa tim kiem theo nguoi choi (Item Library / Potion List).
  */
 public class SearchManager {
-    private final Map<UUID, String> queries = new ConcurrentHashMap<>();
 
-    /** Set the current search query for a player. */
-    public void setQuery(Player player, String query) {
+    public enum Scope {
+        ITEM,
+        POTION
+    }
+
+    private final Map<UUID, String> itemQueries = new ConcurrentHashMap<>();
+    private final Map<UUID, String> potionQueries = new ConcurrentHashMap<>();
+
+    public void setQuery(Player player, Scope scope, String query) {
+        Map<UUID, String> map = scope == Scope.POTION ? potionQueries : itemQueries;
         if (query == null || query.isBlank()) {
-            queries.remove(player.getUniqueId());
+            map.remove(player.getUniqueId());
         } else {
-            queries.put(player.getUniqueId(), query.toLowerCase());
+            map.put(player.getUniqueId(), query.toLowerCase().trim());
         }
     }
 
-    /** Clear the stored query for a player. */
-    public void clearQuery(Player player) {
-        queries.remove(player.getUniqueId());
+    public void clearQuery(Player player, Scope scope) {
+        mapFor(scope).remove(player.getUniqueId());
     }
 
-    /** Get the current query for a player, or null if none. */
+    public String getQuery(Player player, Scope scope) {
+        return mapFor(scope).get(player.getUniqueId());
+    }
+
+    public void setQuery(Player player, String query) {
+        setQuery(player, Scope.ITEM, query);
+    }
+
+    public void clearQuery(Player player) {
+        clearQuery(player, Scope.ITEM);
+    }
+
     public String getQuery(Player player) {
-        return queries.get(player.getUniqueId());
+        return getQuery(player, Scope.ITEM);
+    }
+
+    private Map<UUID, String> mapFor(Scope scope) {
+        return scope == Scope.POTION ? potionQueries : itemQueries;
     }
 }

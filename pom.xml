@@ -9,12 +9,28 @@
     <version>1.0.0</version>
     <name>UItem</name>
     <description>Ultimate Item Plugin</description>
+    <licenses>
+        <license>
+            <name>All Rights Reserved</name>
+            <comments>All Rights Reserved (ARR) — see LICENSE file. No redistribution.</comments>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <developers>
+        <developer>
+            <id>iuaititi</id>
+            <name>iuaititi</name>
+            <email>huy594481@gmail.com</email>
+        </developer>
+    </developers>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.home>/usr/lib/jvm/java-21-openjdk-amd64</java.home>
+        <!-- Compile against minimum supported Paper API; runs on Paper 1.21.4 – 1.26.2 -->
+        <paper.api.version>1.21.4-R0.1-SNAPSHOT</paper.api.version>
     </properties>
 
     <repositories>
@@ -28,7 +44,7 @@
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
-            <version>1.21.4-R0.1-SNAPSHOT</version>
+            <version>${paper.api.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>

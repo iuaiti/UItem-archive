@@ -1,6 +1,7 @@
 package com.uitem.storage;
 
 import com.uitem.UItemData;
+import com.uitem.ability.ItemAbilityYaml;
 import com.uitem.UItemPlugin;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -72,6 +73,7 @@ public final class ItemYamlSerializer {
             }
 
             data.setOraxenId(section.getString("oraxen-id", null));
+            data.setNexoId(section.getString("nexo-id", null));
             data.setItemsAdderId(section.getString("itemsadder-id", null));
             data.setExecutableItemsId(section.getString("executableitems-id", null));
             data.setRarity(section.getString("rarity", null));
@@ -82,6 +84,11 @@ public final class ItemYamlSerializer {
                 data.setModelParent(rp.getString("parent"));
                 data.setTextureLayers(rp.getStringList("layers"));
                 data.setExcludeFromPack(rp.getBoolean("exclude", false));
+            }
+
+            ConfigurationSection abilitiesSec = section.getConfigurationSection("abilities");
+            if (abilitiesSec != null) {
+                ItemAbilityYaml.loadInto(data, abilitiesSec);
             }
 
             return data;
@@ -134,6 +141,11 @@ public final class ItemYamlSerializer {
         } else {
             config.set("oraxen-id", null);
         }
+        if (data.getNexoId() != null) {
+            config.set("nexo-id", data.getNexoId());
+        } else {
+            config.set("nexo-id", null);
+        }
         if (data.getItemsAdderId() != null) {
             config.set("itemsadder-id", data.getItemsAdderId());
         } else {
@@ -167,6 +179,12 @@ public final class ItemYamlSerializer {
             }
         } else {
             config.set("resourcepack", null);
+        }
+
+        if (!data.getAbilities().isEmpty() || !data.isAbilitiesEnabled()) {
+            ItemAbilityYaml.saveFrom(data, config.createSection("abilities"));
+        } else {
+            config.set("abilities", null);
         }
     }
 

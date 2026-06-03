@@ -22,7 +22,8 @@ public class MainHubGui extends AbstractGui {
     private static final int SLOT_RP = 13;
     private static final int SLOT_CRAFT = 31;
     private static final int SLOT_CREATE = 40;
-    private static final int SLOT_PASSIVE = 38;
+    private static final int SLOT_INTEGRATIONS = 38;
+    private static final int SLOT_POTION = 41;
 
     public MainHubGui(UItemPlugin plugin, Player player) {
         super(plugin, player, 54, GuiTheme.title("✦ UItem Studio"));
@@ -80,8 +81,8 @@ public class MainHubGui extends AbstractGui {
 
         if (player.hasPermission("craft") || player.hasPermission("uitem.craft")) {
             setItem(SLOT_CRAFT, GuiTheme.actionPrimary(Material.CRAFTING_TABLE,
-                    "Crafting Table",
-                    "<gray>Mo ban che tao UItem",
+                    Messages.craftGuiTitle(),
+                    "<gray>Mo ban che tao",
                     "<yellow>Can quyen craft"), ev -> {
                 GuiFeedback.click(player);
                 new CraftingGui(plugin, player).open();
@@ -92,16 +93,28 @@ public class MainHubGui extends AbstractGui {
                     List.of("<red>Can quyen <white>craft")));
         }
 
-        if (player.hasPermission("uitem.passive") || player.hasPermission("uitem.admin")) {
-            int passives = plugin.getPassiveBootstrap().manager().all().size();
-            setItem(SLOT_PASSIVE, GuiTheme.glowing(Material.BEACON,
-                    "Passive Studio",
+        var integrations = plugin.getIntegrationManager();
+        setItem(SLOT_INTEGRATIONS, GuiTheme.glowing(Material.COMPARATOR,
+                Messages.guiIntegrationsHub(),
+                List.of(
+                        Messages.guiIntegrationsHubDesc(),
+                        "<yellow>" + integrations.hookedCount() + "/4 <gray>plugin dang ket noi",
+                        "<dark_gray>Oraxen · Nexo · ItemsAdder · EI"
+                )), ev -> {
+            GuiFeedback.click(player);
+            new IntegrationsGui(plugin, player).open();
+        });
+
+        if (player.hasPermission("uitem.potion") || player.hasPermission("uitem.admin")) {
+            int potions = plugin.getPotionManager().getAll().size();
+            setItem(SLOT_POTION, GuiTheme.glowing(Material.BREWING_STAND,
+                    Messages.potionHubTitle(),
                     List.of(
-                            "<gray>Tao hanh dong tu dong — GUI",
-                            "<yellow>" + passives + " passives"
+                            Messages.potionHubSubtitle(),
+                            "<yellow>" + potions + " potions"
                     )), ev -> {
                 GuiFeedback.click(player);
-                new com.uitem.passive.gui.PassiveHubGui(plugin, player).open();
+                new PotionHubGui(plugin, player).open();
             });
         }
 

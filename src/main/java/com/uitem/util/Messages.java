@@ -98,7 +98,7 @@ public final class Messages {
     public static String rpGuiUrlLine(String url) { return get("rp-gui-url", "<gray>URL: <white>" + url, "<gray>URL: <white>" + url).replace("{url}", url); }
     public static String rpGuiBuildTitle() { return get("rp-gui-build-title", "BUILD PACK", "TAO PACK"); }
     public static String rpGuiBuildDesc1() { return get("rp-gui-build-d1", "<gray>Generate + merge + export zip", "<gray>Tao + gop + xuat zip"); }
-    public static String rpGuiBuildDesc2() { return get("rp-gui-build-d2", "<yellow>Like Oraxen / ItemsAdder build", "<yellow>Giong build Oraxen / ItemsAdder"); }
+    public static String rpGuiBuildDesc2() { return get("rp-gui-build-d2", "<yellow>Like Oraxen / Nexo / ItemsAdder build", "<yellow>Giong build Oraxen / Nexo / ItemsAdder"); }
     public static String rpGuiSendAllTitle() { return get("rp-gui-send-title", "SEND TO ALL", "GUI CHO TAT CA"); }
     public static String rpGuiSendAllDesc1() { return get("rp-gui-send-d1", "<gray>Apply pack to online players", "<gray>Ap dung pack cho nguoi online"); }
     public static String rpGuiSendAllDesc2() { return get("rp-gui-send-d2", "<yellow>Requires URL or auto-host", "<yellow>Can URL hoac tu host"); }
@@ -207,7 +207,14 @@ public final class Messages {
     public static String guiOraxenClick() { return get("gui-oraxen-click", "<yellow>Click to set Oraxen item ID", "<yellow>Nhan de dat ID item Oraxen"); }
     public static String guiOraxenHint() { return get("gui-oraxen-hint", "<gray>Use item from Oraxen as base", "<gray>Dung item tu Oraxen lam goc"); }
     public static String guiOraxenPrompt() { return get("gui-oraxen-prompt", "<yellow>Enter Oraxen item ID <gray>(or 'none' to remove):", "<yellow>Nhap ID item Oraxen <gray>(hoac 'none' de xoa):"); }
+    public static String guiOraxenPick() { return get("gui-oraxen-pick", "<aqua>Shift+Click: pick ID from hand", "<aqua>Shift+Click: lay ID tu item tren tay"); }
 
+    // ==================== GUI: Nexo ====================
+    public static String guiNexoField() { return get("gui-nexo-field", "<light_purple><bold>Nexo ID</bold>", "<light_purple><bold>Nexo ID</bold>"); }
+    public static String guiNexoClick() { return get("gui-nexo-click", "<yellow>Click to set Nexo item ID", "<yellow>Nhan de dat ID item Nexo"); }
+    public static String guiNexoHint() { return get("gui-nexo-hint", "<gray>Use item from Nexo as base", "<gray>Dung item tu Nexo lam goc"); }
+    public static String guiNexoPrompt() { return get("gui-nexo-prompt", "<yellow>Enter Nexo item ID <gray>(or 'none' to remove):", "<yellow>Nhap ID item Nexo <gray>(hoac 'none' de xoa):"); }
+    public static String guiNexoPick() { return get("gui-nexo-pick", "<light_purple>Shift+Click: pick ID from hand", "<light_purple>Shift+Click: lay ID tu item tren tay"); }
 
     // ==================== GUI: ItemsAdder ====================
     public static String guiIaField() { return get("gui-ia-field", "<green><bold>ItemsAdder ID</bold>", "<green><bold>ItemsAdder ID</bold>"); }
@@ -215,7 +222,187 @@ public final class Messages {
     public static String guiIaClick() { return get("gui-ia-click", "<yellow>Click to set ItemsAdder item ID", "<yellow>Nhan de dat ID item ItemsAdder"); }
     public static String guiIaHint() { return get("gui-ia-hint", "<gray>Use item from ItemsAdder as base", "<gray>Dung item tu ItemsAdder lam goc"); }
     public static String guiIaPrompt() { return get("gui-ia-prompt", "<yellow>Enter ItemsAdder namespaced ID <gray>(or 'none' to remove):", "<yellow>Nhap ID dinh danh ItemsAdder <gray>(hoac 'none' de xoa):"); }
+    public static String guiIaPick() { return get("gui-ia-pick", "<green>Shift+Click: pick ID from hand", "<green>Shift+Click: lay ID tu item tren tay"); }
+    public static String guiEIIdPick() { return get("gui-eiid-pick", "<gold>Shift+Click: pick ID from hand", "<gold>Shift+Click: lay ID tu item tren tay"); }
+    public static String guiIntegrationShiftHint() { return get("gui-integration-shift", "<dark_gray>Shift+Click = lay ID tu tay", "<dark_gray>Shift+Click = lay ID tu tay"); }
 
+    // ==================== GUI: Integrations hub ====================
+    public static String guiIntegrationsTitle() { return get("gui-integrations-title", "Integrations", "Tich hop"); }
+    public static String guiIntegrationsSubtitle() { return get("gui-integrations-sub", "<gray>Oraxen, Nexo, ItemsAdder, ExecutableItems", "<gray>Oraxen, Nexo, ItemsAdder, ExecutableItems"); }
+    public static String guiIntegrationsHub() { return get("gui-integrations-hub", "Integrations", "Tich hop plugin"); }
+    public static String guiIntegrationsHubDesc() { return get("gui-integrations-hub-d", "<gray>Oraxen / Nexo / ItemsAdder / EI", "<gray>Oraxen / Nexo / ItemsAdder / EI"); }
+    public static String guiIntegrationsPriority() { return get("gui-integrations-priority", "Build priority", "Thu tu uu tien build"); }
+    public static String guiIntegrationsRescan() { return get("gui-integrations-rescan", "Rescan plugins", "Quet lai plugin"); }
+
+    // ==================== Potion Studio ====================
+    public static String potionHubTitle() {
+        return get("potion-hub-title", "Potion Studio", "Potion Studio");
+    }
+    public static String potionHubSubtitle() {
+        return get("potion-hub-sub", "<gray>Custom potions with effects & colors", "<gray>Tao thuoc tuy chinh");
+    }
+    public static String potionListButton() {
+        return get("potion-list-btn", "Potion List", "Danh sach Potion");
+    }
+    public static String potionListButtonDesc() {
+        return get("potion-list-btn-d", "<gray>View and edit all potions", "<gray>Xem va sua potion");
+    }
+    public static String potionCreateButton() {
+        return get("potion-create-btn", "+ New Potion", "+ Tao Potion");
+    }
+    public static String potionCreateButtonDesc() {
+        return get("potion-create-btn-d", "<gray>Create a new custom potion", "<gray>Tao potion moi");
+    }
+    public static String potionCreatePrompt() {
+        return get("potion-create-prompt", "<yellow>Enter new potion ID:", "<yellow>Nhap ID potion moi:");
+    }
+    public static String potionInvalidId() {
+        return get("potion-invalid-id", "Invalid potion ID!", "ID potion khong hop le!");
+    }
+    public static String potionExists(String id) {
+        return get("potion-exists", "Potion '" + id + "' already exists!", "Potion '" + id + "' da ton tai!");
+    }
+    public static String potionCreated(String id) {
+        return get("potion-created", "Created potion '" + id + "'!", "Da tao potion '" + id + "'!");
+    }
+    public static String potionListTitle() {
+        return get("potion-list-title", "Potion List", "Danh sach Potion");
+    }
+    public static String potionDeleteTitle() {
+        return get("potion-delete-title", "Delete Potion?", "Xoa Potion?");
+    }
+    public static String potionDeleteConfirm() {
+        return get("potion-delete-yes", "Confirm Delete", "Xac nhan xoa");
+    }
+    public static String potionDeleteCancel() {
+        return get("potion-delete-no", "Cancel", "Huy");
+    }
+    public static String potionDeleted(String id) {
+        return get("potion-deleted", "Deleted potion '" + id + "'", "Da xoa potion '" + id + "'");
+    }
+    public static String potionFieldName() {
+        return get("potion-field-name", "<gold><bold>Display Name</bold>", "<gold><bold>Ten hien thi</bold>");
+    }
+    public static String potionFieldLore() {
+        return get("potion-field-lore", "<gold><bold>Lore</bold>", "<gold><bold>Lore</bold>");
+    }
+    public static String potionFieldKind() {
+        return get("potion-field-kind", "<aqua><bold>Potion Type</bold>", "<aqua><bold>Loai binh</bold>");
+    }
+    public static String potionFieldColor() {
+        return get("potion-field-color", "<light_purple><bold>Color</bold>", "<light_purple><bold>Mau sac</bold>");
+    }
+    public static String potionFieldEffects() {
+        return get("potion-field-effects", "<green><bold>Effects</bold>", "<green><bold>Hieu ung</bold>");
+    }
+    public static String potionFieldGlow() {
+        return get("potion-field-glow", "<yellow><bold>Glow</bold>", "<yellow><bold>Phat sang</bold>");
+    }
+    public static String potionSave() {
+        return get("potion-save", "SAVE", "LUU");
+    }
+    public static String potionSaved(String id) {
+        return get("potion-saved", "Saved potion '" + id + "'!", "Da luu potion '" + id + "'!");
+    }
+    public static String potionGiveSelf() {
+        return get("potion-give-self", "Test (give self)", "Thu (tu give)");
+    }
+    public static String potionGivenSelf(String id) {
+        return get("potion-given-self", "Received potion '" + id + "'", "Nhan potion '" + id + "'");
+    }
+    public static String potionPromptName() {
+        return get("potion-prompt-name", "<yellow>Enter display name (MiniMessage):", "<yellow>Nhap ten (MiniMessage):");
+    }
+    public static String potionPromptLore() {
+        return get("potion-prompt-lore", "<yellow>Enter lore line (or 'clear'):", "<yellow>Nhap dong lore (hoac 'clear'):");
+    }
+    public static String potionPromptColor() {
+        return get("potion-prompt-color", "<yellow>Color #RRGGBB or r,g,b:", "<yellow>Mau #RRGGBB hoac r,g,b:");
+    }
+    public static String potionEffectsTitle() {
+        return get("potion-effects-title", "Potion Effects", "Hieu ung Potion");
+    }
+    public static String potionAddEffect() {
+        return get("potion-add-effect", "+ Add Effect", "+ Them hieu ung");
+    }
+    public static String potionEffectRemoved() {
+        return get("potion-effect-removed", "Effect removed.", "Da xoa hieu ung.");
+    }
+    public static String potionEffectAdded(String type) {
+        return get("potion-effect-added", "Added effect: " + type, "Da them: " + type);
+    }
+    public static String potionPromptDuration() {
+        return get("potion-prompt-duration", "<yellow>Duration in seconds:", "<yellow>Thoi gian (giay):");
+    }
+    public static String potionInvalidNumber() {
+        return get("potion-invalid-num", "Invalid number!", "So khong hop le!");
+    }
+    public static String potionPickerTitle() {
+        return get("potion-picker-title", "Pick Effect", "Chon hieu ung");
+    }
+
+    // ==================== GUI: Recipe editor / chain ====================
+    public static String recipeEditorGuide1() {
+        return get("recipe-editor-g1", "<gray>Dat nguyen lieu o o ben trai", "<gray>Dat nguyen lieu o o ben trai");
+    }
+    public static String recipeEditorGuide2() {
+        return get("recipe-editor-g2", "<gray>NL: <white>Chon Item <gray>hoac <white>Chon Potion", "<gray>NL: nut Item hoac Potion");
+    }
+    public static String recipeEditorGuide3() {
+        return get("recipe-editor-g3", "<gray>Hoac keo item/potion /uitem give", "<gray>Hoac keo item/potion tu /uitem give");
+    }
+    public static String recipePickerButton() {
+        return get("recipe-picker-btn", "<gold><bold>Chon item UItem</bold>", "<gold><bold>Chon item UItem</bold>");
+    }
+    public static String recipePickerButtonDesc() {
+        return get("recipe-picker-btn-d", "<gray>Lay item da tao lam nguyen lieu", "<gray>Dung item khac lam NL");
+    }
+    public static String recipePickerTitle() {
+        return get("recipe-picker-title", "Recipe ingredients", "Nguyen lieu cong thuc");
+    }
+    public static String recipePickerDesc() {
+        return get("recipe-picker-desc", "<gray>Chon item de them vao cong thuc", "<gray>Chon item lam nguyen lieu");
+    }
+    public static String recipePickerSelfError() {
+        return get("recipe-picker-self", "Cannot use the result item as its own ingredient!", "Khong the dung chinh item ket qua lam NL!");
+    }
+    public static String recipePickerFull() {
+        return get("recipe-picker-full", "Crafting grid is full!", "O cong thuc da day!");
+    }
+    public static String recipePickerAdded(String id) {
+        return get("recipe-picker-added", "Added ingredient: " + id, "Da them NL: " + id);
+    }
+    public static String recipePickerPotionButton() {
+        return get("recipe-picker-potion-btn", "<light_purple><bold>Chon Potion</bold>", "<light_purple><bold>Chon Potion</bold>");
+    }
+    public static String recipePickerPotionButtonDesc() {
+        return get("recipe-picker-potion-btn-d", "<gray>Potion lam nguyen lieu craft", "<gray>Potion lam NL che item");
+    }
+    public static String recipePickerPotionTitle() {
+        return get("recipe-picker-potion-title", "Potion ingredients", "Nguyen lieu Potion");
+    }
+    public static String recipePickerPotionDesc() {
+        return get("recipe-picker-potion-desc", "<gray>Pick a custom potion", "<gray>Chon potion UItem");
+    }
+    public static String recipePickerPotionAdded(String id) {
+        return get("recipe-picker-potion-added", "Added potion: " + id, "Da them potion: " + id);
+    }
+    public static String recipePickerTabItems() {
+        return get("recipe-picker-tab-items", "Items", "Item");
+    }
+    public static String recipePickerTabPotions() {
+        return get("recipe-picker-tab-potions", "Potions", "Potion");
+    }
+
+    public static String itemEditorPotionIngredientBtn() {
+        return get("item-editor-potion-ing", "<light_purple><bold>+ Potion vao cong thuc</bold>",
+                "<light_purple><bold>+ Potion vao cong thuc</bold>");
+    }
+
+    public static String itemEditorPotionIngredientDesc() {
+        return get("item-editor-potion-ing-d", "<gray>Mo cong thuc va chon potion NL",
+                "<gray>Mo editor cong thuc → chon potion lam NL");
+    }
 
     // ==================== GUI: Recipe ====================
     public static String guiRecipeField() { return get("gui-recipe-field", "<gold><bold>Crafting Recipe</bold>", "<gold><bold>Cong Thuc Che Tao</bold>"); }
@@ -298,9 +485,6 @@ public final class Messages {
     // ==================== Recipe Editor ====================
     public static String recipeEditorTitle(String id) { return get("recipe-editor-title", "<gold>Recipe: <white>" + id, "<gold>Cong Thuc: <white>" + id).replace("{id}", id); }
     public static String recipeEditorGuide() { return get("recipe-editor-guide", "<gold><bold>Guide</bold>", "<gold><bold>Huong Dan</bold>"); }
-    public static String recipeEditorGuide1() { return get("recipe-editor-guide1", "<gray>Place ingredients in the left slots", "<gray>Dat nguyen lieu vao o ben trai"); }
-    public static String recipeEditorGuide2() { return get("recipe-editor-guide2", "<gray>Result is this item", "<gray>Ket qua la item nay"); }
-    public static String recipeEditorGuide3() { return get("recipe-editor-guide3", "<green>Shaped: <gray>save with shape pattern", "<green>Shaped: <gray>luu voi mau hinh dang"); }
     public static String recipeEditorGuide4() { return get("recipe-editor-guide4", "<aqua>Shapeless: <gray>save without shape pattern", "<aqua>Shapeless: <gray>luu khong can mau hinh dang"); }
     public static String recipeEditorSaveShaped() { return get("recipe-editor-save-shaped", "<green><bold>Save Shaped</bold>", "<green><bold>Luu Shaped</bold>"); }
     public static String recipeEditorSaveShapedDesc() { return get("recipe-editor-save-shaped-desc", "<gray>Save shaped recipe (3x3)", "<gray>Luu cong thuc shaped (3x3)"); }
@@ -330,6 +514,15 @@ public final class Messages {
     public static String recipeDetailNotFound() { return get("recipe-detail-not-found", "<red>Not found", "<red>Khong tim thay"); }
 
     // ==================== Crafting GUI ====================
+    public static String craftGuiTitle() {
+        return get("craft-gui-title", "<white>Crafting Table", "<white>Ban che tao");
+    }
+    public static String craftGuiHintPlace() {
+        return get("craft-gui-hint-place", "<gray>Place ingredients on the left", "<gray>Dat nguyen lieu ben trai");
+    }
+    public static String craftGuiHintTake() {
+        return get("craft-gui-hint-take", "<gray>Click the result to take items", "<gray>Click ket qua de nhan do");
+    }
     public static String craftAmount1() { return get("craft-amount-1", "<gray>Craft 1 item", "<gray>Che tao 1 item"); }
     public static String craftAmount8() { return get("craft-amount-8", "<gray>Craft 8 items", "<gray>Che tao 8 items"); }
     public static String craftAmount64() { return get("craft-amount-64", "<gray>Craft 64 items", "<gray>Che tao 64 items"); }

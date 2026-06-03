@@ -1,0 +1,7 @@
+material: IRON_SWORD
+display-name: "<light_purple><bold>Vial Blade</bold>"
+lore:
+  - "<gray>Ruot kiem ngam <light_purple>Heal Burst"
+  - "<gray>Che tu potion UItem + kiem"
+glowing: true
+rarity: RARE

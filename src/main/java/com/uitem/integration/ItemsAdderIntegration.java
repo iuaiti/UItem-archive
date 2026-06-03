@@ -39,4 +39,28 @@ public class ItemsAdderIntegration {
             return null;
         }
     }
+
+    public String getIdFromItem(ItemStack item) {
+        if (item == null || item.getType().isAir()) {
+            return null;
+        }
+        try {
+            Object customStack = customStackClass.getMethod("byItemStack", ItemStack.class).invoke(null, item);
+            if (customStack == null) {
+                return null;
+            }
+            for (String methodName : new String[]{"getNamespacedID", "getNamespacedId", "getId"}) {
+                try {
+                    Object id = customStackClass.getMethod(methodName).invoke(customStack);
+                    if (id instanceof String s && !s.isBlank()) {
+                        return s;
+                    }
+                } catch (NoSuchMethodException ignored) {
+                }
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

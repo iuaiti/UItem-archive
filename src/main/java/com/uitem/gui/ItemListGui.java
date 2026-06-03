@@ -3,6 +3,7 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemManager;
 import com.uitem.UItemPlugin;
+import com.uitem.search.ItemSearchUtil;
 import com.uitem.search.SearchManager;
 import com.uitem.util.GuiFeedback;
 import com.uitem.util.GuiTheme;
@@ -49,14 +50,9 @@ public class ItemListGui extends AbstractGui {
         int itemsPerPage = plugin.getConfig().getInt("gui.items-per-page", DEFAULT_ITEMS_PER_PAGE);
 
         SearchManager searchMgr = plugin.getSearchManager();
-        String query = searchMgr.getQuery(player);
+        String query = searchMgr.getQuery(player, SearchManager.Scope.ITEM);
         if (query != null && !query.isBlank()) {
-            String lower = query.toLowerCase();
-            allItems.removeIf(data -> {
-                if (data.getId().toLowerCase().contains(lower)) return false;
-                String disp = data.getDisplayName();
-                return disp == null || !disp.toLowerCase().contains(lower);
-            });
+            allItems.removeIf(data -> !ItemSearchUtil.matches(data, query));
         }
 
         int totalPages = Math.max(1, (int) Math.ceil((double) allItems.size() / itemsPerPage));
@@ -83,22 +79,25 @@ public class ItemListGui extends AbstractGui {
             }
         }
 
+        String searchPerm = plugin.getConfig().getString("permissions.search", "uitem.search");
         if (plugin.getConfig().getBoolean("gui.search.enabled", true)
-                && player.hasPermission("uitem.search")) {
+                && player.hasPermission(searchPerm)) {
             setItem(48, GuiTheme.actionSecondary(Material.SPYGLASS,
-                    "Search",
+                    Messages.guiSearchButton(),
                     Messages.guiSearchHint1(),
-                    Messages.guiSearchHint2()), event -> {
+                    Messages.guiSearchHint2(),
+                    query != null && !query.isBlank()
+                            ? "<gray>Dang loc: <white>" + query : "<gray>Tim: id, ten, rarity, material"), event -> {
                 GuiFeedback.click(player);
                 plugin.getChatInputManager().requestInput(player,
                         Messages.guiSearchPrompt(),
                         input -> {
                             if (input.equalsIgnoreCase("clear")) {
-                                searchMgr.clearQuery(player);
+                                searchMgr.clearQuery(player, SearchManager.Scope.ITEM);
                             } else {
-                                searchMgr.setQuery(player, input);
+                                searchMgr.setQuery(player, SearchManager.Scope.ITEM, input);
                             }
-                            new ItemListGui(plugin, player, page).open();
+                            new ItemListGui(plugin, player, 0).open();
                         });
             });
         }

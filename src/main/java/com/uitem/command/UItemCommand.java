@@ -32,7 +32,7 @@ import java.util.Map;
 public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> ROOT_SUBCOMMANDS = List.of(
-            "give", "editor", "reload", "list", "resourcepack", "rp", "craft", "passive", "help", "check"
+            "give", "editor", "reload", "list", "resourcepack", "rp", "craft", "potion", "help", "check"
     );
 
     private static final List<String> RP_ACTIONS = List.of(
@@ -63,7 +63,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             case "list" -> handleList(sender);
             case "resourcepack", "rp" -> handleResourcePack(sender, args);
             case "craft", "crafting" -> handleCraft(sender);
-            case "passive", "passives" -> handlePassive(sender);
+            case "potion", "potions" -> handlePotion(sender);
             case "check" -> handleCheck(sender);
             case "help" -> sendHelp(sender);
             default -> sender.sendMessage(TextUtil.error("Invalid command. Use /" + label + " help"));
@@ -84,30 +84,56 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         }
 
         String itemId = args[1].toLowerCase(Locale.ROOT);
-        if (!plugin.getItemManager().hasItem(itemId)) {
-            sender.sendMessage(TextUtil.error("Item '" + itemId + "' does not exist!"));
-            return;
-        }
-
         GiveTarget target = resolveGiveTarget(sender, args);
         if (target == null) {
             return;
         }
 
-        // Dùng UItemAPI.giveItem để fire UItemGiveEvent
-        boolean success = com.uitem.api.UItemAPI.get().giveItem(
-                target.player(), itemId, target.amount(), sender);
+        if (plugin.getItemManager().hasItem(itemId)) {
+            boolean success = com.uitem.api.UItemAPI.get().giveItem(
+                    target.player(), itemId, target.amount(), sender);
+            if (success) {
+                sender.sendMessage(TextUtil.success(
+                        "Gave " + target.player().getName() + " x" + target.amount() + " " + itemId));
+                if (!sender.equals(target.player())) {
+                    target.player().sendMessage(TextUtil.success(
+                            "You received x" + target.amount() + " " + itemId));
+                }
+            } else {
+                sender.sendMessage(TextUtil.error("Cannot give item (may have been blocked by another plugin)."));
+            }
+            return;
+        }
 
-        if (success) {
+        if (plugin.getPotionManager().has(itemId)) {
+            org.bukkit.inventory.ItemStack potion = plugin.getPotionManager()
+                    .buildItemStack(plugin.getPotionManager().get(itemId));
+            potion.setAmount(target.amount());
+            for (org.bukkit.inventory.ItemStack left : target.player().getInventory().addItem(potion).values()) {
+                target.player().getWorld().dropItemNaturally(target.player().getLocation(), left);
+            }
             sender.sendMessage(TextUtil.success(
-                    "Gave " + target.player().getName() + " x" + target.amount() + " " + itemId));
+                    "Gave " + target.player().getName() + " x" + target.amount() + " potion " + itemId));
             if (!sender.equals(target.player())) {
                 target.player().sendMessage(TextUtil.success(
-                        "You received x" + target.amount() + " " + itemId));
+                        "You received x" + target.amount() + " potion " + itemId));
             }
-        } else {
-            sender.sendMessage(TextUtil.error("Cannot give item (may have been blocked by another plugin)."));
+            return;
         }
+
+        sender.sendMessage(TextUtil.error("Item or potion '" + itemId + "' does not exist!"));
+    }
+
+    private void handlePotion(CommandSender sender) {
+        if (!sender.hasPermission("uitem.potion") && !sender.hasPermission("uitem.admin")) {
+            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
+            return;
+        }
+        new com.uitem.gui.PotionHubGui(plugin, player).open();
     }
 
     private GiveTarget resolveGiveTarget(CommandSender sender, String[] args) {
@@ -178,18 +204,6 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         new ItemListGui(plugin, player).open();
     }
 
-    private void handlePassive(CommandSender sender) {
-        if (!sender.hasPermission("uitem.passive") && !sender.hasPermission("uitem.admin")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
-            return;
-        }
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
-            return;
-        }
-        new com.uitem.passive.gui.PassiveHubGui(plugin, player).open();
-    }
-
     private void handleReload(CommandSender sender) {
         if (!sender.hasPermission("uitem.reload")) {
             sender.sendMessage(TextUtil.error(Messages.noPermission()));
@@ -198,9 +212,10 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
         plugin.reloadConfig();
         com.uitem.util.Messages.reload();
+        com.uitem.rarity.RarityConfig.reload(plugin);
         plugin.getStorageManager().saveAllNow(plugin.getItemManager());
         plugin.getStorageManager().loadAll(plugin.getItemManager());
-        plugin.getPassiveBootstrap().manager().loadAll();
+        plugin.getPotionManager().reload();
         plugin.getIntegrationManager().detectIntegrations();
 
         // Bug E fix: reload ResourcePackManager config fields
@@ -217,19 +232,17 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                     var rpm = plugin.getResourcePackManager();
                     rpm.generatePack();
                     rpm.exportZip();
-                    com.uitem.util.SchedulerUtil.runSync(plugin,
+                    SchedulerUtil.runSync(plugin, sender,
                             () -> sender.sendMessage(TextUtil.success(Messages.rpRegenerated())));
                     String packUrl = url != null && !url.isBlank() ? url : rpm.resolvePackUrl();
                     if (autoApply && packUrl != null && !packUrl.isBlank()) {
                         byte[] hash = rpm.getLastPackHash();
-                        com.uitem.util.SchedulerUtil.runSync(plugin, () -> {
-                            for (Player player : Bukkit.getOnlinePlayers()) {
-                                rpm.applyResourcePack(player, packUrl, hash);
-                            }
-                        });
+                        for (Player player : Bukkit.getOnlinePlayers()) {
+                            rpm.applyResourcePack(player, packUrl, hash);
+                        }
                     }
                 } catch (Exception e) {
-                    com.uitem.util.SchedulerUtil.runSync(plugin,
+                    SchedulerUtil.runSync(plugin, sender,
                             () -> sender.sendMessage(TextUtil.error("Cannot generate/export resource pack: " + e.getMessage())));
                 }
             });
@@ -342,10 +355,10 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                     int n = new com.uitem.resourcepack.PackImporter(plugin)
                             .importAll(rpm.getResourcePackDirectory().toPath(),
                                     rpm.getSettings().externalPacksDir());
-                    SchedulerUtil.runSync(plugin, () ->
+                    SchedulerUtil.runSync(plugin, sender, () ->
                             sender.sendMessage(TextUtil.success(Messages.rpMerged(n))));
                 } catch (Exception e) {
-                    SchedulerUtil.runSync(plugin, () ->
+                    SchedulerUtil.runSync(plugin, sender, () ->
                             sender.sendMessage(TextUtil.error(Messages.rpGenerateFailed(e.getMessage()))));
                 }
             });
@@ -354,14 +367,14 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                 try {
                     File zip = rpm.exportZip();
                     String hashHex = rpm.getLastPackHashHex();
-                    SchedulerUtil.runSync(plugin, () -> {
+                    SchedulerUtil.runSync(plugin, sender, () -> {
                         sender.sendMessage(TextUtil.success(Messages.rpExported(zip.getAbsolutePath())));
                         if (hashHex != null) {
                             sender.sendMessage(TextUtil.prefixed("<gold>SHA-1: <white>" + hashHex));
                         }
                     });
                 } catch (Exception e) {
-                    SchedulerUtil.runSync(plugin, () ->
+                    SchedulerUtil.runSync(plugin, sender, () ->
                             sender.sendMessage(TextUtil.error(Messages.rpExportFailed(e.getMessage()))));
                 }
             });
@@ -409,7 +422,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             try {
                 if (fullBuild) {
                     File zip = rpm.rebuildAll();
-                    SchedulerUtil.runSync(plugin, () -> {
+                    SchedulerUtil.runSync(plugin, sender, () -> {
                         sender.sendMessage(TextUtil.success(Messages.rpRegenerated()));
                         sender.sendMessage(TextUtil.success(Messages.rpExported(zip.getAbsolutePath())));
                         if (plugin.getConfig().getBoolean("resourcepack.auto-apply", false)) {
@@ -420,10 +433,11 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                 } else {
                     rpm.syncCmdsToLiveItems();
                     rpm.generatePack();
-                    SchedulerUtil.runSync(plugin, () -> sender.sendMessage(TextUtil.success(Messages.rpRegenerated())));
+                    SchedulerUtil.runSync(plugin, sender,
+                            () -> sender.sendMessage(TextUtil.success(Messages.rpRegenerated())));
                 }
             } catch (Exception e) {
-                SchedulerUtil.runSync(plugin, () ->
+                SchedulerUtil.runSync(plugin, sender, () ->
                         sender.sendMessage(TextUtil.error(Messages.rpGenerateFailed(e.getMessage()))));
             }
         });
@@ -435,17 +449,17 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                 "  <gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <gray>— Ultimate Item Plugin"));
         sender.sendMessage(Component.text(""));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem give <id> [player] [amount] <dark_gray>— <gray>Give item"));
+                "  <gold>/uitem give <id> [player] [amount] <dark_gray>— <gray>Give item or potion"));
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem editor <dark_gray>— <gray>Open editor GUI"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem passive <dark_gray>— <gray>Passive Studio (GUI)"));
-        sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem list <dark_gray>— <gray>List items"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem rp <build|generate|export|gui|sendall> <dark_gray>— <gray>Resource pack (Oraxen/IA style)"));
+                "  <gold>/uitem rp <build|generate|export|gui|sendall> <dark_gray>— <gray>Resource pack (Oraxen/Nexo/IA)"));
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem check <dark_gray>— <gray>Check if held item is a valid UItem"));
+        sender.sendMessage(miniMessage.deserialize(
+                "  <gold>/uitem potion <dark_gray>— <gray>Potion Studio (GUI)"));
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem craft <dark_gray>— <gray>Open UItem crafting table"));
         sender.sendMessage(miniMessage.deserialize(
@@ -481,6 +495,11 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             if (isGiveSubcommand(root)) {
                 for (String id : plugin.getItemManager().getAllItems().keySet()) {
                     if (id.toLowerCase(Locale.ROOT).startsWith(input)) {
+                        completions.add(id);
+                    }
+                }
+                for (String id : plugin.getPotionManager().getAll().keySet()) {
+                    if (id.toLowerCase(Locale.ROOT).startsWith(input) && !completions.contains(id)) {
                         completions.add(id);
                     }
                 }

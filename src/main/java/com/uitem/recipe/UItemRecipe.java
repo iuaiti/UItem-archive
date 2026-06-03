@@ -15,6 +15,7 @@ public class UItemRecipe {
 
     // Cached NamespacedKey for PDC tag matching — avoids creating a new one each match()
     private static NamespacedKey CACHED_UITEM_KEY;
+    private static NamespacedKey CACHED_POTION_KEY;
 
     private static NamespacedKey getUItemKey() {
         if (CACHED_UITEM_KEY == null) {
@@ -27,6 +28,18 @@ public class UItemRecipe {
             }
         }
         return CACHED_UITEM_KEY;
+    }
+
+    private static NamespacedKey getPotionKey() {
+        if (CACHED_POTION_KEY == null) {
+            var plugin = UItemPlugin.getInstance();
+            if (plugin != null) {
+                CACHED_POTION_KEY = plugin.getPotionManager().getPotionKey();
+            } else {
+                CACHED_POTION_KEY = new NamespacedKey("uitem", "upotion_id");
+            }
+        }
+        return CACHED_POTION_KEY;
     }
 
     private final String resultItemId;
@@ -64,6 +77,7 @@ public class UItemRecipe {
     public static class Ingredient {
         private Material material;
         private String uitemId;
+        private String potionId;
         private int amount;
 
         public Ingredient(Material material) {
@@ -80,35 +94,59 @@ public class UItemRecipe {
             this.amount = Math.max(1, amount);
         }
 
+        public static Ingredient potion(String potionId, int amount) {
+            Ingredient ing = new Ingredient(Material.AIR, 1);
+            ing.material = null;
+            ing.potionId = potionId;
+            ing.amount = Math.max(1, amount);
+            return ing;
+        }
+
         public Material getMaterial() { return material; }
         public String getUitemId() { return uitemId; }
+        public String getPotionId() { return potionId; }
         public int getAmount() { return amount; }
 
         public boolean matches(ItemStack item) {
             if (item == null || item.getType().isAir()) return false;
+            if (potionId != null) {
+                ItemMeta meta = item.getItemMeta();
+                if (meta == null) return false;
+                String id = meta.getPersistentDataContainer().get(getPotionKey(), PersistentDataType.STRING);
+                return potionId.equalsIgnoreCase(id) && item.getAmount() >= amount;
+            }
             if (uitemId != null) {
                 ItemMeta meta = item.getItemMeta();
                 if (meta == null) return false;
                 String id = meta.getPersistentDataContainer().get(getUItemKey(), PersistentDataType.STRING);
-                return uitemId.equals(id) && item.getAmount() >= amount;
+                return uitemId.equalsIgnoreCase(id) && item.getAmount() >= amount;
             }
-            return item.getType() == material && item.getAmount() >= amount;
+            return material != null && item.getType() == material && item.getAmount() >= amount;
         }
 
         public boolean isAir() {
+            if (potionId != null || uitemId != null) {
+                return false;
+            }
             return material == null || material.isAir();
         }
 
         public ItemStack toItemStack() {
-            if (uitemId != null) {
-                UItemPlugin plugin = UItemPlugin.getInstance();
-                if (plugin != null) {
-                    UItemData data = plugin.getItemManager().getItem(uitemId);
-                    if (data != null) {
-                        ItemStack item = plugin.getItemManager().buildItemStack(data);
-                        item.setAmount(amount);
-                        return item;
-                    }
+            UItemPlugin plugin = UItemPlugin.getInstance();
+            if (potionId != null && plugin != null) {
+                var data = plugin.getPotionManager().get(potionId);
+                if (data != null) {
+                    ItemStack item = plugin.getPotionManager().buildItemStack(data);
+                    item.setAmount(amount);
+                    return item;
+                }
+            }
+            if (uitemId != null && plugin != null) {
+                UItemData data = plugin.getItemManager().getItem(uitemId);
+                if (data != null) {
+                    ItemStack item = plugin.getItemManager().buildItemStack(data);
+                    item.setAmount(amount);
+                    return item;
                 }
             }
             if (material != null && !material.isAir()) {
@@ -118,7 +156,9 @@ public class UItemRecipe {
         }
 
         public void save(ConfigurationSection section) {
-            if (uitemId != null) {
+            if (potionId != null) {
+                section.set("potion-id", potionId);
+            } else if (uitemId != null) {
                 section.set("uitem-id", uitemId);
             } else if (material != null) {
                 section.set("material", material.name());
@@ -129,6 +169,10 @@ public class UItemRecipe {
         public static Ingredient load(ConfigurationSection section) {
             if (section == null) return null;
             int amount = section.getInt("amount", 1);
+            String potionId = section.getString("potion-id");
+            if (potionId != null) {
+                return potion(potionId, amount);
+            }
             String uitemId = section.getString("uitem-id");
             if (uitemId != null) {
                 return new Ingredient(uitemId, amount);
@@ -151,12 +195,13 @@ public class UItemRecipe {
             if (!(o instanceof Ingredient that)) return false;
             return amount == that.amount &&
                     material == that.material &&
-                    Objects.equals(uitemId, that.uitemId);
+                    Objects.equals(uitemId, that.uitemId) &&
+                    Objects.equals(potionId, that.potionId);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(material, uitemId, amount);
+            return Objects.hash(material, uitemId, potionId, amount);
         }
     }
 

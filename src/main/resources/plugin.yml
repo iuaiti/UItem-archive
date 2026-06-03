@@ -3,10 +3,10 @@ version: ${version}
 main: com.uitem.UItemPlugin
 api-version: '1.21'
 folia-supported: true
-description: Ultimate Item - Custom item plugin for Minecraft
+description: Ultimate Item - Custom items for Paper 1.21.4 through 1.26.2 (Folia supported)
 author: iuaititi
-softdepend: [Oraxen, ItemsAdder, SCore, ExecutableItems]
-license: Delta Softwares License (DSL) - All Rights Reserved - No Redistribution
+softdepend: [Oraxen, Nexo, ItemsAdder, SCore, ExecutableItems]
+license: All Rights Reserved (DSL v1.0 - No Redistribution)
 commands:
   uitem:
     description: UItem main command
@@ -14,7 +14,7 @@ commands:
     aliases: [ui]
     permission: uitem.admin
   crafting:
-    description: Open the UItem crafting table
+    description: Open the custom crafting table
     aliases: [craft]
 permissions:
   craft:
@@ -32,10 +32,10 @@ permissions:
       uitem.reload: true
       craft: true
       uitem.craft: true
-      uitem.passive: true
-      uitem.passive.create: true
-      uitem.passive.edit: true
-      uitem.passive.delete: true
+      uitem.potion: true
+      uitem.potion.create: true
+      uitem.potion.edit: true
+      uitem.potion.delete: true
   uitem.give:
     description: Allow giving custom items
     default: op
@@ -48,17 +48,17 @@ permissions:
   uitem.search:
     description: Allow using the item search GUI
     default: op
-  uitem.passive:
-    description: Open Passive Studio and manage custom passives
+  uitem.potion:
+    description: Open Potion Studio GUI
     default: op
-  uitem.passive.create:
-    description: Create new passives via GUI
+  uitem.potion.create:
+    description: Create custom potions
     default: op
-  uitem.passive.edit:
-    description: Edit existing passives
+  uitem.potion.edit:
+    description: Edit custom potions
     default: op
-  uitem.passive.delete:
-    description: Delete passives
+  uitem.potion.delete:
+    description: Delete custom potions
     default: op
 
 # =============================================================

@@ -1,78 +1,79 @@
-Delta Softwares License (DSL) for Minecraft Plugins
-Version 1.0
+UItem — All Rights Reserved
 
 Copyright (c) 2026 iuaititi
-email:huy594481@gmail.com
+All Rights Reserved.
 
-All rights reserved.
+Contact: huy594481@gmail.com
 
-────────────────────────────────────────────────────────────────
-I. GRANT OF LICENSE
-────────────────────────────────────────────────────────────────
+================================================================================
+NOTICE
+================================================================================
 
-Uitem (hereinafter referred to as "The Software") is licensed, not sold.
+Except for the limited use rights described below, ALL RIGHTS in and to the
+UItem software (including source code, compiled binaries, documentation, assets,
+and branding) are RESERVED by the copyright holder.
 
-You are granted a non-exclusive, non-transferable, revocable license to use The Software on your own Minecraft servers.
+No right is granted to copy, redistribute, modify, or create derivative works
+unless you have prior written permission from the author.
 
-You MAY:
-- Install and use The Software on an unlimited number of Minecraft servers that you own or manage.
-- Use The Software for commercial purposes (e.g., donation-based servers, selling ranks or items) without paying any additional licensing fees.
+================================================================================
+I. GRANT OF LICENSE (Limited use)
+================================================================================
 
-────────────────────────────────────────────────────────────────
-II. RESTRICTIONS (What you may NOT do)
-────────────────────────────────────────────────────────────────
+UItem ("The Software") is licensed, not sold.
 
-You are PROHIBITED from doing any of the following:
+You receive a non-exclusive, non-transferable, revocable license to:
 
-1. REDISTRIBUTE
-   - You may NOT upload, share, re-upload, or distribute The Software's .jar file on any platform (including but not limited to: Discord, MediaFire, Google Drive, Mega, Minecraft forums, plugin websites, or file-sharing sites) outside the official distribution channel designated by the author.
+  - Install and run The Software on Minecraft servers you own or administer.
+  - Use The Software on commercial servers (donations, ranks, shop) without
+    additional royalty fees to the author.
 
-2. REVERSE ENGINEER
-   - You may NOT reverse engineer, disassemble, decompile, or attempt to reconstruct, identify, or discover any source code, underlying ideas, or algorithms of The Software by any means.
+================================================================================
+II. PROHIBITED ACTIVITIES
+================================================================================
 
-3. MODIFY
-   - You may NOT modify, patch, fork, create derivative works, or alter The Software in any way.
+You may NOT:
 
-4. BYPASS
-   - You may NOT bypass, disable, interfere with, or circumvent any copyright protection, license validation, integrity check, or security mechanism of The Software (if any).
+  1. REDISTRIBUTE — Share, upload, mirror, or distribute the .jar or source
+     outside the author's official distribution channel.
 
-5. SELL
-   - You may NOT sell, rent, lease, sublicense, or commercially distribute The Software (except for using it on your own servers as permitted in Section I).
+  2. REVERSE ENGINEER — Decompile, disassemble, or attempt to derive source code.
 
-6. COMPETE
-   - You may NOT use the ideas, structure, logic, or code from The Software to develop another plugin or software with similar functionality that competes directly with or replaces the original Software.
+  3. MODIFY — Patch, fork, or create derivative works.
 
-────────────────────────────────────────────────────────────────
+  4. BYPASS — Disable license checks, copyright notices, or security mechanisms.
+
+  5. RESELL — Sell, lease, sublicense, or commercially distribute The Software
+     as a product (using it on your own server is allowed under Section I).
+
+  6. COMPETE — Reuse the design or implementation to ship a competing product
+     that replaces or clones UItem without permission.
+
+================================================================================
 III. USER RESPONSIBILITIES
-────────────────────────────────────────────────────────────────
+================================================================================
 
-- You are responsible for ensuring that all users (including staff, admins, or anyone with access to the plugin file) on your server comply with the terms of this License.
-- You may NOT remove, hide, or obscure any author credits (e.g., /plugin info command, console startup messages) from The Software.
+  - Ensure staff with file access comply with this license.
+  - Do not remove author credits from console, /plugins, or documentation.
 
-────────────────────────────────────────────────────────────────
+================================================================================
 IV. TERMINATION
-────────────────────────────────────────────────────────────────
+================================================================================
 
-This License is effective until terminated. Your rights under this License will terminate automatically without notice if you fail to comply with any term of this License. Upon termination, you must immediately cease all use of The Software and delete all copies of The Software from your servers.
+This license ends automatically if you violate any term. You must stop using
+The Software and delete all copies on your systems.
 
-────────────────────────────────────────────────────────────────
-V. DISCLAIMER OF WARRANTY
-────────────────────────────────────────────────────────────────
+================================================================================
+V. DISCLAIMER
+================================================================================
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND. THE AUTHOR
+IS NOT LIABLE FOR DAMAGES ARISING FROM USE OF THE SOFTWARE.
 
-────────────────────────────────────────────────────────────────
-VI. GOVERNING LAW
-────────────────────────────────────────────────────────────────
+================================================================================
+VI. REPORTING VIOLATIONS
+================================================================================
 
-This License shall be governed by and construed in accordance with the laws of [Your Country], without regard to its conflict of laws principles. Any legal action or proceeding arising under this License shall be brought exclusively in the courts located in [Your City / Country].
-
-────────────────────────────────────────────────────────────────
-VII. CONTACT & REPORTING VIOLATIONS
-────────────────────────────────────────────────────────────────
-
-If you discover any violation of this License or unauthorized distribution of The Software, please report it to:
-- Email: [your email]
-- Discord: [your Discord username]
+Unauthorized copies or leaks: huy594481@gmail.com
 
 --- END OF LICENSE ---

@@ -186,4 +186,12 @@ public final class TextUtil {
     public static Component info(String message) {
         return prefix().append(Component.text(message, NamedTextColor.GRAY));
     }
+
+    /** Bo tag MiniMessage de tim kiem / so sanh text thuan. */
+    public static String stripMiniMessageTags(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return "";
+        }
+        return raw.replaceAll("<[^>]+>", "").toLowerCase();
+    }
 }

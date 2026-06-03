@@ -45,8 +45,11 @@ public class CraftingGui implements InventoryHolder {
         this.plugin = plugin;
         this.player = player;
         this.recipeManager = plugin.getRecipeManager();
-        this.inventory = Bukkit.createInventory(this, GUI_SIZE,
-                TextUtil.parse(GuiTheme.title("Crafting")));
+        String titleRaw = plugin.getConfig().getString("craft.gui-title", "");
+        if (titleRaw == null || titleRaw.isBlank()) {
+            titleRaw = Messages.craftGuiTitle();
+        }
+        this.inventory = Bukkit.createInventory(this, GUI_SIZE, TextUtil.parse(titleRaw));
         initialize();
     }
 
@@ -73,7 +76,7 @@ public class CraftingGui implements InventoryHolder {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(TextUtil.parse(GuiTheme.GRADIENT_BOLD + "Craft x" + label + GuiTheme.GRADIENT_END));
+            meta.displayName(TextUtil.parse("<white>x" + label));
             meta.lore(TextUtil.buildLore(lore));
             item.setItemMeta(meta);
         }
@@ -180,16 +183,8 @@ public class CraftingGui implements InventoryHolder {
         while (crafted < toCraft) {
             ItemStack[] matrix = getMatrix();
             UItemRecipe recipe = findMatchingRecipe(matrix);
-            if (recipe == null) break;
-
-            for (int i = 0; i < 9; i++) {
-                ItemStack item = inventory.getItem(CRAFT_SLOTS[i]);
-                if (item != null && !item.getType().isAir()) {
-                    item.setAmount(item.getAmount() - 1);
-                    if (item.getAmount() <= 0) {
-                        inventory.setItem(CRAFT_SLOTS[i], null);
-                    }
-                }
+            if (recipe == null || !consumeOneCraft(recipe)) {
+                break;
             }
             crafted++;
         }
@@ -205,6 +200,75 @@ public class CraftingGui implements InventoryHolder {
 
         updateCraftButtons();
         updateResult();
+    }
+
+    private boolean consumeOneCraft(UItemRecipe recipe) {
+        ItemStack[] matrix = getMatrix();
+        if (!recipe.matches(matrix)) {
+            return false;
+        }
+
+        if (recipe.isShaped()) {
+            List<String> rows = recipe.getShape();
+            if (rows.size() != 3) {
+                return false;
+            }
+            for (int r = 0; r < 3; r++) {
+                String row = rows.get(r);
+                if (row == null || row.length() != 3) {
+                    return false;
+                }
+                for (int c = 0; c < 3; c++) {
+                    int idx = r * 3 + c;
+                    char ch = row.charAt(c);
+                    if (ch == ' ') {
+                        continue;
+                    }
+                    UItemRecipe.Ingredient ing = recipe.getIngredientMap().get(ch);
+                    if (ing == null) {
+                        return false;
+                    }
+                    ItemStack item = inventory.getItem(CRAFT_SLOTS[idx]);
+                    if (item == null || !ing.matches(item)) {
+                        return false;
+                    }
+                    int left = item.getAmount() - ing.getAmount();
+                    if (left <= 0) {
+                        inventory.setItem(CRAFT_SLOTS[idx], null);
+                    } else {
+                        item.setAmount(left);
+                    }
+                }
+            }
+            return true;
+        }
+
+        List<UItemRecipe.Ingredient> remaining = new ArrayList<>(recipe.getIngredients());
+        for (int i = 0; i < 9; i++) {
+            ItemStack item = inventory.getItem(CRAFT_SLOTS[i]);
+            if (item == null || item.getType().isAir()) {
+                continue;
+            }
+            boolean matched = false;
+            for (Iterator<UItemRecipe.Ingredient> it = remaining.iterator(); it.hasNext(); ) {
+                UItemRecipe.Ingredient ing = it.next();
+                if (ing.matches(item)) {
+                    int left = item.getAmount() - ing.getAmount();
+                    if (left <= 0) {
+                        inventory.setItem(CRAFT_SLOTS[i], null);
+                    } else {
+                        item.setAmount(left);
+                    }
+                    it.remove();
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                return false;
+            }
+        }
+        return remaining.isEmpty();
     }
 
     public void handleClick(InventoryClickEvent event) {
@@ -258,7 +322,7 @@ public class CraftingGui implements InventoryHolder {
                 if (cs == slot) { isCraftSlot = true; break; }
             }
             if (isCraftSlot) {
-                SchedulerUtil.runSync(plugin, this::updateResult);
+                SchedulerUtil.runSync(plugin, player, this::updateResult);
                 return;
             }
             event.setCancelled(true);
@@ -272,7 +336,7 @@ public class CraftingGui implements InventoryHolder {
                     event.setCancelled(true);
                     return;
                 }
-                SchedulerUtil.runSync(plugin, this::updateResult);
+                SchedulerUtil.runSync(plugin, player, this::updateResult);
                 return;
             }
             event.setCancelled(true);
@@ -285,7 +349,7 @@ public class CraftingGui implements InventoryHolder {
                     one.setAmount(1);
                     inventory.setItem(cs, one);
                     clicked.setAmount(clicked.getAmount() - 1);
-                    SchedulerUtil.runSync(plugin, this::updateResult);
+                    SchedulerUtil.runSync(plugin, player, this::updateResult);
                     return;
                 }
             }

@@ -1,0 +1,17 @@
+potion:
+  display-name: "<red><bold>Heal Burst</bold>"
+  lore:
+    - "<gray>Custom UItem potion"
+    - "<white>Instant heal + short regen"
+  kind: SPLASH
+  color-rgb: 16733525
+  glowing: true
+  effects:
+    effect_0:
+      type: instant_health
+      duration-ticks: 1
+      amplifier: 1
+    effect_1:
+      type: regeneration
+      duration-seconds: 8
+      amplifier: 0

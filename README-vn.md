@@ -2,8 +2,11 @@
 
 > **Plugin:** UItem v1.0.0  
 > **Tác giả:** iuaititi  
-> **API:** Paper 1.21.4+  
-> **Folia:** ✔ Hỗ trợ
+> **API:** Paper **1.21.4 – 1.26.2** (Java 21)
+> **Folia:** ✔ Hỗ trợ đầy đủ (entity / region / global scheduler qua `SchedulerUtil`)
+> **Giấy phép:** **All Rights Reserved** — [LICENSE](LICENSE) · [Tóm tắt](docs/GIAY-PHEP.md)
+
+📖 **Hướng dẫn đầy đủ (khuyên dùng):** [docs/HUONG-DAN.md](docs/HUONG-DAN.md)
 
 ---
 
@@ -36,6 +39,7 @@
 | `/uitem rp status` | Xem trạng thái RP | `uitem.reload` |
 | `/uitem craft` | Mở bàn chế tạo | * |
 | `/uitem check` | Kiểm tra item đang cầm | * |
+| `/uitem passive` | Mở Passive Studio (GUI) | `uitem.passive` |
 | `/uitem help` | Xem hướng dẫn | * |
 
 ### `/crafting` (bí danh: `/craft`)
@@ -57,6 +61,10 @@
 | `uitem.reload` | op | Reload + quản lý resource pack |
 | `uitem.search` | op | Tìm kiếm item trong GUI |
 | `uitem.craft` | op | Mở bàn chế tạo |
+| `uitem.passive` | op | Passive Studio |
+| `uitem.passive.create` | op | Tạo passive |
+| `uitem.passive.edit` | op | Sửa passive |
+| `uitem.passive.delete` | op | Xóa passive |
 
 ---
 
@@ -98,7 +106,7 @@ Mỗi custom item có thể có:
 
 ### Hỗ trợ Folia
 
-Plugin chạy ổn định trên cả Paper, Spigot và Folia nhờ `SchedulerUtil`.
+Plugin chạy ổn định trên **Paper, Spigot và Folia**. Trên Folia: GUI, give item, resource pack, kỹ năng item/potion đều chạy trên **entity scheduler** của từng người chơi; lệnh console và I/O dùng global/async scheduler.
 
 ---
 
@@ -218,7 +226,7 @@ resourcepack:
   server-port: 9732         # Cổng HTTP server
   kick-on-fail: true        # Kick nếu không tải được RP
   url: ""                   # URL RP tùy chỉnh
-  pack-format: 34           # Format số (34 = MC 1.21)
+  pack-format: -1          # -1 = tu dong theo phien ban server (1.21.4→34, 1.26.x→64)
   namespace: "uitem"        # Namespace
   output-zip: "UItem-ResourcePack.zip"
 ```
@@ -312,8 +320,28 @@ Chỉnh sửa tất cả thuộc tính của 1 item:
 
 ---
 
+## ⚡ Passive Studio
+
+Tạo hành động tự động **chỉ bằng GUI** (khi nào → điều kiện → làm gì).
+
+- Mở: `/uitem passive` hoặc nút **Passive Studio** trong hub
+- Chi tiết từng bước: **[docs/HUONG-DAN.md](docs/HUONG-DAN.md)** (mục 6)
+
+---
+
 ## 🔧 Yêu cầu
 
-- **Server:** Paper 1.21.4+ (hoặc Spigot, Folia)
+- **Server:** Paper **1.21.4 – 1.26.2** (Spigot/Folia qua `SchedulerUtil`; ky nang ON_EQUIP uu tien su kien Paper)
 - **Java:** 21
 - **Plugin phụ thuộc (optional):** Oraxen, ItemsAdder, ExecutableItems
+
+---
+
+## © Bản quyền — All Rights Reserved
+
+© 2026 **iuaititi**. Mọi quyền được bảo lưu.
+
+- Được cài trên server bạn quản trị.
+- **Không** chia sẻ `.jar`, sửa code, decompile, hoặc bán lại plugin.
+- Chi tiết: [LICENSE](LICENSE) · [docs/GIAY-PHEP.md](docs/GIAY-PHEP.md)
+- Báo leak: huy594481@gmail.com

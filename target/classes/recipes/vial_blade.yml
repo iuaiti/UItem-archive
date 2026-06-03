@@ -1,0 +1,15 @@
+recipe:
+  result-item: vial_blade
+  result-amount: 1
+  shaped: true
+  shape:
+    - " P "
+    - " S "
+    - " S "
+  ingredient-map:
+    P:
+      potion-id: heal_burst
+      amount: 1
+    S:
+      material: STICK
+      amount: 1

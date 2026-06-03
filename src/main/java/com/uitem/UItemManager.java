@@ -148,10 +148,14 @@ public class UItemManager {
             meta.displayName(safeDeserialize(displayName, data.getId()));
         }
 
-        // Lore with rarity lore
+        // Lore with rarity lore (bo dong ky thuat neu cau hinh an ID)
+        boolean hideMeta = plugin.getConfig().getBoolean("display.hide-item-id-in-game", true);
         List<Component> loreComponents = new ArrayList<>();
         if (data.getLore() != null) {
             for (String line : com.uitem.util.TextUtil.expandLoreLines(data.getLore())) {
+                if (hideMeta && com.uitem.util.ItemDisplayUtil.isTechnicalLoreLine(line)) {
+                    continue;
+                }
                 loreComponents.add(safeDeserialize(line, data.getId()));
             }
         }
@@ -235,6 +239,10 @@ public class UItemManager {
             }
         }
 
+        if (plugin.getConfig().getBoolean("display.hide-item-id-in-game", true)) {
+            com.uitem.util.ServerVersionUtil.applyHideAdditionalTooltip(meta);
+        }
+
         // Tag item với PersistentDataContainer
         meta.getPersistentDataContainer().set(uitemKey, PersistentDataType.STRING, data.getId());
 
@@ -246,7 +254,17 @@ public class UItemManager {
      * Build ItemStack cho preview trong GUI (có thêm thông tin phụ).
      */
     public ItemStack buildPreviewItemStack(UItemData data) {
+        return buildPreviewItemStack(data, plugin.getConfig().getBoolean("display.show-id-in-editor-preview", true));
+    }
+
+    /**
+     * Preview trong GUI admin — co the hien ID / material / CMD.
+     */
+    public ItemStack buildPreviewItemStack(UItemData data, boolean showAdminMeta) {
         ItemStack item = buildItemStack(data);
+        if (!showAdminMeta) {
+            return item;
+        }
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             List<Component> lore = meta.lore();
@@ -257,10 +275,10 @@ public class UItemManager {
             lore.add(miniMessage.deserialize("<gray>ID: <white>" + data.getId()));
             Material previewMaterial = data.getMaterial() != null ? data.getMaterial() : Material.STONE;
             lore.add(miniMessage.deserialize("<gray>Material: <white>" + previewMaterial.name()));
-            lore.add(miniMessage.deserialize("<gray>CMD: <white>" + (data.getCustomModelData() > 0 ? data.getCustomModelData() : "Không")));
+            lore.add(miniMessage.deserialize("<gray>CMD: <white>" + (data.getCustomModelData() > 0 ? data.getCustomModelData() : "Khong")));
             lore.add(miniMessage.deserialize("<dark_gray>──────────────"));
-            lore.add(miniMessage.deserialize("<yellow>Click trái: <white>Chỉnh sửa"));
-            lore.add(miniMessage.deserialize("<red>Click phải: <white>Xóa"));
+            lore.add(miniMessage.deserialize("<yellow>Click trai: <white>Chinh sua"));
+            lore.add(miniMessage.deserialize("<red>Click phai: <white>Xoa"));
             meta.lore(lore);
             item.setItemMeta(meta);
         }
@@ -287,14 +305,33 @@ public class UItemManager {
     private void applyDisplayProperties(ItemStack item, UItemData data) {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
-        if (data.getDisplayName() != null && !data.getDisplayName().isEmpty()) {
-            meta.displayName(safeDeserialize(data.getDisplayName(), data.getId()));
+        String displayName = data.getDisplayName();
+        String rarity = data.getRarity();
+        if (displayName != null && !displayName.isEmpty()) {
+            if (rarity != null) {
+                String prefix = RarityConfig.getRarityPrefix(rarity);
+                if (prefix != null && !prefix.isEmpty()) {
+                    displayName = prefix + " " + displayName;
+                }
+            }
+            meta.displayName(safeDeserialize(displayName, data.getId()));
         }
-        if (data.getLore() != null && !data.getLore().isEmpty()) {
-            List<Component> loreComponents = new ArrayList<>();
+        List<Component> loreComponents = new ArrayList<>();
+        boolean hideMeta = plugin.getConfig().getBoolean("display.hide-item-id-in-game", true);
+        if (data.getLore() != null) {
             for (String line : com.uitem.util.TextUtil.expandLoreLines(data.getLore())) {
+                if (hideMeta && com.uitem.util.ItemDisplayUtil.isTechnicalLoreLine(line)) {
+                    continue;
+                }
                 loreComponents.add(safeDeserialize(line, data.getId()));
             }
+        }
+        if (rarity != null) {
+            for (String line : RarityConfig.getRarityLore(rarity)) {
+                loreComponents.add(safeDeserialize(line, data.getId()));
+            }
+        }
+        if (!loreComponents.isEmpty()) {
             meta.lore(com.uitem.util.TextUtil.withLeadingSpacer(loreComponents));
         }
         item.setItemMeta(meta);
