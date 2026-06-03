@@ -1,8 +1,0 @@
-material: GOLDEN_APPLE
-display-name: "<light_purple><bold>Magic Apple</bold></light_purple>"
-lore:
-  - "<gray>Một quả táo ma thuật"
-  - "<green>Hồi phục tất cả HP"
-custom-model-data: -1
-unbreakable: false
-glowing: true

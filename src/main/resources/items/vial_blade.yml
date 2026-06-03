@@ -1,8 +1,0 @@
-material: IRON_SWORD
-display-name: "<light_purple><bold>Vial Blade</bold>"
-lore:
-  - "<gray>Ruot kiem ngam <light_purple>Heal Burst"
-  - "<gray>Gắn potion heal_burst — click phải để hồi máu"
-linked-potion: heal_burst
-glowing: true
-rarity: RARE

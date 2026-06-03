@@ -1,7 +1,0 @@
-{
-  "env": {
-    "ANTHROPIC_AUTH_TOKEN": "sk-lNRa5YUpfuAsHKstNl6YY5wV4rriA6oLd6xqrQ2J6nIyki6x",
-    "ANTHROPIC_BASE_URL": "https://api.bluesminds.com/v1",
-    "ANTHROPIC_MODEL": "qwen3.6-plus"
-  }
-}
