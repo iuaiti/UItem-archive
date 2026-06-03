@@ -1,8 +1,0 @@
-# Paper-specific metadata (also set folia-supported in plugin.yml)
-name: UItem
-version: 1.0.0
-main: com.uitem.UItemPlugin
-api-version: '1.21'
-folia-supported: true
-description: Ultimate Item — Folia region scheduler compatible (Paper 1.21.4–1.26.2)
-author: iuaititi
