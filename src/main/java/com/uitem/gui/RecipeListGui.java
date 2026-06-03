@@ -3,11 +3,14 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.recipe.UItemRecipe;
+import com.uitem.util.GuiFeedback;
+import com.uitem.util.GuiTheme;
+import com.uitem.util.RecipeDisplayUtil;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,25 +19,26 @@ import java.util.Map;
 public class RecipeListGui extends AbstractGui {
 
     private int page;
-    private static final int PER_PAGE = 7;
-    private static final int[] SLOTS = {10, 11, 12, 13, 14, 15, 16};
+    private static final int PER_PAGE = 28;
+    private static final int[] SLOTS = {
+            10, 11, 12, 13, 14, 15, 16,
+            19, 20, 21, 22, 23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
+    };
 
     public RecipeListGui(UItemPlugin plugin, Player player) {
         this(plugin, player, 0);
     }
 
     public RecipeListGui(UItemPlugin plugin, Player player, int page) {
-        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d>Recipe List</gradient>");
+        super(plugin, player, 54, GuiTheme.title("Recipes"));
         this.page = page;
     }
 
     @Override
     protected void setup() {
         fillBorder(6);
-
-        setItem(4, createItem(Material.KNOWLEDGE_BOOK,
-                "<gradient:#ff6b6b:#ffd93d><bold>Recipe List</bold></gradient>",
-                List.of("<gray>Click a recipe to view details")));
 
         List<Map.Entry<String, UItemRecipe>> list = new ArrayList<>(
                 plugin.getRecipeManager().getAllRecipes().entrySet());
@@ -43,58 +47,78 @@ public class RecipeListGui extends AbstractGui {
         if (page >= totalPages) page = totalPages - 1;
         if (page < 0) page = 0;
 
+        setItem(4, GuiTheme.header(Material.KNOWLEDGE_BOOK, "Recipes",
+                List.of(
+                        "<gray>Click recipe de xem chi tiet",
+                        "<yellow>Trang: <white>" + (page + 1) + "<gray>/<white>" + totalPages,
+                        "<yellow>Tong: <white>" + list.size())));
+
         int start = page * PER_PAGE;
         for (int i = 0; i < SLOTS.length; i++) {
+            int slot = SLOTS[i];
             int idx = start + i;
-            if (idx >= list.size()) break;
+            if (idx >= list.size()) {
+                setItem(slot, null);
+                continue;
+            }
 
             Map.Entry<String, UItemRecipe> entry = list.get(idx);
             String id = entry.getKey();
             UItemRecipe recipe = entry.getValue();
             UItemData data = plugin.getItemManager().getItem(id);
-
-            String type = recipe.isShaped() ? "Shaped" : "Shapeless";
-            ItemStack item;
-            if (data != null) {
-                item = plugin.getItemManager().buildPreviewItemStack(data);
-                var meta = item.getItemMeta();
-                if (meta != null) {
-                    var lore = meta.lore();
-                    if (lore == null) lore = new ArrayList<>();
-                    lore.add(TextUtil.parse(""));
-                    lore.add(TextUtil.parse("<gold>" + type + " <dark_gray>| <gold>x" + recipe.getResultAmount()));
-                    lore.add(TextUtil.parse("<yellow>Click to view recipe"));
-                    meta.lore(lore);
-                    item.setItemMeta(meta);
-                }
-            } else {
-                item = createItem(Material.BARRIER, "<red>" + id,
-                        List.of("<gray>Item deleted"));
-            }
+            ItemStack item = buildCraftListItem(id, recipe, data);
 
             String fid = id;
-            setItem(SLOTS[i], item, ev -> {
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            setItem(slot, item, ev -> {
+                GuiFeedback.click(player);
                 new RecipeDetailGui(plugin, player, fid).open();
             });
         }
 
-        setItem(49, createItem(Material.CRAFTING_TABLE,
-                "<green><bold>Craft</bold>",
-                List.of("<gray>Open crafting table")), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new CraftingGui(plugin, player).open();
+        if (player.hasPermission("craft") || player.hasPermission("uitem.craft")) {
+            setItem(49, GuiTheme.actionPrimary(Material.CRAFTING_TABLE,
+                    "Crafting Table",
+                    "<gray>Mo ban che tao UItem"), ev -> {
+                GuiFeedback.click(player);
+                new CraftingGui(plugin, player).open();
+            });
+        }
+
+        setItem(45, createHomeButton(), ev -> {
+            GuiFeedback.click(player);
+            new MainHubGui(plugin, player).open();
         });
 
-        setItem(46, page > 0 ? createPreviousButton() : createItem(Material.GRAY_STAINED_GLASS_PANE, " "),
-                page > 0 ? ev -> { player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                    new RecipeListGui(plugin, player, page - 1).open(); } : null);
-        setItem(52, page < totalPages - 1 ? createNextButton() : createItem(Material.GRAY_STAINED_GLASS_PANE, " "),
-                page < totalPages - 1 ? ev -> { player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                    new RecipeListGui(plugin, player, page + 1).open(); } : null);
-        setItem(45, createBackButton(), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new ItemListGui(plugin, player).open();
-        });
+        if (page > 0) {
+            setItem(46, createPreviousButton(), ev -> {
+                GuiFeedback.click(player);
+                new RecipeListGui(plugin, player, page - 1).open();
+            });
+        } else {
+            setItem(46, GuiTheme.disabledNav());
+        }
+
+        if (page < totalPages - 1) {
+            setItem(52, createNextButton(), ev -> {
+                GuiFeedback.click(player);
+                new RecipeListGui(plugin, player, page + 1).open();
+            });
+        } else {
+            setItem(52, GuiTheme.disabledNav());
+        }
+    }
+
+    private ItemStack buildCraftListItem(String id, UItemRecipe recipe, UItemData data) {
+        if (data == null) {
+            return GuiTheme.button(Material.BARRIER, "<red>" + id,
+                    List.of("<gray>Item da bi xoa"));
+        }
+        ItemStack item = plugin.getItemManager().buildItemStack(data);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.lore(TextUtil.buildLore(RecipeDisplayUtil.craftSummaryLore(recipe)));
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 }

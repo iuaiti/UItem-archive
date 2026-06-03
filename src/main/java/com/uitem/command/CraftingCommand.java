@@ -2,7 +2,6 @@ package com.uitem.command;
 
 import com.uitem.UItemPlugin;
 import com.uitem.gui.CraftingGui;
-import com.uitem.gui.RecipeListGui;
 import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import org.bukkit.command.Command;
@@ -26,16 +25,16 @@ public class CraftingCommand implements CommandExecutor {
             return true;
         }
 
-        if (!player.hasPermission("uitem.craft")) {
+        if (!hasCraftPermission(player)) {
             player.sendMessage(TextUtil.error(Messages.noPermission()));
             return true;
         }
 
-        if (args.length > 0 && args[0].equalsIgnoreCase("craft")) {
-            new CraftingGui(plugin, player).open();
-        } else {
-            new RecipeListGui(plugin, player).open();
-        }
+        new CraftingGui(plugin, player).open();
         return true;
+    }
+
+    private boolean hasCraftPermission(Player player) {
+        return player.hasPermission("craft") || player.hasPermission("uitem.craft");
     }
 }

@@ -3,9 +3,11 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.recipe.UItemRecipe;
+import com.uitem.util.GuiFeedback;
+import com.uitem.util.GuiTheme;
+import com.uitem.util.RecipeDisplayUtil;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -26,29 +28,37 @@ public class RecipeDetailGui extends AbstractGui {
     private final String itemId;
 
     public RecipeDetailGui(UItemPlugin plugin, Player player, String itemId) {
-        super(plugin, player, 45, "<gold>Recipe: <white>" + itemId);
+        super(plugin, player, 45, GuiTheme.title("Recipe: " + itemId));
         this.itemId = itemId;
     }
 
     @Override
     protected void setup() {
         for (int i = 0; i < 45; i++) {
-            setItem(i, createItem(Material.GRAY_STAINED_GLASS_PANE, " "));
+            setItem(i, GuiTheme.border());
         }
+        setItem(2, GuiTheme.accent());
+        setItem(6, GuiTheme.accent());
+        setItem(38, GuiTheme.accent());
+        setItem(42, GuiTheme.accent());
 
         UItemRecipe recipe = plugin.getRecipeManager().getRecipe(itemId);
         UItemData data = plugin.getItemManager().getItem(itemId);
 
         if (recipe == null || data == null) {
-            setItem(22, createItem(Material.BARRIER, "<red>Not found"));
+            setItem(22, GuiTheme.button(Material.BARRIER, "<red>Not found", List.of()));
             setItem(SLOT_BACK, createBackButton(), ev -> new RecipeListGui(plugin, player).open());
             return;
         }
 
-        setItem(4, createItem(Material.KNOWLEDGE_BOOK,
-                "<gold><bold>" + itemId + "</bold>",
-                List.of("<gray>" + (recipe.isShaped() ? "Shaped 3x3" : "Shapeless"),
-                        "<gray>Output: x" + recipe.getResultAmount())));
+        List<String> infoLore = new ArrayList<>();
+        infoLore.add("<gray>" + (recipe.isShaped() ? "Shaped 3x3" : "Shapeless"));
+        infoLore.add("<gray>Output: x" + recipe.getResultAmount());
+        infoLore.add("");
+        infoLore.add("<gray>Ingredients:");
+        infoLore.addAll(RecipeDisplayUtil.describeIngredients(recipe));
+
+        setItem(4, GuiTheme.header(Material.KNOWLEDGE_BOOK, itemId, TextUtil.expandLoreLines(infoLore)));
 
         if (recipe.isShaped()) {
             ItemStack[] matrix = recipe.toMatrix();
@@ -58,38 +68,46 @@ public class RecipeDetailGui extends AbstractGui {
                 if (ing != null && !ing.getType().isAir()) {
                     String name = findIngredientName(ing, ingMap);
                     setItem(GRID[i], addLore(ing.clone(), "<gray>" + name));
+                } else {
+                    setItem(GRID[i], null);
                 }
             }
         } else {
             List<UItemRecipe.Ingredient> ings = recipe.getIngredients();
-            for (int i = 0; i < Math.min(ings.size(), 9); i++) {
-                ItemStack ing = ings.get(i).toItemStack();
-                if (ing != null && !ing.getType().isAir()) {
-                    String name = ings.get(i).getUitemId() != null ? ings.get(i).getUitemId()
-                            : formatMat(ing.getType());
-                    setItem(GRID[i], addLore(ing.clone(), "<gray>" + name));
+            for (int i = 0; i < 9; i++) {
+                if (i < ings.size()) {
+                    ItemStack ing = ings.get(i).toItemStack();
+                    if (ing != null && !ing.getType().isAir()) {
+                        String name = ings.get(i).getUitemId() != null ? ings.get(i).getUitemId()
+                                : formatMat(ing.getType());
+                        setItem(GRID[i], addLore(ing.clone(), "<gray>" + name));
+                    }
+                } else {
+                    setItem(GRID[i], null);
                 }
             }
         }
 
-        setItem(SLOT_ARROW1, createItem(Material.ARROW, "<yellow>→"));
-        setItem(SLOT_ARROW2, createItem(Material.ARROW, "<yellow>→"));
+        setItem(SLOT_ARROW1, GuiTheme.button(Material.SPECTRAL_ARROW, "<yellow>→", List.of()));
+        setItem(SLOT_ARROW2, GuiTheme.button(Material.SPECTRAL_ARROW, "<yellow>→", List.of()));
 
-        ItemStack result = plugin.getItemManager().buildPreviewItemStack(data);
+        ItemStack result = plugin.getItemManager().buildItemStack(data);
         result.setAmount(recipe.getResultAmount());
         setItem(SLOT_RESULT, result);
 
         setItem(SLOT_BACK, createBackButton(), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            GuiFeedback.click(player);
             new RecipeListGui(plugin, player).open();
         });
 
-        setItem(SLOT_CRAFT, createItem(Material.CRAFTING_TABLE,
-                "<green><bold>Craft</bold>",
-                List.of("<gray>Open crafting table")), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new CraftingGui(plugin, player).open();
-        });
+        if (player.hasPermission("craft") || player.hasPermission("uitem.craft")) {
+            setItem(SLOT_CRAFT, GuiTheme.actionPrimary(Material.CRAFTING_TABLE,
+                    "Craft",
+                    "<gray>Mo ban che tao"), ev -> {
+                GuiFeedback.click(player);
+                new CraftingGui(plugin, player).open();
+            });
+        }
     }
 
     private String findIngredientName(ItemStack item, Map<Character, UItemRecipe.Ingredient> map) {
@@ -108,6 +126,7 @@ public class RecipeDetailGui extends AbstractGui {
         if (meta != null) {
             var lore = meta.lore();
             if (lore == null) lore = new ArrayList<>();
+            else lore = new ArrayList<>(TextUtil.withLeadingSpacer(lore));
             lore.add(TextUtil.parse(line));
             meta.lore(lore);
             item.setItemMeta(meta);
@@ -120,7 +139,7 @@ public class RecipeDetailGui extends AbstractGui {
         String[] w = s.split(" ");
         StringBuilder sb = new StringBuilder();
         for (String x : w) {
-            if (x.length() > 0)
+            if (!x.isEmpty())
                 sb.append(Character.toUpperCase(x.charAt(0))).append(x.substring(1)).append(" ");
         }
         return sb.toString().trim();

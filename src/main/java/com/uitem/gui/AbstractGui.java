@@ -1,10 +1,9 @@
 package com.uitem.gui;
 
 import com.uitem.UItemPlugin;
+import com.uitem.util.GuiFeedback;
+import com.uitem.util.GuiTheme;
 import com.uitem.util.TextUtil;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -75,6 +74,9 @@ public abstract class AbstractGui implements InventoryHolder {
     public void handleClick(InventoryClickEvent event) {
         event.setCancelled(true);
         int slot = event.getRawSlot();
+        if (slot >= 0 && slot < inventory.getSize()) {
+            GuiFeedback.click(player, clickHandlers.containsKey(slot));
+        }
         Consumer<InventoryClickEvent> handler = clickHandlers.get(slot);
         if (handler != null) {
             handler.accept(event);
@@ -101,18 +103,15 @@ public abstract class AbstractGui implements InventoryHolder {
     }
 
     /**
-     * Fill border với glass pane.
+     * Styled border (black frame + orange accents).
      */
     protected void fillBorder(int rows) {
-        ItemStack border = createItem(Material.GRAY_STAINED_GLASS_PANE, " ");
-        int size = rows * 9;
-        for (int i = 0; i < size; i++) {
-            int row = i / 9;
-            int col = i % 9;
-            if (row == 0 || row == rows - 1 || col == 0 || col == 8) {
-                setItem(i, border);
-            }
-        }
+        GuiTheme.fillBorder(this, rows);
+    }
+
+    /** Used by {@link GuiTheme} to place panes. */
+    public void setItemPublic(int slot, ItemStack item) {
+        setItem(slot, item);
     }
 
     /**
@@ -137,7 +136,7 @@ public abstract class AbstractGui implements InventoryHolder {
         if (meta != null) {
             meta.displayName(TextUtil.parse(name));
             if (lore != null) {
-                meta.lore(lore.stream().map(TextUtil::parse).toList());
+                meta.lore(TextUtil.buildLore(lore));
             }
             item.setItemMeta(meta);
         }
@@ -148,20 +147,18 @@ public abstract class AbstractGui implements InventoryHolder {
      * Tạo button quay lại.
      */
     protected ItemStack createBackButton() {
-        return createItem(Material.ARROW, "<yellow>← Back", List.of("<gray>Click to go back"));
+        return GuiTheme.navBack();
     }
 
-    /**
-     * Tạo button trang trước.
-     */
+    protected ItemStack createHomeButton() {
+        return GuiTheme.navHome();
+    }
+
     protected ItemStack createPreviousButton() {
-        return createItem(Material.ARROW, "<yellow>◄ Previous page");
+        return GuiTheme.navPrevious();
     }
 
-    /**
-     * Tạo button trang sau.
-     */
     protected ItemStack createNextButton() {
-        return createItem(Material.ARROW, "<yellow>Next page ►");
+        return GuiTheme.navNext();
     }
 }

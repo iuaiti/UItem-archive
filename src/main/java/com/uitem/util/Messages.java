@@ -84,6 +84,36 @@ public final class Messages {
     public static String rpStatusNotExported() { return get("rp-status-not-exported", "Not exported", "Chưa xuất"); }
     public static String rpStatusNone() { return get("rp-status-none", "None", "Không có"); }
     public static String rpKickMessage() { return get("rp-kick", "Unable to load resource packs, please rejoin", "Không tải được resource packs, vui lòng vào lại"); }
+    public static String rpHelpBuild() { return get("rp-help-build", "<gold>Full build: <white>/uitem rp build", "<gold>Build day du: <white>/uitem rp build"); }
+    public static String rpHelpSendAll() { return get("rp-help-sendall", "<gold>Send to all online: <white>/uitem rp sendall", "<gold>Gui cho tat ca: <white>/uitem rp sendall"); }
+    public static String rpHelpGui() { return get("rp-help-gui", "<gold>Open RP panel: <white>/uitem rp gui", "<gold>Mo panel RP: <white>/uitem rp gui"); }
+    public static String rpHelpMerge() { return get("rp-help-merge", "<gold>Import external packs: <white>/uitem rp merge", "<gold>Nhap pack ngoai: <white>/uitem rp merge"); }
+    public static String rpSentAll() { return get("rp-sent-all", "Sent resource pack to all online players.", "Da gui resource pack cho tat ca nguoi choi online."); }
+    public static String rpMerged(int files) { return get("rp-merged", "Imported " + files + " files from packs/import/", "Da nhap " + files + " file tu packs/import/").replace("{count}", String.valueOf(files)); }
+    public static String rpUsageFull() { return get("rp-usage-full", "Usage: /uitem rp <build|generate|export|sendall|apply|status|gui|merge>", "Cach dung: /uitem rp <build|generate|export|sendall|apply|status|gui|merge>"); }
+
+    public static String rpGuiItemsLoaded(int n) { return get("rp-gui-items", "<gray>Items in pack: <white>" + n, "<gray>Item trong pack: <white>" + n).replace("{count}", String.valueOf(n)); }
+    public static String rpGuiCmdCount(int n) { return get("rp-gui-cmd", "<gray>CMD assignments: <white>" + n, "<gray>CMD da gan: <white>" + n).replace("{count}", String.valueOf(n)); }
+    public static String rpGuiHost(boolean on) { return get("rp-gui-host", "<gray>Auto-host: " + (on ? "<green>ON" : "<red>OFF"), "<gray>Tu host: " + (on ? "<green>BAT" : "<red>TAT")); }
+    public static String rpGuiUrlLine(String url) { return get("rp-gui-url", "<gray>URL: <white>" + url, "<gray>URL: <white>" + url).replace("{url}", url); }
+    public static String rpGuiBuildTitle() { return get("rp-gui-build-title", "BUILD PACK", "TAO PACK"); }
+    public static String rpGuiBuildDesc1() { return get("rp-gui-build-d1", "<gray>Generate + merge + export zip", "<gray>Tao + gop + xuat zip"); }
+    public static String rpGuiBuildDesc2() { return get("rp-gui-build-d2", "<yellow>Like Oraxen / ItemsAdder build", "<yellow>Giong build Oraxen / ItemsAdder"); }
+    public static String rpGuiSendAllTitle() { return get("rp-gui-send-title", "SEND TO ALL", "GUI CHO TAT CA"); }
+    public static String rpGuiSendAllDesc1() { return get("rp-gui-send-d1", "<gray>Apply pack to online players", "<gray>Ap dung pack cho nguoi online"); }
+    public static String rpGuiSendAllDesc2() { return get("rp-gui-send-d2", "<yellow>Requires URL or auto-host", "<yellow>Can URL hoac tu host"); }
+    public static String rpGuiExportTitle() { return get("rp-gui-export-title", "EXPORT ZIP", "XUAT ZIP"); }
+    public static String rpGuiExportDesc1() { return get("rp-gui-export-d1", "<gray>Export without full rebuild", "<gray>Xuat zip khong build lai"); }
+    public static String rpGuiExportDesc2() { return get("rp-gui-export-d2", "<gray>Uses current pack folder", "<gray>Dung thu muc pack hien tai"); }
+    public static String rpGuiFolderTitle() { return get("rp-gui-folder-title", "PACK FOLDER", "THU MUC PACK"); }
+    public static String rpGuiFolderHint() { return get("rp-gui-folder-hint", "Drop textures in textures/", "Dat texture vao textures/"); }
+    public static String rpGuiImportTitle() { return get("rp-gui-import-title", "IMPORT PACKS", "NHAP PACK NGOAI"); }
+    public static String rpGuiImportHint() { return get("rp-gui-import-hint", "Place zips/folders in packs/import/", "Dat zip/folder vao packs/import/"); }
+    public static String rpGuiHelpTitle() { return get("rp-gui-help-title", "COMMANDS", "LENH"); }
+    public static String rpGuiBuilding() { return get("rp-gui-building", "Building resource pack... please wait.", "Dang tao resource pack... vui long cho."); }
+    public static String rpGenerating() { return get("rp-generating", "Generating resource pack... please wait.", "Dang generate resource pack... vui long cho."); }
+    public static String rpUrlNotSet() { return get("rp-url-not-set", "No pack URL configured. Set resourcepack.url or enable auto-host.", "Chua co URL pack. Dat resourcepack.url hoac bat auto-host."); }
+    public static String rpApplied(String name) { return get("rp-applied", "Applied resource pack to " + name, "Da ap dung resource pack cho " + name).replace("{player}", name); }
 
     // ==================== GUI: Item Editor ====================
     public static String guiEditTitle(String id) { return get("gui-edit-title", "<gradient:#ff6b6b:#ffd93d>Edit: </gradient><white>" + id, "<gradient:#ff6b6b:#ffd93d>Sua: </gradient><white>" + id).replace("{id}", id); }
@@ -319,13 +349,12 @@ public final class Messages {
     // ==================== Help ====================
     public static String helpTitle() { return get("help-title", "  <gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <gray>— Ultimate Item Plugin", "  <gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <gray>— Ultimate Item Plugin"); }
     public static String helpGive() { return get("help-give", "  <gold>/uitem give <id> [player] [amount] <dark_gray>— <gray>Give item", "  <gold>/uitem give <id> [nguoi choi] [so luong] <dark_gray>— <gray>Dua item"); }
-    public static String helpEditor() { return get("help-editor", "  <gold>/uitem editor <dark_gray>— <gray>Open editor GUI", "  <gold>/uitem editor <dark_gray>— <gray>Mo trinh sua GUI"); }
+    public static String helpEditor() { return get("help-editor", "  <gold>/uitem editor <dark_gray>— <gray>Open UItem Studio", "  <gold>/uitem editor <dark_gray>— <gray>Mo UItem Studio"); }
     public static String helpList() { return get("help-list", "  <gold>/uitem list <dark_gray>— <gray>List items", "  <gold>/uitem list <dark_gray>— <gray>Danh sach items"); }
     public static String helpRp() { return get("help-rp", "  <gold>/uitem rp <generate|export|apply|status> <dark_gray>— <gray>Manage resource pack", "  <gold>/uitem rp <generate|export|apply|status> <dark_gray>— <gray>Quan ly resource pack"); }
     public static String helpCheck() { return get("help-check", "  <gold>/uitem check <dark_gray>— <gray>Check if held item is a valid UItem", "  <gold>/uitem check <dark_gray>— <gray>Kiem tra item co phai UItem hop le"); }
     public static String helpCraft() { return get("help-craft", "  <gold>/uitem craft <dark_gray>— <gray>Open UItem crafting table", "  <gold>/uitem craft <dark_gray>— <gray>Mo ban che tao UItem"); }
-    public static String helpCraftingCmd() { return get("help-crafting-cmd", "  <gold>/crafting <dark_gray>— <gray>List all crafting recipes", "  <gold>/crafting <dark_gray>— <gray>Danh sach cong thuc che tao"); }
-    public static String helpCraftingTable() { return get("help-crafting-table", "  <gold>/crafting craft <dark_gray>— <gray>Open UItem crafting table", "  <gold>/crafting craft <dark_gray>— <gray>Mo ban che tao UItem"); }
+    public static String helpCraftingCmd() { return get("help-crafting-cmd", "  <gold>/craft <dark_gray>— <gray>Open UItem crafting table", "  <gold>/craft <dark_gray>— <gray>Mo ban che tao UItem"); }
     public static String helpReload() { return get("help-reload", "  <gold>/uitem reload <dark_gray>— <gray>Reload plugin", "  <gold>/uitem reload <dark_gray>— <gray>Tai lai plugin"); }
     public static String helpHelp() { return get("help-help", "  <gold>/uitem help <dark_gray>— <gray>Show help", "  <gold>/uitem help <dark_gray>— <gray>Hien tro giup"); }
     public static String helpUi() { return get("help-ui", "  <gold>/ui <dark_gray>— <gray>Short alias for /uitem", "  <gold>/ui <dark_gray>— <gray>Viet tat cua /uitem"); }

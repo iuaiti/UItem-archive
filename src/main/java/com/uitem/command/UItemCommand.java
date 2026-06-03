@@ -5,6 +5,7 @@ import com.uitem.UItemPlugin;
 import com.uitem.gui.ItemListGui;
 import com.uitem.resourcepack.ResourcePackManager;
 import com.uitem.util.Messages;
+import com.uitem.util.SchedulerUtil;
 import com.uitem.util.TextUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -19,6 +20,7 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -30,11 +32,11 @@ import java.util.Map;
 public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> ROOT_SUBCOMMANDS = List.of(
-            "give", "editor", "reload", "list", "resourcepack", "rp", "craft", "help", "check"
+            "give", "editor", "reload", "list", "resourcepack", "rp", "craft", "passive", "help", "check"
     );
 
     private static final List<String> RP_ACTIONS = List.of(
-            "generate", "export", "apply", "status"
+            "build", "generate", "export", "sendall", "apply", "status", "gui", "merge"
     );
 
     private final UItemPlugin plugin;
@@ -61,6 +63,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             case "list" -> handleList(sender);
             case "resourcepack", "rp" -> handleResourcePack(sender, args);
             case "craft", "crafting" -> handleCraft(sender);
+            case "passive", "passives" -> handlePassive(sender);
             case "check" -> handleCheck(sender);
             case "help" -> sendHelp(sender);
             default -> sender.sendMessage(TextUtil.error("Invalid command. Use /" + label + " help"));
@@ -175,6 +178,18 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         new ItemListGui(plugin, player).open();
     }
 
+    private void handlePassive(CommandSender sender) {
+        if (!sender.hasPermission("uitem.passive") && !sender.hasPermission("uitem.admin")) {
+            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
+            return;
+        }
+        new com.uitem.passive.gui.PassiveHubGui(plugin, player).open();
+    }
+
     private void handleReload(CommandSender sender) {
         if (!sender.hasPermission("uitem.reload")) {
             sender.sendMessage(TextUtil.error(Messages.noPermission()));
@@ -185,6 +200,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         com.uitem.util.Messages.reload();
         plugin.getStorageManager().saveAllNow(plugin.getItemManager());
         plugin.getStorageManager().loadAll(plugin.getItemManager());
+        plugin.getPassiveBootstrap().manager().loadAll();
         plugin.getIntegrationManager().detectIntegrations();
 
         // Bug E fix: reload ResourcePackManager config fields
@@ -196,16 +212,19 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         String url = plugin.getConfig().getString("resourcepack.url", "");
 
         if (autoGenerate) {
-            // Chạy async để không block
             com.uitem.util.SchedulerUtil.runAsync(plugin, () -> {
                 try {
-                    plugin.getResourcePackManager().exportZip();
+                    var rpm = plugin.getResourcePackManager();
+                    rpm.generatePack();
+                    rpm.exportZip();
                     com.uitem.util.SchedulerUtil.runSync(plugin,
-                            () -> sender.sendMessage(TextUtil.success("Resource pack has been re-generated and exported.")));
-                    if (autoApply && url != null && !url.isBlank()) {
+                            () -> sender.sendMessage(TextUtil.success(Messages.rpRegenerated())));
+                    String packUrl = url != null && !url.isBlank() ? url : rpm.resolvePackUrl();
+                    if (autoApply && packUrl != null && !packUrl.isBlank()) {
+                        byte[] hash = rpm.getLastPackHash();
                         com.uitem.util.SchedulerUtil.runSync(plugin, () -> {
                             for (Player player : Bukkit.getOnlinePlayers()) {
-                                plugin.getResourcePackManager().applyResourcePack(player, url);
+                                rpm.applyResourcePack(player, packUrl, hash);
                             }
                         });
                     }
@@ -290,62 +309,124 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleResourcePack(CommandSender sender, String[] args) {
         if (!sender.hasPermission("uitem.reload")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            sender.sendMessage(TextUtil.error(Messages.noPermission()));
             return;
         }
 
         ResourcePackManager rpm = plugin.getResourcePackManager();
 
         if (args.length == 1) {
-            sender.sendMessage(TextUtil.prefixed("<gold>Generate resource pack: <white>/uitem rp generate"));
-            sender.sendMessage(TextUtil.prefixed("<gold>Export zip: <white>/uitem rp export"));
-            sender.sendMessage(TextUtil.prefixed("<gold>Apply to player: <white>/uitem rp apply <player> <url> [hash]"));
-            sender.sendMessage(TextUtil.prefixed("<gold>Status: <white>/uitem rp status"));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpGenerate()));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpExport()));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpBuild()));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpSendAll()));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpGui()));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpMerge()));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpApply()));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpStatus()));
             return;
         }
 
         String action = args[1].toLowerCase(Locale.ROOT);
         switch (action) {
-            case "generate", "gen", "reload" -> {
-                plugin.getResourcePackManager().syncCmdsToLiveItems();
-                rpm.generatePack();
-                sender.sendMessage(TextUtil.success("Generated resource pack at data/resourcepack/"));
-            }
-            case "export", "zip" -> {
-                try {
-                    var zip = rpm.exportZip();
-                    sender.sendMessage(TextUtil.success("Exported zip: " + zip.getAbsolutePath()));
-                    String hashHex = rpm.getLastPackHashHex();
-                    if (hashHex != null) {
-                        sender.sendMessage(TextUtil.prefixed("<gold>SHA-1: <white>" + hashHex));
-                    }
-                } catch (Exception e) {
-                    sender.sendMessage(TextUtil.error("Export failed: " + e.getMessage()));
+            case "gui" -> {
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(TextUtil.error(Messages.playersOnly()));
+                    return;
                 }
+                new com.uitem.gui.ResourcePackGui(plugin, player).open();
+            }
+            case "build" -> runRpAsync(sender, rpm, true);
+            case "merge" -> SchedulerUtil.runAsync(plugin, () -> {
+                try {
+                    int n = new com.uitem.resourcepack.PackImporter(plugin)
+                            .importAll(rpm.getResourcePackDirectory().toPath(),
+                                    rpm.getSettings().externalPacksDir());
+                    SchedulerUtil.runSync(plugin, () ->
+                            sender.sendMessage(TextUtil.success(Messages.rpMerged(n))));
+                } catch (Exception e) {
+                    SchedulerUtil.runSync(plugin, () ->
+                            sender.sendMessage(TextUtil.error(Messages.rpGenerateFailed(e.getMessage()))));
+                }
+            });
+            case "generate", "gen" -> runRpAsync(sender, rpm, false);
+            case "export", "zip" -> SchedulerUtil.runAsync(plugin, () -> {
+                try {
+                    File zip = rpm.exportZip();
+                    String hashHex = rpm.getLastPackHashHex();
+                    SchedulerUtil.runSync(plugin, () -> {
+                        sender.sendMessage(TextUtil.success(Messages.rpExported(zip.getAbsolutePath())));
+                        if (hashHex != null) {
+                            sender.sendMessage(TextUtil.prefixed("<gold>SHA-1: <white>" + hashHex));
+                        }
+                    });
+                } catch (Exception e) {
+                    SchedulerUtil.runSync(plugin, () ->
+                            sender.sendMessage(TextUtil.error(Messages.rpExportFailed(e.getMessage()))));
+                }
+            });
+            case "sendall" -> {
+                rpm.sendPackToAllOnline();
+                sender.sendMessage(TextUtil.success(Messages.rpSentAll()));
             }
             case "apply" -> {
-                if (args.length < 4) {
-                    sender.sendMessage(TextUtil.error("Usage: /uitem rp apply <player> <url> [hash]"));
+                if (args.length < 3) {
+                    sender.sendMessage(TextUtil.error(Messages.rpApplyUsage()));
                     return;
                 }
                 Player target = Bukkit.getPlayerExact(args[2]);
                 if (target == null) {
-                    sender.sendMessage(TextUtil.error("Player '" + args[2] + "' is not online!"));
+                    sender.sendMessage(TextUtil.error(Messages.playerNotFound(args[2])));
                     return;
                 }
-                String url = args[3];
-                String hash = args.length >= 5 ? args[4] : null;
-                rpm.applyResourcePack(target, url, hash);
-                sender.sendMessage(TextUtil.success("Sent resource pack to " + target.getName()));
+                String url = args.length >= 4 ? args[3] : rpm.resolvePackUrl();
+                if (url == null || url.isBlank()) {
+                    sender.sendMessage(TextUtil.error(Messages.rpUrlNotSet()));
+                    return;
+                }
+                String hashArg = args.length >= 5 ? args[4] : null;
+                rpm.applyResourcePack(target, url, hashArg);
+                sender.sendMessage(TextUtil.success(Messages.rpApplied(target.getName())));
             }
             case "status" -> {
-                sender.sendMessage(TextUtil.prefixed("<gold>Pack directory: <white>" + rpm.getResourcePackDirectory().getAbsolutePath()));
-                sender.sendMessage(TextUtil.prefixed("<gold>CMD file: <white>" + rpm.getCmdConfigFile().getAbsolutePath()));
-                sender.sendMessage(TextUtil.prefixed("<gold>Last zip: <white>" + (rpm.getLastZipFile() == null ? "Not exported" : rpm.getLastZipFile().getAbsolutePath())));
-                sender.sendMessage(TextUtil.prefixed("<gold>Current hash: <white>" + (rpm.getLastPackHashHex() == null ? "None" : rpm.getLastPackHashHex())));
+                var st = rpm.getStatus();
+                sender.sendMessage(TextUtil.prefixed("<gold>Resource Pack Status"));
+                sender.sendMessage(TextUtil.prefixed("<gray>Pack: <white>" + st.packDirectory()));
+                sender.sendMessage(TextUtil.prefixed("<gray>Import: <white>" + st.importDirectory()));
+                sender.sendMessage(TextUtil.prefixed("<gray>Zip: <white>" + (st.lastZip() != null ? st.lastZip() : Messages.rpStatusNone())));
+                sender.sendMessage(TextUtil.prefixed("<gray>SHA-1: <white>" + (st.sha1() != null ? st.sha1() : Messages.rpStatusNone())));
+                sender.sendMessage(TextUtil.prefixed("<gray>URL: <white>" + (st.packUrl() != null ? st.packUrl() : Messages.rpStatusNone())));
+                sender.sendMessage(TextUtil.prefixed("<gray>Host: <white>" + (st.hostRunning() ? "ON" : "OFF")));
+                sender.sendMessage(TextUtil.prefixed("<gray>Items/CMD: <white>" + st.itemCount() + "/" + st.cmdAssignments()));
             }
-            default -> sender.sendMessage(TextUtil.error("Usage: /uitem rp <generate|export|apply|status>"));
+            default -> sender.sendMessage(TextUtil.error(Messages.rpUsageFull()));
         }
+    }
+
+    private void runRpAsync(CommandSender sender, ResourcePackManager rpm, boolean fullBuild) {
+        sender.sendMessage(TextUtil.info(fullBuild ? Messages.rpGuiBuilding() : Messages.rpGenerating()));
+        SchedulerUtil.runAsync(plugin, () -> {
+            try {
+                if (fullBuild) {
+                    File zip = rpm.rebuildAll();
+                    SchedulerUtil.runSync(plugin, () -> {
+                        sender.sendMessage(TextUtil.success(Messages.rpRegenerated()));
+                        sender.sendMessage(TextUtil.success(Messages.rpExported(zip.getAbsolutePath())));
+                        if (plugin.getConfig().getBoolean("resourcepack.auto-apply", false)) {
+                            rpm.sendPackToAllOnline();
+                            sender.sendMessage(TextUtil.success(Messages.rpSentAll()));
+                        }
+                    });
+                } else {
+                    rpm.syncCmdsToLiveItems();
+                    rpm.generatePack();
+                    SchedulerUtil.runSync(plugin, () -> sender.sendMessage(TextUtil.success(Messages.rpRegenerated())));
+                }
+            } catch (Exception e) {
+                SchedulerUtil.runSync(plugin, () ->
+                        sender.sendMessage(TextUtil.error(Messages.rpGenerateFailed(e.getMessage()))));
+            }
+        });
     }
 
     private void sendHelp(CommandSender sender) {
@@ -358,9 +439,11 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem editor <dark_gray>— <gray>Open editor GUI"));
         sender.sendMessage(miniMessage.deserialize(
+                "  <gold>/uitem passive <dark_gray>— <gray>Passive Studio (GUI)"));
+        sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem list <dark_gray>— <gray>List items"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem rp <generate|export|apply|status> <dark_gray>— <gray>Manage resource pack"));
+                "  <gold>/uitem rp <build|generate|export|gui|sendall> <dark_gray>— <gray>Resource pack (Oraxen/IA style)"));
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem check <dark_gray>— <gray>Check if held item is a valid UItem"));
         sender.sendMessage(miniMessage.deserialize(

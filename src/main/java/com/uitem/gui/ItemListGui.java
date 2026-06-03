@@ -3,28 +3,25 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemManager;
 import com.uitem.UItemPlugin;
+import com.uitem.search.SearchManager;
+import com.uitem.util.GuiFeedback;
+import com.uitem.util.GuiTheme;
+import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
-import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
-import com.uitem.search.SearchManager;
 import java.util.Comparator;
 import java.util.List;
 
-/**
- * GUI hiển thị danh sách tất cả custom items.
- * Hỗ trợ phân trang, tạo mới, chỉnh sửa, xóa.
- */
 public class ItemListGui extends AbstractGui {
 
     private int page;
-    private static final int DEFAULT_ITEMS_PER_PAGE = 28; // fallback if config missing
+    private static final int DEFAULT_ITEMS_PER_PAGE = 28;
     private static final int[] ITEM_SLOTS = {
             10, 11, 12, 13, 14, 15, 16,
             19, 20, 21, 22, 23, 24, 25,
@@ -37,58 +34,20 @@ public class ItemListGui extends AbstractGui {
     }
 
     public ItemListGui(UItemPlugin plugin, Player player, int page) {
-        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d><bold>UItem Editor</bold></gradient>");
+        super(plugin, player, 54, GuiTheme.title("Item Library"));
         this.page = page;
     }
 
     @Override
     protected void setup() {
-        // Fill border
         fillBorder(6);
 
-        // Title item
-        setItem(4, createItem(Material.NETHER_STAR,
-                "<gradient:#ff6b6b:#ffd93d><bold>UItem Editor</bold></gradient>",
-                List.of(
-                        "<gray>Manage all custom items",
-                        "",
-                        "<yellow>Total items: <white>" + plugin.getItemManager().getAllItems().size(),
-                        "<yellow>Page: <white>" + (page + 1)
-                )));
-
-        // Search button (if enabled)
-        if (plugin.getConfig().getBoolean("gui.search.enabled", true)
-                && player.hasPermission("uitem.search")) {
-            setItem(48, createItem(Material.MAGENTA_GLAZED_TERRACOTTA,
-                    "<aqua><bold>Search Item</bold>",
-                    List.of(
-                            "<gray>Enter keyword to filter list",
-                            "<gray>Type 'clear' to clear filter"
-                    )), event -> {
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                plugin.getChatInputManager().requestInput(player,
-                        "<yellow>Enter search keyword (<gray>or 'clear' to clear):",
-                        input -> {
-                            SearchManager sm = plugin.getSearchManager();
-                            if (input.equalsIgnoreCase("clear")) {
-                                sm.clearQuery(player);
-                            } else {
-                                sm.setQuery(player, input);
-                            }
-                            new ItemListGui(plugin, player, page).open();
-                        });
-            });
-        }
-
-        // Lấy danh sách items
         UItemManager manager = plugin.getItemManager();
         List<UItemData> allItems = new ArrayList<>(manager.getAllItems().values());
         allItems.sort(Comparator.comparing(UItemData::getId, String.CASE_INSENSITIVE_ORDER));
 
-        // Determine items per page from config
         int itemsPerPage = plugin.getConfig().getInt("gui.items-per-page", DEFAULT_ITEMS_PER_PAGE);
 
-        // Apply search filter if present
         SearchManager searchMgr = plugin.getSearchManager();
         String query = searchMgr.getQuery(player);
         if (query != null && !query.isBlank()) {
@@ -101,88 +60,115 @@ public class ItemListGui extends AbstractGui {
         }
 
         int totalPages = Math.max(1, (int) Math.ceil((double) allItems.size() / itemsPerPage));
-        if (page >= totalPages) {
-            page = totalPages - 1;
-        }
-        if (page < 0) {
-            page = 0;
-        }
+        if (page >= totalPages) page = totalPages - 1;
+        if (page < 0) page = 0;
 
-        // Hiển thị items cho trang hiện tại
+        setItem(4, GuiTheme.header(Material.CHEST, "Item Library",
+                List.of(
+                        "<gray>Trai: <white>Sua  <gray>|  Phai: <white>Xoa",
+                        "<yellow>Trang: <white>" + (page + 1) + "<gray>/<white>" + totalPages,
+                        "<yellow>Tong: <white>" + allItems.size() + " <gray>item"
+                        + (query != null && !query.isBlank() ? " <dark_gray>(loc: " + query + ")" : "")
+                )));
+
         int startIndex = page * itemsPerPage;
         for (int i = 0; i < ITEM_SLOTS.length; i++) {
             int dataIndex = startIndex + i;
             if (dataIndex < allItems.size()) {
                 UItemData data = allItems.get(dataIndex);
                 ItemStack preview = manager.buildPreviewItemStack(data);
-
-                setItem(ITEM_SLOTS[i], preview, event -> {
-                    if (event.getClick() == ClickType.LEFT) {
-                        // Mở editor
-                        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                        new ItemEditorGui(plugin, player, data).open();
-                    } else if (event.getClick() == ClickType.RIGHT) {
-                        // Xóa item - confirm
-                        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 0.5f);
-                        new ConfirmDeleteGui(plugin, player, data, this.page).open();
-                    }
-                });
+                setItem(ITEM_SLOTS[i], preview, event -> handleItemClick(event, data));
+            } else {
+                setItem(ITEM_SLOTS[i], null);
             }
         }
 
-        // Create new item button
-        setItem(49, createItem(Material.EMERALD,
-                "<green><bold>+ Create New Item</bold>",
-                List.of(
-                        "<gray>Click to create a new custom item",
-                        "",
-                        "<yellow>You will be prompted to enter an ID"
-                )), event -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+        if (plugin.getConfig().getBoolean("gui.search.enabled", true)
+                && player.hasPermission("uitem.search")) {
+            setItem(48, GuiTheme.actionSecondary(Material.SPYGLASS,
+                    "Search",
+                    Messages.guiSearchHint1(),
+                    Messages.guiSearchHint2()), event -> {
+                GuiFeedback.click(player);
+                plugin.getChatInputManager().requestInput(player,
+                        Messages.guiSearchPrompt(),
+                        input -> {
+                            if (input.equalsIgnoreCase("clear")) {
+                                searchMgr.clearQuery(player);
+                            } else {
+                                searchMgr.setQuery(player, input);
+                            }
+                            new ItemListGui(plugin, player, page).open();
+                        });
+            });
+        }
+
+        setItem(49, GuiTheme.actionPrimary(Material.EMERALD,
+                "+ Create",
+                Messages.guiCreateHint(),
+                Messages.guiCreateHint2()), event -> {
+            GuiFeedback.success(player);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Enter ID for new item <gray>(letters, numbers, underscores only):",
-                    input -> {
-                        String id = input.toLowerCase().replaceAll("[^a-z0-9_]", "_");
-                        if (id.isEmpty()) {
-                            player.sendMessage(TextUtil.error("Invalid ID!"));
-                            new ItemListGui(plugin, player, page).open();
-                            return;
-                        }
-                        if (manager.hasItem(id)) {
-                            player.sendMessage(TextUtil.error("Item '" + id + "' already exists!"));
-                            new ItemListGui(plugin, player, page).open();
-                            return;
-                        }
-                        UItemData newData = new UItemData(id);
-                        // Use API to fire UItemCreateEvent
-                        boolean created = com.uitem.api.UItemAPI.get()
-                                .registerItem(newData, player);
-                        if (!created) {
-                            player.sendMessage(com.uitem.util.TextUtil.error(
-                                    "Cannot create item '" + id + "' (blocked by another plugin)."));
-                            new ItemListGui(plugin, player, page).open();
-                            return;
-                        }
-                        plugin.getResourcePackManager().syncCmdsToLiveItems();
-                        player.sendMessage(TextUtil.success("Created item '" + id + "'!"));
-                        new ItemEditorGui(plugin, player, newData).open();
-                    });
+                    Messages.guiCreatePrompt(),
+                    input -> promptCreateItem(input));
         });
 
-        // Nút trang trước
+        setItem(45, createHomeButton(), event -> {
+            GuiFeedback.click(player);
+            new MainHubGui(plugin, player).open();
+        });
+
         if (page > 0) {
             setItem(46, createPreviousButton(), event -> {
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                GuiFeedback.click(player);
                 new ItemListGui(plugin, player, page - 1).open();
             });
+        } else {
+            setItem(46, GuiTheme.disabledNav());
         }
 
-        // Nút trang sau
         if (page < totalPages - 1) {
             setItem(52, createNextButton(), event -> {
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                GuiFeedback.click(player);
                 new ItemListGui(plugin, player, page + 1).open();
             });
+        } else {
+            setItem(52, GuiTheme.disabledNav());
         }
+    }
+
+    private void handleItemClick(InventoryClickEvent event, UItemData data) {
+        if (event.getClick() == ClickType.LEFT) {
+            GuiFeedback.click(player);
+            new ItemEditorGui(plugin, player, data).open();
+        } else if (event.getClick() == ClickType.RIGHT) {
+            GuiFeedback.click(player, false);
+            new ConfirmDeleteGui(plugin, player, data, page).open();
+        }
+    }
+
+    private void promptCreateItem(String input) {
+        UItemManager manager = plugin.getItemManager();
+        String id = input.toLowerCase().replaceAll("[^a-z0-9_]", "_");
+        if (id.isEmpty()) {
+            player.sendMessage(TextUtil.error("Invalid ID!"));
+            new ItemListGui(plugin, player, page).open();
+            return;
+        }
+        if (manager.hasItem(id)) {
+            player.sendMessage(TextUtil.error("Item '" + id + "' already exists!"));
+            new ItemListGui(plugin, player, page).open();
+            return;
+        }
+        UItemData newData = new UItemData(id);
+        boolean created = com.uitem.api.UItemAPI.get().registerItem(newData, player);
+        if (!created) {
+            player.sendMessage(TextUtil.error("Cannot create item '" + id + "' (blocked by another plugin)."));
+            new ItemListGui(plugin, player, page).open();
+            return;
+        }
+        plugin.getResourcePackManager().syncCmdsToLiveItems();
+        player.sendMessage(TextUtil.success("Created item '" + id + "'!"));
+        new ItemEditorGui(plugin, player, newData).open();
     }
 }

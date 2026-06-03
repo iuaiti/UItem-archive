@@ -151,7 +151,7 @@ public class UItemManager {
         // Lore with rarity lore
         List<Component> loreComponents = new ArrayList<>();
         if (data.getLore() != null) {
-            for (String line : data.getLore()) {
+            for (String line : com.uitem.util.TextUtil.expandLoreLines(data.getLore())) {
                 loreComponents.add(safeDeserialize(line, data.getId()));
             }
         }
@@ -162,7 +162,7 @@ public class UItemManager {
             }
         }
         if (!loreComponents.isEmpty()) {
-            meta.lore(loreComponents);
+            meta.lore(com.uitem.util.TextUtil.withLeadingSpacer(loreComponents));
         }
 
         // Enchantments
@@ -251,6 +251,7 @@ public class UItemManager {
         if (meta != null) {
             List<Component> lore = meta.lore();
             if (lore == null) lore = new ArrayList<>();
+            else lore = new ArrayList<>(com.uitem.util.TextUtil.withLeadingSpacer(lore));
             lore.add(Component.empty());
             lore.add(miniMessage.deserialize("<dark_gray>──────────────"));
             lore.add(miniMessage.deserialize("<gray>ID: <white>" + data.getId()));
@@ -291,10 +292,10 @@ public class UItemManager {
         }
         if (data.getLore() != null && !data.getLore().isEmpty()) {
             List<Component> loreComponents = new ArrayList<>();
-            for (String line : data.getLore()) {
+            for (String line : com.uitem.util.TextUtil.expandLoreLines(data.getLore())) {
                 loreComponents.add(safeDeserialize(line, data.getId()));
             }
-            meta.lore(loreComponents);
+            meta.lore(com.uitem.util.TextUtil.withLeadingSpacer(loreComponents));
         }
         item.setItemMeta(meta);
     }

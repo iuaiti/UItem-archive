@@ -1,0 +1,25 @@
+schema-version: 1
+id: stone_diamond
+display-name: "<green>Dao da nhan kim cuong"
+enabled: true
+
+when:
+  trigger: block_break
+
+if:
+  mode: ALL
+  list:
+    - type: block_type
+      block: STONE
+    - type: chance
+      percent: 5
+
+then:
+  - type: give_item
+    material: DIAMOND
+    amount: 1
+
+advanced:
+  cooldown-seconds: 0
+  delay-ticks: 0
+  chance-percent: 100

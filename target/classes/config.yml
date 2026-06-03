@@ -11,6 +11,23 @@ prefix: "<gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <dark_gray>│ 
 # Auto-save items when editing via GUI
 auto-save: true
 
+# ╔══════════════════════════════════════════╗
+# ║   External storage (items & recipes)     ║
+# ╚══════════════════════════════════════════╝
+# type: folder = one YAML per id in a directory (recommended)
+# type: file   = single items.yml / recipes.yml (legacy)
+storage:
+  items:
+    type: folder
+    directory: items
+    legacy-file: items.yml
+  recipes:
+    type: folder
+    directory: recipes
+    legacy-file: recipes.yml
+  # Also load entries from legacy files when the id is not in a folder file
+  import-legacy-on-load: true
+
 # Allow MiniMessage in display name and lore
 minimessage-support: true
 
@@ -37,22 +54,36 @@ integration:
 # Debug mode - log additional information
 debug: false
 
-# Resource pack engine
+# Resource pack engine (Oraxen / ItemsAdder style ~90%)
+# EN: drop textures in plugins/UItem/textures/<id>.png
+# VI: dat texture tai plugins/UItem/textures/<id>.png
+# External packs: plugins/UItem/packs/import/*.zip
 resourcepack:
   auto-generate: true
   auto-apply: false
   auto-host: true
+  generate-on-item-save: false
   server-port: 9732
   kick-on-fail: true
   kick-message: "Không tải được resource packs, vui lòng vào lại\nUnable to load resource packs, please rejoin"
   url: ""
   source-texture-folder: "textures"
+  texture-search-folders:
+    - "textures/items"
+  external-packs-folder: "packs/import"
+  import-external-packs: true
+  merge-vanilla-overrides: true
+  pull-oraxen-textures: true
+  pull-itemsadder-textures: true
   pack-format: 34
   namespace: "uitem"
   base-model-folder: "assets/minecraft/models/item"
   model-folder: "assets/uitem/models/item"
   texture-folder: "assets/uitem/textures/item"
   output-zip: "UItem-ResourcePack.zip"
+  description:
+    en: "UItem Custom Pack | Premium items"
+    vi: "Goi tai nguyen UItem | Item cao cap"
   cmd:
     storage-file: "custom_model_data.yml"
 

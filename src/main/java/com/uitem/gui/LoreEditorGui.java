@@ -2,6 +2,7 @@ package com.uitem.gui;
 
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
+import com.uitem.util.GuiTheme;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -32,7 +33,7 @@ public class LoreEditorGui extends AbstractGui {
     };
 
     public LoreEditorGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 54, "<gold><bold>Lore Editor</bold> <dark_gray>- <white>" + data.getId());
+        super(plugin, player, 54, GuiTheme.title("Lore · " + data.getId()));
         this.data = data;
         this.page = 0;
         this.selectedLine = -1;
@@ -43,14 +44,11 @@ public class LoreEditorGui extends AbstractGui {
         fillBorder(6);
 
         // Title
-        setItem(4, createItem(Material.WRITABLE_BOOK,
-                "<gold><bold>Lore Editor</bold>",
+        setItem(4, GuiTheme.header(Material.WRITABLE_BOOK, "Lore Editor",
                 List.of(
                         "<gray>Edit item description",
-                        "",
-                        "<yellow>Left click: <white>Edit line",
-                        "<yellow>Right click: <white>Delete line",
-                        "<yellow>Shift+Click: <white>Insert blank line above"
+                        "<yellow>Left: <white>Edit  <yellow>Right: <white>Delete",
+                        "<yellow>Shift+Click: <white>Insert line above"
                 )));
 
         List<String> lore = data.getLore();

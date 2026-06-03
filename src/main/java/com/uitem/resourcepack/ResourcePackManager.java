@@ -24,7 +24,6 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,16 +52,11 @@ public class ResourcePackManager {
     private final UItemPlugin plugin;
     private final UItemManager itemManager;
     private final File rpDir;
-    private final File cmdConfigFile;
+    private File cmdConfigFile;
+    private final PackImporter packImporter;
 
-    // Mutable: được cập nhật khi reloadFromConfig()
-    private File sourceTextureDir;
-    private String namespace;
-    private String modelFolder;
-    private String textureFolder;
-    private String baseModelFolder;
-    private String outputZipName;
-    private int packFormat;
+    private ResourcePackSettings settings;
+    private TextureResolver textureResolver;
 
     private final Object cmdLock = new Object();
     private org.bukkit.configuration.file.FileConfiguration cmdConfig;
@@ -76,9 +70,8 @@ public class ResourcePackManager {
         this.plugin = plugin;
         this.itemManager = itemManager;
         this.rpDir = new File(plugin.getDataFolder(), "resourcepack");
-        this.cmdConfigFile = new File(plugin.getDataFolder(),
-                plugin.getConfig().getString("resourcepack.cmd.storage-file", "custom_model_data.yml"));
-        readConfigFields(plugin.getConfig());
+        this.packImporter = new PackImporter(plugin);
+        reloadFromConfig(plugin.getConfig());
         loadCmdConfig();
     }
 
@@ -86,20 +79,15 @@ public class ResourcePackManager {
      * Đọc lại các trường cấu hình từ config (dùng khi reload).
      */
     public void reloadFromConfig(org.bukkit.configuration.file.FileConfiguration config) {
-        readConfigFields(config);
+        this.settings = new ResourcePackSettings(plugin);
+        this.textureResolver = new TextureResolver(plugin, settings);
+        this.cmdConfigFile = new File(plugin.getDataFolder(), settings.cmdStorageFile());
         loadCmdConfig();
         plugin.getLogger().info("[UItem] ResourcePackManager reloaded config.");
     }
 
-    private void readConfigFields(org.bukkit.configuration.file.FileConfiguration config) {
-        this.sourceTextureDir = new File(plugin.getDataFolder(),
-                config.getString("resourcepack.source-texture-folder", "textures"));
-        this.namespace = config.getString("resourcepack.namespace", "uitem");
-        this.modelFolder = normalizeFolder(config.getString("resourcepack.model-folder", "assets/uitem/models/item"));
-        this.textureFolder = normalizeFolder(config.getString("resourcepack.texture-folder", "assets/uitem/textures/item"));
-        this.baseModelFolder = normalizeFolder(config.getString("resourcepack.base-model-folder", "assets/minecraft/models/item"));
-        this.outputZipName = config.getString("resourcepack.output-zip", "UItem-ResourcePack.zip");
-        this.packFormat = Math.max(1, config.getInt("resourcepack.pack-format", 34));
+    public ResourcePackSettings getSettings() {
+        return settings;
     }
 
     public File getResourcePackDirectory() {
@@ -253,13 +241,60 @@ public class ResourcePackManager {
     }
 
     /**
-     * Generate toàn bộ pack đúng cấu trúc.
+     * Full pipeline: sync CMD → generate folder → export zip (Oraxen / ItemsAdder style build).
+     */
+    public synchronized File rebuildAll() throws IOException {
+        syncCmdsToLiveItems();
+        generatePack();
+        return exportZip();
+    }
+
+    public PackStatus getStatus() {
+        File zip = lastZipFile;
+        var server = plugin.getPackServer();
+        String url = settings.manualUrl();
+        if ((url == null || url.isBlank()) && server != null && server.isRunning()) {
+            url = server.getPackUrl();
+        }
+        return new PackStatus(
+                rpDir.getAbsolutePath(),
+                settings.externalPacksDir().getAbsolutePath(),
+                zip == null ? null : zip.getAbsolutePath(),
+                getLastPackHashHex(),
+                url,
+                server != null && server.isRunning(),
+                itemManager.getAllItems().size(),
+                cmdCache.size()
+        );
+    }
+
+    public record PackStatus(
+            String packDirectory,
+            String importDirectory,
+            String lastZip,
+            String sha1,
+            String packUrl,
+            boolean hostRunning,
+            int itemCount,
+            int cmdAssignments
+    ) {
+    }
+
+    /**
+     * Generate toàn bộ pack đúng cấu trúc (merge external + UItem overrides).
      */
     public synchronized void generatePack() {
         clearGeneratedPack();
         createDirectories();
+        settings.sourceTextureDir().mkdirs();
+        settings.externalPacksDir().mkdirs();
 
-        Map<String, List<OverrideEntry>> groupedOverrides = new LinkedHashMap<>();
+        if (settings.importExternalPacks()) {
+            int imported = packImporter.importAll(rpDir.toPath(), settings.externalPacksDir());
+            plugin.getLogger().info("[UItem] Merged " + imported + " file(s) from external packs.");
+        }
+
+        Map<String, List<ModelJsonHelper.OverrideEntry>> uitemOverrides = new LinkedHashMap<>();
         Map<String, UItemData> snapshot = itemManager.snapshotAll();
         List<Map.Entry<String, UItemData>> sortedItems = new ArrayList<>(snapshot.entrySet());
         sortedItems.sort(Map.Entry.comparingByKey(String.CASE_INSENSITIVE_ORDER));
@@ -267,7 +302,7 @@ public class ResourcePackManager {
         for (Map.Entry<String, UItemData> entry : sortedItems) {
             String itemId = entry.getKey();
             UItemData data = entry.getValue();
-            if (data == null) {
+            if (data == null || data.isExcludeFromPack()) {
                 continue;
             }
 
@@ -281,24 +316,43 @@ public class ResourcePackManager {
 
             Material material = data.getMaterial() != null ? data.getMaterial() : Material.STONE;
             String baseMaterial = material.name().toLowerCase(Locale.ROOT);
-            String modelPath = namespace + ":item/" + sanitizeFileName(itemId);
+            String modelPath = settings.namespace() + ":item/" + sanitizeFileName(itemId);
 
-            groupedOverrides.computeIfAbsent(baseMaterial, k -> new ArrayList<>())
-                    .add(new OverrideEntry(cmd, modelPath));
+            uitemOverrides.computeIfAbsent(baseMaterial, k -> new ArrayList<>())
+                    .add(new ModelJsonHelper.OverrideEntry(cmd, modelPath));
 
-            copyOrGenerateTexture(itemId);
+            copyOrGenerateTexture(data);
         }
 
-        for (Map.Entry<String, List<OverrideEntry>> entry : groupedOverrides.entrySet()) {
-            generateBaseModelJson(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, List<ModelJsonHelper.OverrideEntry>> entry : uitemOverrides.entrySet()) {
+            writeBaseModelWithMerge(entry.getKey(), entry.getValue());
         }
 
         for (Map.Entry<String, UItemData> entry : sortedItems) {
-            generateCustomModelJson(entry.getKey(), entry.getValue());
+            if (entry.getValue() != null && !entry.getValue().isExcludeFromPack()) {
+                writeCustomModelJson(entry.getKey(), entry.getValue());
+            }
         }
 
         generatePackMcmeta();
+        copyDefaultPackIcon();
         plugin.getLogger().info("[UItem] Resource pack generated at: " + rpDir.getAbsolutePath());
+    }
+
+    private void writeBaseModelWithMerge(String baseMaterial, List<ModelJsonHelper.OverrideEntry> uitemEntries) {
+        File outFile = new File(rpDir, settings.baseModelFolder() + "/" + baseMaterial + ".json");
+        List<ModelJsonHelper.OverrideEntry> existing = settings.mergeVanillaOverrides()
+                ? ModelJsonHelper.readOverrides(outFile.toPath())
+                : List.of();
+        Map<Integer, ModelJsonHelper.OverrideEntry> merged =
+                ModelJsonHelper.mergeOverrides(existing, uitemEntries);
+        writeText(outFile, ModelJsonHelper.buildBaseModelJson(baseMaterial, merged));
+    }
+
+    private void writeCustomModelJson(String itemId, UItemData data) {
+        String json = ModelJsonHelper.buildCustomModelJson(data, settings.namespace(), itemId);
+        File outFile = new File(rpDir, settings.modelFolder() + "/" + sanitizeFileName(itemId) + ".json");
+        writeText(outFile, json);
     }
 
     private void clearGeneratedPack() {
@@ -321,85 +375,25 @@ public class ResourcePackManager {
     }
 
     private void createDirectories() {
-        new File(rpDir, baseModelFolder).mkdirs();
-        new File(rpDir, modelFolder).mkdirs();
-        new File(rpDir, textureFolder).mkdirs();
-        sourceTextureDir.mkdirs();
+        new File(rpDir, settings.baseModelFolder()).mkdirs();
+        new File(rpDir, settings.modelFolder()).mkdirs();
+        new File(rpDir, settings.textureFolder()).mkdirs();
+        settings.sourceTextureDir().mkdirs();
     }
 
-    /**
-     * Tạo file override cho base item.
-     * Ví dụ: assets/minecraft/models/item/diamond_sword.json
-     */
-    private void generateBaseModelJson(String baseMaterial, List<OverrideEntry> overrides) {
-        Collections.sort(overrides, Comparator.comparingInt(o -> o.cmd));
-        String parent = isHandheld(baseMaterial) ? "minecraft:item/handheld" : "minecraft:item/generated";
+    private void copyOrGenerateTexture(UItemData data) {
+        String safeId = sanitizeFileName(data.getId());
+        Path target = new File(rpDir, settings.textureFolder()).toPath().resolve(safeId + ".png");
 
-        StringBuilder json = new StringBuilder();
-        json.append("{\n");
-        json.append("  \"parent\": \"").append(parent).append("\",\n");
-        json.append("  \"textures\": {\n");
-        json.append("    \"layer0\": \"minecraft:item/").append(baseMaterial).append("\"\n");
-        json.append("  },\n");
-        json.append("  \"overrides\": [\n");
-
-        for (int i = 0; i < overrides.size(); i++) {
-            OverrideEntry oe = overrides.get(i);
-            json.append("    {\n");
-            json.append("      \"predicate\": { \"custom_model_data\": ").append(oe.cmd).append(" },\n");
-            json.append("      \"model\": \"").append(oe.model).append("\"\n");
-            json.append("    }");
-            if (i < overrides.size() - 1) {
-                json.append(',');
+        boolean copied = textureResolver.copyToPack(data, target);
+        if (!copied) {
+            plugin.getLogger().warning("[UItem] Missing texture for '" + data.getId()
+                    + "' — generating placeholder. Put PNG in textures/ or set resourcepack.texture in item file.");
+            try {
+                generatePlaceholderTexture(target, data.getId());
+            } catch (IOException e) {
+                plugin.getLogger().warning("[UItem] Placeholder failed for " + data.getId() + ": " + e.getMessage());
             }
-            json.append('\n');
-        }
-
-        json.append("  ]\n");
-        json.append("}\n");
-
-        File outFile = new File(rpDir, baseModelFolder + "/" + baseMaterial + ".json");
-        writeText(outFile, json.toString());
-    }
-
-    /**
-     * Tạo model JSON cho custom item.
-     * Đường dẫn đúng: assets/uitem/models/item/<itemId>.json
-     * Texture đúng: assets/uitem/textures/item/<itemId>.png
-     */
-    private void generateCustomModelJson(String itemId, UItemData data) {
-        Material material = data != null && data.getMaterial() != null ? data.getMaterial() : Material.STONE;
-        String parent = isHandheld(material.name().toLowerCase(Locale.ROOT)) ? "minecraft:item/handheld" : "minecraft:item/generated";
-        String texturePath = namespace + ":item/" + sanitizeFileName(itemId);
-
-        StringBuilder json = new StringBuilder();
-        json.append("{\n");
-        json.append("  \"parent\": \"").append(parent).append("\",\n");
-        json.append("  \"textures\": {\n");
-        json.append("    \"layer0\": \"").append(texturePath).append("\"\n");
-        json.append("  }\n");
-        json.append("}\n");
-
-        File outFile = new File(rpDir, modelFolder + "/" + sanitizeFileName(itemId) + ".json");
-        writeText(outFile, json.toString());
-    }
-
-    private void copyOrGenerateTexture(String itemId) {
-        String safeId = sanitizeFileName(itemId);
-        Path source = sourceTextureDir.toPath().resolve(safeId + ".png");
-        Path target = new File(rpDir, textureFolder).toPath().resolve(safeId + ".png");
-
-        try {
-            Files.createDirectories(target.getParent());
-            if (Files.exists(source)) {
-                Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-                return;
-            }
-
-            plugin.getLogger().warning("[UItem] Missing texture for item: " + itemId + " (needed: " + source.toAbsolutePath() + "). Generating placeholder.");
-            generatePlaceholderTexture(target, itemId);
-        } catch (IOException e) {
-            plugin.getLogger().warning("[UItem] Could not copy/generate texture for item " + itemId + ": " + e.getMessage());
         }
     }
 
@@ -428,13 +422,60 @@ public class ResourcePackManager {
     }
 
     private void generatePackMcmeta() {
+        String description = settings.descriptionEn() + " | EN\n" + settings.descriptionVi() + " | VI";
         String json = "{\n" +
                 "  \"pack\": {\n" +
-                "    \"pack_format\": " + packFormat + ",\n" +
-                "    \"description\": \"UItem Resource Pack\"\n" +
+                "    \"pack_format\": " + settings.packFormat() + ",\n" +
+                "    \"description\": \"" + escapeJson(description) + "\"\n" +
                 "  }\n" +
                 "}\n";
         writeText(new File(rpDir, "pack.mcmeta"), json);
+    }
+
+    private void copyDefaultPackIcon() {
+        File target = new File(rpDir, "pack.png");
+        if (target.exists()) return;
+        try {
+            var stream = plugin.getResource("resourcepack/pack.png");
+            if (stream != null) {
+                Files.copy(stream, target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException ignored) {
+        }
+    }
+
+    private static String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    public void sendPackToAllOnline() {
+        String url = resolvePackUrl();
+        if (url == null || url.isBlank()) {
+            plugin.getLogger().warning("[UItem] No pack URL — export pack and start host or set resourcepack.url");
+            return;
+        }
+        byte[] hash = getLastPackHash();
+        for (Player p : plugin.getServer().getOnlinePlayers()) {
+            applyResourcePack(p, url, hash);
+        }
+    }
+
+    public void sendPackTo(Player player) {
+        String url = resolvePackUrl();
+        if (url == null || url.isBlank() || player == null) return;
+        applyResourcePack(player, url, getLastPackHash());
+    }
+
+    public String resolvePackUrl() {
+        if (settings.manualUrl() != null && !settings.manualUrl().isBlank()) {
+            return settings.manualUrl();
+        }
+        var server = plugin.getPackServer();
+        if (server != null && server.isRunning()) {
+            return server.getPackUrl();
+        }
+        return null;
     }
 
     /**
@@ -443,7 +484,7 @@ public class ResourcePackManager {
     public File exportZip() throws IOException {
         generatePack();
 
-        File zipFile = new File(plugin.getDataFolder(), outputZipName);
+        File zipFile = new File(plugin.getDataFolder(), settings.outputZipName());
         if (zipFile.exists() && !zipFile.delete()) {
             throw new IOException("Could not delete old zip file: " + zipFile.getAbsolutePath());
         }
@@ -559,11 +600,6 @@ public class ResourcePackManager {
         SchedulerUtil.runSync(plugin, task);
     }
 
-    private boolean isHandheld(String material) {
-        String m = material == null ? "" : material.toLowerCase(Locale.ROOT);
-        return m.contains("sword") || m.contains("axe") || m.contains("pickaxe") || m.contains("shovel") || m.contains("hoe") || m.contains("rod") || m.contains("trident") || m.contains("mace");
-    }
-
     private void writeText(File file, String content) {
         try {
             File parent = file.getParentFile();
@@ -574,20 +610,6 @@ public class ResourcePackManager {
         } catch (IOException e) {
             plugin.getLogger().warning("Could not write file: " + file.getAbsolutePath() + " | " + e.getMessage());
         }
-    }
-
-    private String normalizeFolder(String folder) {
-        if (folder == null || folder.isBlank()) {
-            return "";
-        }
-        String normalized = folder.replace('\\', '/');
-        while (normalized.startsWith("/")) {
-            normalized = normalized.substring(1);
-        }
-        while (normalized.endsWith("/")) {
-            normalized = normalized.substring(0, normalized.length() - 1);
-        }
-        return normalized;
     }
 
     private String sanitizeFileName(String input) {
@@ -605,13 +627,4 @@ public class ResourcePackManager {
         return sb.toString();
     }
 
-    private static final class OverrideEntry {
-        final int cmd;
-        final String model;
-
-        OverrideEntry(int cmd, String model) {
-            this.cmd = cmd;
-            this.model = model;
-        }
-    }
 }

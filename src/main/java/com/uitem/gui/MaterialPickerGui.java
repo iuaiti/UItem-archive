@@ -2,6 +2,7 @@ package com.uitem.gui;
 
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
+import com.uitem.util.GuiTheme;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -65,7 +66,7 @@ public class MaterialPickerGui extends AbstractGui {
 
     public MaterialPickerGui(UItemPlugin plugin, Player player, UItemData data,
                              Consumer<String> callback, int page, String filter, String category) {
-        super(plugin, player, 54, "<gold><bold>Choose Material</bold>");
+        super(plugin, player, 54, GuiTheme.title("Materials"));
         this.data = data;
         this.callback = callback;
         this.page = page;

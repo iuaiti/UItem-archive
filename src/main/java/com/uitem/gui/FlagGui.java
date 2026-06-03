@@ -2,6 +2,7 @@ package com.uitem.gui;
 
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
+import com.uitem.util.GuiTheme;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -20,7 +21,7 @@ public class FlagGui extends AbstractGui {
     private final UItemData data;
 
     public FlagGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 36, "<blue><bold>Item Flags</bold> <dark_gray>- <white>" + data.getId());
+        super(plugin, player, 36, GuiTheme.title("Flags · " + data.getId()));
         this.data = data;
     }
 

@@ -1,0 +1,21 @@
+material: DIAMOND_SWORD
+display-name: "<gradient:#ff0000:#ff6600><bold>Ruby Sword</bold></gradient>"
+lore:
+  - "<gray>Một thanh kiếm huyền thoại"
+  - "<gray>được rèn từ <red>Ruby <gray>nguyên chất"
+  - ""
+  - "<gold>✦ Legendary"
+enchantments:
+  sharpness: 5
+  unbreaking: 3
+  fire_aspect: 2
+flags:
+  - HIDE_ENCHANTS
+  - HIDE_ATTRIBUTES
+custom-model-data: 10001
+unbreakable: true
+glowing: false
+rarity: LEGENDARY
+resourcepack:
+  texture: ruby_sword
+  parent: handheld

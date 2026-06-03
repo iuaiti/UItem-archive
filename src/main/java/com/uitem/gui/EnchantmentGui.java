@@ -2,6 +2,7 @@ package com.uitem.gui;
 
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
+import com.uitem.util.GuiTheme;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -35,7 +36,7 @@ public class EnchantmentGui extends AbstractGui {
     }
 
     public EnchantmentGui(UItemPlugin plugin, Player player, UItemData data, int page) {
-        super(plugin, player, 54, "<light_purple><bold>Enchantments</bold> <dark_gray>- <white>" + data.getId());
+        super(plugin, player, 54, GuiTheme.title("Enchants · " + data.getId()));
         this.data = data;
         this.page = page;
     }

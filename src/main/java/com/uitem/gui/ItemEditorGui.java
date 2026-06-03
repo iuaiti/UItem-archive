@@ -3,6 +3,8 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.rarity.RarityConfig;
+import com.uitem.util.GuiFeedback;
+import com.uitem.util.GuiTheme;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -22,8 +24,7 @@ public class ItemEditorGui extends AbstractGui {
     private final UItemData data;
 
     public ItemEditorGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 54,
-                "<gradient:#ff6b6b:#ffd93d>Edit: </gradient><white>" + data.getId());
+        super(plugin, player, 54, GuiTheme.titleEdit(data.getId()));
         this.data = data;
     }
 
@@ -358,37 +359,33 @@ public class ItemEditorGui extends AbstractGui {
             new RecipeEditorGui(plugin, player, data).open();
         });
 
-        // === Back button (slot 46) ===
+        setItem(45, createHomeButton(), event -> {
+            GuiFeedback.click(player);
+            new MainHubGui(plugin, player).open();
+        });
+
         setItem(46, createBackButton(), event -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            GuiFeedback.click(player);
             new ItemListGui(plugin, player).open();
         });
 
-        // === SAVE button (slot 49) ===
-        setItem(49, createItem(Material.EMERALD,
-                "<green><bold>💾 SAVE</bold>",
-                List.of(
-                        "<gray>Save all changes to file",
-                        "",
-                        "<yellow>Click to save"
-                )), event -> {
+        setItem(49, GuiTheme.actionPrimary(Material.LIME_CONCRETE,
+                "SAVE",
+                "<gray>Luu thay doi vao file",
+                "<yellow>Click de luu"), event -> {
             plugin.getItemManager().registerItem(data);
             plugin.getResourcePackManager().syncCmdsToLiveItems();
             plugin.getStorageManager().saveAllNow(plugin.getItemManager());
             player.sendMessage(TextUtil.success("Saved item '" + data.getId() + "'!"));
-            player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.0f);
+            GuiFeedback.success(player);
             refresh();
         });
 
-        // === DELETE button (slot 52) ===
-        setItem(52, createItem(Material.BARRIER,
-                "<red><bold>🗑 DELETE</bold>",
-                List.of(
-                        "<gray>Delete this item",
-                        "",
-                        "<red>⚠ Click to delete"
-                )), event -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 0.5f);
+        setItem(52, GuiTheme.actionDanger(Material.RED_CONCRETE,
+                "DELETE",
+                "<gray>Xoa item nay",
+                "<red>Khong the hoan tac"), event -> {
+            GuiFeedback.click(player, false);
             new ConfirmDeleteGui(plugin, player, data, 0).open();
         });
     }

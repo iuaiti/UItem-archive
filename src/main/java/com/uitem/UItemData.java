@@ -34,6 +34,12 @@ public class UItemData {
     private String itemsAdderId;
     private String executableItemsId;
 
+    /** Resource pack overrides (Oraxen / ItemsAdder style per-item config). */
+    private String texturePath;
+    private String modelParent;
+    private List<String> textureLayers;
+    private boolean excludeFromPack;
+
     public UItemData(String id) {
         this.id = id;
         this.material = Material.STONE;
@@ -50,6 +56,10 @@ public class UItemData {
         this.oraxenId = null;
         this.itemsAdderId = null;
         this.executableItemsId = null;
+        this.texturePath = null;
+        this.modelParent = null;
+        this.textureLayers = new ArrayList<>();
+        this.excludeFromPack = false;
     }
 
     // === Getters & Setters ===
@@ -170,6 +180,38 @@ public class UItemData {
         this.executableItemsId = executableItemsId;
     }
 
+    public String getTexturePath() {
+        return texturePath;
+    }
+
+    public void setTexturePath(String texturePath) {
+        this.texturePath = texturePath;
+    }
+
+    public String getModelParent() {
+        return modelParent;
+    }
+
+    public void setModelParent(String modelParent) {
+        this.modelParent = modelParent;
+    }
+
+    public List<String> getTextureLayers() {
+        return textureLayers;
+    }
+
+    public void setTextureLayers(List<String> textureLayers) {
+        this.textureLayers = textureLayers != null ? new ArrayList<>(textureLayers) : new ArrayList<>();
+    }
+
+    public boolean isExcludeFromPack() {
+        return excludeFromPack;
+    }
+
+    public void setExcludeFromPack(boolean excludeFromPack) {
+        this.excludeFromPack = excludeFromPack;
+    }
+
     /**
      * Deep clone UItemData.
      */
@@ -192,6 +234,10 @@ public class UItemData {
         clone.oraxenId = this.oraxenId;
         clone.itemsAdderId = this.itemsAdderId;
         clone.executableItemsId = this.executableItemsId;
+        clone.texturePath = this.texturePath;
+        clone.modelParent = this.modelParent;
+        clone.textureLayers = this.textureLayers != null ? new ArrayList<>(this.textureLayers) : new ArrayList<>();
+        clone.excludeFromPack = this.excludeFromPack;
         return clone;
     }
 

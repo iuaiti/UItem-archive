@@ -24,6 +24,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -39,6 +40,7 @@ public final class UItemPlugin extends JavaPlugin {
     private com.uitem.search.SearchManager searchManager;
     private ResourcePackServer packServer;
     private RecipeManager recipeManager;
+    private com.uitem.passive.PassiveBootstrap passiveBootstrap;
     private Listener resourcePackJoinListener;
 
     @Override
@@ -59,11 +61,16 @@ public final class UItemPlugin extends JavaPlugin {
         this.resourcePackManager = new ResourcePackManager(this, this.itemManager);
         this.searchManager = new com.uitem.search.SearchManager();
 
+        storageManager.ensureDefaultExternalFiles();
         storageManager.loadAll(itemManager);
         integrationManager.detectIntegrations();
         resourcePackManager.syncCmdsToLiveItems();
 
         this.recipeManager = new RecipeManager(this, this.itemManager);
+
+        this.passiveBootstrap = new com.uitem.passive.PassiveBootstrap(this);
+        passiveBootstrap.enable(this);
+        ensureDefaultPassiveFile();
 
         RarityConfig.load(this);
 
@@ -95,6 +102,7 @@ public final class UItemPlugin extends JavaPlugin {
         getLogger().info("║        ✦ Author: iuaititi");
         getLogger().info("╠══════════════════════════════════════════════╣");
         getLogger().info("║  ■ Loaded: " + itemManager.getAllItems().size() + " custom items");
+        getLogger().info("║  ■ Passives: " + passiveBootstrap.manager().all().size());
         getLogger().info("║  ■ Integrations: " + integrationManager.getStatus());
         getLogger().info("║  ■ Scheduler: " + (SchedulerUtil.isFolia() ? "🌐 Folia (Region)" : "☕ Paper/Spigot"));
         getLogger().info("╚══════════════════════════════════════════════╝");
@@ -103,6 +111,8 @@ public final class UItemPlugin extends JavaPlugin {
         if (getConfig().getBoolean("resourcepack.auto-generate", true)) {
             SchedulerUtil.runAsync(this, () -> {
                 try {
+                    resourcePackManager.syncCmdsToLiveItems();
+                    resourcePackManager.generatePack();
                     resourcePackManager.exportZip();
                     getLogger().info("[UItem] Resource pack exported successfully.");
                     if (getConfig().getBoolean("resourcepack.auto-apply", true) && packServer != null && packServer.isRunning()) {
@@ -304,5 +314,17 @@ public final class UItemPlugin extends JavaPlugin {
 
     public RecipeManager getRecipeManager() {
         return recipeManager;
+    }
+
+    public com.uitem.passive.PassiveBootstrap getPassiveBootstrap() {
+        return passiveBootstrap;
+    }
+
+    private void ensureDefaultPassiveFile() {
+        File target = new File(getDataFolder(), "passives/stone_diamond.yml");
+        if (!target.exists()) {
+            saveResource("passives/stone_diamond.yml", false);
+            passiveBootstrap.manager().loadAll();
+        }
     }
 }
