@@ -360,7 +360,17 @@ public class RecipeEditorGui implements InventoryHolder {
 
     private char findMatchingChar(ItemStack item, Map<Character, UItemRecipe.Ingredient> map) {
         for (Map.Entry<Character, UItemRecipe.Ingredient> entry : map.entrySet()) {
-            if (entry.getValue().matches(item)) {
+            UItemRecipe.Ingredient ing = entry.getValue();
+            // Require exact match on type/uitem AND the exact amount (stack size placed = consume amount for that position)
+            // This allows same material with *different* per-position amounts (they get distinct letters)
+            boolean typeMatch = false;
+            if (ing.getUitemId() != null) {
+                String id = getUItemId(item);
+                typeMatch = ing.getUitemId().equals(id);
+            } else {
+                typeMatch = ing.getMaterial() == item.getType();
+            }
+            if (typeMatch && ing.getAmount() == item.getAmount()) {
                 return entry.getKey();
             }
         }

@@ -248,7 +248,7 @@ public class UItemData {
      * Configurable in items.yml under "effects:".
      */
     public static class ItemEffect {
-        private String trigger;     // HIT, DAMAGE, EQUIP, FULL_SET
+        private String trigger;     // HIT, DAMAGE, DIE, EQUIP, FULL_SET (mặc = EQUIP)
         private String type;        // POTION, REFLECT, EXTRA_DAMAGE
         private String potion;      // e.g. SPEED, REGENERATION, STRENGTH (for POTION)
         private int amplifier = 0;

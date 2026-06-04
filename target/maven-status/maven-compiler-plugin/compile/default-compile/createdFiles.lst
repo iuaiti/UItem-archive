@@ -11,6 +11,7 @@ com/uitem/api/UItemAPI.class
 com/uitem/gui/AbstractGui.class
 com/uitem/gui/RecipeEditorGui.class
 com/uitem/integration/ExecutableItemsIntegration.class
+com/uitem/gui/EffectEditorGui.class
 com/uitem/resourcepack/ResourcePackServer$PackHandler.class
 com/uitem/integration/OraxenIntegration.class
 com/uitem/UItemPlugin$1.class

@@ -439,7 +439,7 @@ public class ItemEditorGui extends AbstractGui {
                     });
         });
 
-        // === Effects (general potions + actions on hit/damage/equip/fullset) slot 27 ===
+        // === Effects (general potions + actions on hit/damage/equip/fullset/die) slot 27 ===
         int effCount = (data.getEffects() != null) ? data.getEffects().size() : 0;
         setItem(27, createItem(
                 effCount > 0 ? Material.BREWING_STAND : Material.GLASS_BOTTLE,
@@ -447,48 +447,14 @@ public class ItemEditorGui extends AbstractGui {
                 List.of(
                         "<gray>Effects: <white>" + effCount,
                         "",
-                        "<yellow>Click to add effect",
-                        "<gray>Format: TRIGGER TYPE [potion amp dur chance value]",
-                        "<gray>HIT POTION SPEED 1 60 30",
-                        "<gray>DAMAGE REFLECT 25 100",
-                        "<gray>EQUIP POTION STRENGTH 0 200 100",
-                        "<gray>FULL_SET POTION SPEED 2 100 100",
-                        "<gray>Type 'clear' to remove all"
+                        "<yellow>Click to open Effect Editor GUI",
+                        "<gray>Choose trigger (HIT, DAMAGE, DIE, EQUIP, FULL_SET)",
+                        "<gray>Pick POTION + level (amplifier), duration, chance",
+                        "<gray>Or REFLECT / EXTRA_DAMAGE effects",
+                        "<gray>FULL_SET activates when wearing any 4 armor pieces"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Enter effect <gray>or 'clear': TRIGGER TYPE ...",
-                    input -> {
-                        String in = input.trim();
-                        if (in.equalsIgnoreCase("clear")) {
-                            data.getEffects().clear();
-                            player.sendMessage(TextUtil.success("Cleared all attached effects!"));
-                            saveAndReopen();
-                            return;
-                        }
-                        String[] parts = in.split("\\s+");
-                        if (parts.length < 2) {
-                            player.sendMessage(TextUtil.error("Need at least: TRIGGER TYPE"));
-                            new ItemEditorGui(plugin, player, data).open();
-                            return;
-                        }
-                        try {
-                            com.uitem.UItemData.ItemEffect eff = new com.uitem.UItemData.ItemEffect();
-                            eff.setTrigger(parts[0]);
-                            eff.setType(parts[1]);
-                            if (parts.length >= 3) eff.setPotion(parts[2]);
-                            if (parts.length >= 4) eff.setAmplifier(Integer.parseInt(parts[3]));
-                            if (parts.length >= 5) eff.setDurationTicks(Integer.parseInt(parts[4]));
-                            if (parts.length >= 6) eff.setChance(Double.parseDouble(parts[5]));
-                            if (parts.length >= 7) eff.setValue(Double.parseDouble(parts[6]));
-                            data.getEffects().add(eff);
-                            player.sendMessage(TextUtil.success("Added effect!"));
-                            saveAndReopen();
-                        } catch (Exception ex) {
-                            player.sendMessage(TextUtil.error("Bad format: " + ex.getMessage()));
-                            new ItemEditorGui(plugin, player, data).open();
-                        }
-                    });
+            new EffectEditorGui(plugin, player, data).open();
         });
 
         // === Back button (slot 46) ===

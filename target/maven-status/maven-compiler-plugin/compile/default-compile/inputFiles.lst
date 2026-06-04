@@ -17,6 +17,7 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/AbstractGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ConfirmDeleteGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/CraftingGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/EffectEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/EnchantmentGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/FlagGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/GuiListener.java

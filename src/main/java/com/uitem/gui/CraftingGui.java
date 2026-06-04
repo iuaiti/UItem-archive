@@ -1,5 +1,6 @@
 package com.uitem.gui;
 
+import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.recipe.RecipeManager;
 import com.uitem.recipe.UItemRecipe;
@@ -85,14 +86,13 @@ public class CraftingGui implements InventoryHolder {
         inventory.setItem(22, createInfoLabel(Material.ARROW, "<yellow>→"));
         inventory.setItem(24, createInfoLabel(Material.KNOWLEDGE_BOOK, "<gold>Result"));
 
-        // Dedicated area ("chỗ tròn" / preview spot) to view full armor set
-        // Players can see how full set looks and remember that FULL_SET effects require all 4 pieces
-        inventory.setItem(0, createInfoLabel(Material.ANVIL, "<gold>Full Armor Set"));
-        inventory.setItem(1, createInfoLabel(Material.DIAMOND_HELMET, "<aqua>Helmet"));
-        inventory.setItem(2, createInfoLabel(Material.DIAMOND_CHESTPLATE, "<aqua>Chestplate"));
-        inventory.setItem(3, createInfoLabel(Material.DIAMOND_LEGGINGS, "<aqua>Leggings"));
-        inventory.setItem(4, createInfoLabel(Material.DIAMOND_BOOTS, "<aqua>Boots"));
-        inventory.setItem(9, createInfoLabel(Material.ARMOR_STAND, "<gray>Wear all 4 = activate FULL_SET effects"));
+        // Info area explaining custom crafting + FULL_SET support (visual only, not live player armor)
+        inventory.setItem(0, createInfoLabel(Material.CRAFTING_TABLE, "<gold>UItem Crafting"));
+        inventory.setItem(1, createInfoLabel(Material.KNOWLEDGE_BOOK, "<gray>Custom items"));
+        inventory.setItem(2, createInfoLabel(Material.ANVIL, "<gray>+ vanilla mats"));
+        inventory.setItem(3, createInfoLabel(Material.NETHERITE_INGOT, "<yellow>Special recipes"));
+        inventory.setItem(4, createInfoLabel(Material.NETHER_STAR, "<gold>Result here"));
+        inventory.setItem(9, createInfoLabel(Material.ARMOR_STAND, "<gray>Wear 4 armor pieces → FULL_SET effects activate (on those UItems)"));
 
         updateCraftButtons();
     }
@@ -109,6 +109,9 @@ public class CraftingGui implements InventoryHolder {
 
     private void updateCraftButtons() {
         int selected = craftUnits;
+        ItemStack[] matrix = getMatrix();
+        int maxU = maxCraftable(matrix);
+        boolean hasRecipe = maxU > 0;
 
         inventory.setItem(CRAFT_1_SLOT, createAmountButton(Material.LIME_DYE, "1",
                 List.of("<gray>Craft 1 unit", selected == 1 ? "<green>✔ Selected" : "<yellow>Click to select")));
@@ -117,7 +120,10 @@ public class CraftingGui implements InventoryHolder {
         inventory.setItem(CRAFT_64_SLOT, createAmountButton(Material.CYAN_DYE, "64",
                 List.of("<gray>Craft 64 units", selected == 64 ? "<green>✔ Selected" : "<yellow>Click to select")));
         inventory.setItem(CRAFT_MAX_SLOT, createAmountButton(Material.MAGENTA_DYE, "MAX",
-                List.of("<gray>Craft as many units as possible", selected == 999 ? "<green>✔ Selected" : "<yellow>Click to select")));
+                List.of(
+                        hasRecipe ? "<gray>Craft max possible: x" + maxU : "<gray>No craftable recipe",
+                        selected == 999 ? "<green>✔ Selected" : "<yellow>Click to select"
+                )));
     }
 
     private ItemStack createAmountButton(Material mat, String label, List<String> lore) {
@@ -148,16 +154,32 @@ public class CraftingGui implements InventoryHolder {
             return;
         }
 
-        ItemStack result = recipeManager.matchRecipe(matrix);
-        if (result != null) {
+        ItemStack baseResult = recipeManager.matchRecipe(matrix);
+        if (baseResult != null) {
             UItemRecipe rec = findMatchingRecipe(matrix);
             int per = (rec != null ? rec.getResultAmount() : 1);
             int maxU = maxCraftable(matrix);
             int units = (craftUnits == 999 ? maxU : Math.min(craftUnits, maxU));
             int total = units * per;
-            result.setAmount(Math.min(result.getMaxStackSize(), Math.min(64, total)));
+            int showAmt = Math.min(baseResult.getMaxStackSize(), Math.min(64, total));
+
+            // Clone for preview so we can safely add temporary "click to craft" lore without polluting the real item
+            ItemStack preview = baseResult.clone();
+            preview.setAmount(showAmt);
+
+            ItemMeta pm = preview.getItemMeta();
+            if (pm != null) {
+                List<net.kyori.adventure.text.Component> lore = pm.lore() != null ? new ArrayList<>(pm.lore()) : new ArrayList<>();
+                lore.add(net.kyori.adventure.text.Component.empty());
+                lore.add(TextUtil.parse("<yellow>Click to craft x" + showAmt));
+                lore.add(TextUtil.parse("<gray>Max units craftable: " + maxU));
+                pm.lore(lore);
+                preview.setItemMeta(pm);
+            }
+            inventory.setItem(RESULT_SLOT, preview);
+        } else {
+            inventory.setItem(RESULT_SLOT, null);
         }
-        inventory.setItem(RESULT_SLOT, result);
     }
 
     private int maxCraftable(ItemStack[] matrix) {
@@ -230,6 +252,9 @@ public class CraftingGui implements InventoryHolder {
         ItemStack result = inventory.getItem(RESULT_SLOT);
         if (result == null || result.getType().isAir()) return;
 
+        // Clear immediately to prevent double-click / race condition giving duplicate items
+        inventory.setItem(RESULT_SLOT, null);
+
         int totalItemsWanted = result.getAmount();
 
         // Determine per-unit output from current recipe (may be >1)
@@ -237,6 +262,7 @@ public class CraftingGui implements InventoryHolder {
         UItemRecipe rec = findMatchingRecipe(curMatrix);
         int per = (rec != null ? rec.getResultAmount() : 1);
         int unitsWanted = (per > 0 ? totalItemsWanted / per : totalItemsWanted);
+        String resultItemId = (rec != null ? rec.getResultItemId() : null);
 
         int craftedUnits = 0;
 
@@ -297,10 +323,17 @@ public class CraftingGui implements InventoryHolder {
 
         if (craftedUnits > 0) {
             int actualItems = craftedUnits * per;
-            ItemStack toGive = result.clone();
-            toGive.setAmount(actualItems);
-            for (ItemStack leftover : player.getInventory().addItem(toGive).values()) {
-                player.getWorld().dropItem(player.getLocation(), leftover);
+            // Re-build a clean result item (do NOT clone the preview which has extra "click to craft" lore)
+            ItemStack toGive = null;
+            UItemData giveData = plugin.getItemManager().getItem(resultItemId);
+            if (giveData != null) {
+                toGive = plugin.getItemManager().buildItemStack(giveData);
+            }
+            if (toGive != null) {
+                toGive.setAmount(actualItems);
+                for (ItemStack leftover : player.getInventory().addItem(toGive).values()) {
+                    player.getWorld().dropItem(player.getLocation(), leftover);
+                }
             }
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.3f, 1.5f);
         }
@@ -360,7 +393,10 @@ public class CraftingGui implements InventoryHolder {
                 if (cs == slot) { isCraftSlot = true; break; }
             }
             if (isCraftSlot) {
-                SchedulerUtil.runSync(plugin, this::updateResult);
+                SchedulerUtil.runSync(plugin, () -> {
+                    updateResult();
+                    updateCraftButtons();
+                });
                 return;
             }
             event.setCancelled(true);
@@ -398,7 +434,10 @@ public class CraftingGui implements InventoryHolder {
                 } else {
                     event.getCurrentItem().setAmount(remaining);
                 }
-                SchedulerUtil.runSync(plugin, this::updateResult);
+                SchedulerUtil.runSync(plugin, () -> {
+                    updateResult();
+                    updateCraftButtons();
+                });
             }
         }
     }

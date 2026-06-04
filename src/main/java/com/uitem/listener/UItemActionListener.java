@@ -15,6 +15,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.NamespacedKey;
@@ -246,7 +248,7 @@ public class UItemActionListener implements Listener {
 
     // ============================================================
     // Custom Item Effects (potion, reflect, extra damage...)
-    // Triggers: HIT, DAMAGE, EQUIP, FULL_SET
+    // Triggers: HIT, DAMAGE, DIE, EQUIP, FULL_SET
     // ============================================================
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -288,9 +290,61 @@ public class UItemActionListener implements Listener {
 
         applyItemEffects(data, p, "EQUIP", null);
 
-        // Full set check
+        // Re-apply FULL_SET from *all* armor pieces when a full set is now worn
         if (hasFullArmor(p)) {
-            applyItemEffects(data, p, "FULL_SET", null);
+            for (ItemStack armor : p.getInventory().getArmorContents()) {
+                if (armor == null || armor.getType().isAir()) continue;
+                UItemData ad = getUItemData(armor);
+                if (ad != null) {
+                    applyItemEffects(ad, p, "FULL_SET", null);
+                }
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player p = event.getPlayer();
+        // Apply EQUIP + possible FULL_SET for items the player is already wearing on join
+        // (no UItemEquipEvent fires for pre-existing armor on login)
+        for (ItemStack armor : p.getInventory().getArmorContents()) {
+            if (armor == null || armor.getType().isAir()) continue;
+            UItemData ad = getUItemData(armor);
+            if (ad != null) {
+                applyItemEffects(ad, p, "EQUIP", null);
+            }
+        }
+        ItemStack held = p.getInventory().getItemInMainHand();
+        UItemData hd = getUItemData(held);
+        if (hd != null) {
+            applyItemEffects(hd, p, "EQUIP", null);
+        }
+        if (hasFullArmor(p)) {
+            for (ItemStack armor : p.getInventory().getArmorContents()) {
+                if (armor == null || armor.getType().isAir()) continue;
+                UItemData ad = getUItemData(armor);
+                if (ad != null) {
+                    applyItemEffects(ad, p, "FULL_SET", null);
+                }
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        Player p = event.getEntity();
+        // DIE trigger: fire for held item + all worn armor at time of death
+        ItemStack held = p.getInventory().getItemInMainHand();
+        UItemData hd = getUItemData(held);
+        if (hd != null) {
+            applyItemEffects(hd, p, "DIE", null);
+        }
+        for (ItemStack armor : p.getInventory().getArmorContents()) {
+            if (armor == null || armor.getType().isAir()) continue;
+            UItemData ad = getUItemData(armor);
+            if (ad != null) {
+                applyItemEffects(ad, p, "DIE", null);
+            }
         }
     }
 
