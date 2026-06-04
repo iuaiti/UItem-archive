@@ -23,28 +23,37 @@ public class EffectEditorGui extends AbstractGui {
     private static final List<String> TRIGGERS = List.of("HIT", "DAMAGE", "DIE", "EQUIP", "FULL_SET");
     private static final List<String> TYPES = List.of("POTION", "REFLECT", "EXTRA_DAMAGE");
 
-    // Popular potion keys (these .toLowerCase() resolve via Registry in listener)
+    // Popular potion keys using canonical registry names (upper) so lookup always succeeds.
+    // These .toLowerCase() work with Registry.EFFECT.get(NamespacedKey.minecraft(...))
     private static final List<String> COMMON_POTIONS = List.of(
-            "SPEED", "STRENGTH", "REGENERATION", "DAMAGE_RESISTANCE", "FIRE_RESISTANCE",
-            "NIGHT_VISION", "INVISIBILITY", "JUMP_BOOST", "FAST_DIGGING", "HEALTH_BOOST",
-            "ABSORPTION", "SATURATION", "POISON", "WEAKNESS", "SLOW", "DARKNESS"
+            "SPEED", "STRENGTH", "REGENERATION", "RESISTANCE", "FIRE_RESISTANCE",
+            "NIGHT_VISION", "INVISIBILITY", "JUMP_BOOST", "HASTE", "HEALTH_BOOST",
+            "ABSORPTION", "SATURATION", "POISON", "WEAKNESS", "SLOWNESS", "DARKNESS"
     );
 
     private final UItemData data;
     private UItemData.ItemEffect pending;
 
     public EffectEditorGui(UItemPlugin plugin, Player player, UItemData data) {
+        this(plugin, player, data, null);
+    }
+
+    public EffectEditorGui(UItemPlugin plugin, Player player, UItemData data, UItemData.ItemEffect initialPending) {
         super(plugin, player, 54, "<light_purple><bold>Effect Editor</bold> <dark_gray>- <white>" + data.getId());
         this.data = data;
-        this.pending = new UItemData.ItemEffect();
-        // sensible defaults
-        this.pending.setTrigger("HIT");
-        this.pending.setType("POTION");
-        this.pending.setPotion("SPEED");
-        this.pending.setAmplifier(0);
-        this.pending.setDurationTicks(200); // ~10s
-        this.pending.setChance(100.0);
-        this.pending.setValue(20.0);
+        if (initialPending != null) {
+            this.pending = initialPending.copy();
+        } else {
+            this.pending = new UItemData.ItemEffect();
+            // sensible defaults
+            this.pending.setTrigger("HIT");
+            this.pending.setType("POTION");
+            this.pending.setPotion("SPEED");
+            this.pending.setAmplifier(0);
+            this.pending.setDurationTicks(200); // ~10s
+            this.pending.setChance(100.0);
+            this.pending.setValue(20.0);
+        }
     }
 
     @Override
@@ -56,7 +65,9 @@ public class EffectEditorGui extends AbstractGui {
                 "<light_purple><bold>Effects for " + data.getId() + "</bold>",
                 List.of(
                         "<gray>Trigger on action → apply potion or combat effect",
-                        "<yellow>Choose trigger + type + potion (if any) + level"
+                        "<yellow>Choose trigger + type + potion (if any) + level",
+                        "<red>IMPORTANT: After save, use /uitem give <id> or craft to get updated item!",
+                        "<gray>HIT target effects only work when holding the item in main hand & attacking"
                 )));
 
         // === Current effects list (click to remove) - first row only to leave room ===
@@ -120,25 +131,24 @@ public class EffectEditorGui extends AbstractGui {
                     });
         }
 
-        // Target / Self toggle - only meaningful for HIT trigger (hitting a target can affect the victim)
-        // Placed at 27 (left side of trigger row)
-        if ("HIT".equalsIgnoreCase(pending.getTrigger())) {
-            boolean toTarget = pending.isApplyToTarget();
-            setItem(27, createItem(toTarget ? Material.REDSTONE : Material.EMERALD,
-                    (toTarget ? "<red><bold>→ TARGET (victim)</bold>" : "<green><bold>→ SELF (holder)</bold>"),
-                    List.of(
-                            "<gray>When trigger = HIT:",
-                            toTarget ? "<red>Effect will be applied to the victim" : "<green>Effect will be applied to you (the attacker)",
-                            "<yellow>Click to toggle"
-                    )),
-                    ev -> {
-                        pending.setApplyToTarget(!pending.isApplyToTarget());
-                        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
-                        refresh();
-                    });
-        }
+        // Affects: Self / Target - always visible in builder (only has effect for HIT trigger)
+        boolean toTarget = pending.isApplyToTarget();
+        setItem(27, createItem(!toTarget ? Material.EMERALD : Material.GRAY_STAINED_GLASS_PANE,
+                (!toTarget ? "<green><bold>SELF (holder)</bold>" : "<gray>SELF (holder)"),
+                List.of(
+                        "<gray>Who receives the effect?",
+                        "<green>Self = the player holding/wearing the item",
+                        "<yellow>Click to apply to holder"
+                )),
+                ev -> {
+                    pending.setApplyToTarget(false);
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
+                    refresh();
+                });
 
-        // Type buttons (safe inner cols) 33-35
+        // (target button moved to after value block to avoid overwrite)
+
+        // Type buttons (after triggers, before target toggle)
         int typeStart = 33;
         for (int ty = 0; ty < TYPES.size(); ty++) {
             final String typ = TYPES.get(ty);
@@ -223,16 +233,33 @@ public class EffectEditorGui extends AbstractGui {
         // Value controls (non-potion only)
         if (!"POTION".equalsIgnoreCase(pending.getType())) {
             setItem(51, createItem(Material.DIAMOND_SWORD, "<gold>Value <white>" + pending.getValue(),
-                    List.of("<gray>REFLECT % or EXTRA flat dmg")));
-            setItem(52, createItem(Material.RED_DYE, "<red>−", List.of()), ev -> {
-                pending.setValue(Math.max(0, pending.getValue() - 1));
-                refresh();
+                    List.of("<gray>REFLECT % or EXTRA flat dmg", "<yellow>Click label for exact value via chat")), ev -> {
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                plugin.getChatInputManager().requestInput(player, "<yellow>Enter value (e.g. 25 for 25% or amount):", input -> {
+                    try {
+                        double v = Double.parseDouble(input.trim());
+                        pending.setValue(Math.max(0, v));
+                    } catch (Exception ignored) {}
+                    refresh();
+                });
             });
-            setItem(53, createItem(Material.LIME_DYE, "<green>+", List.of()), ev -> {
-                pending.setValue(pending.getValue() + 1);
-                refresh();
-            });
+            // +/- hidden by target/back, use label click or switch to potion type to see target
         }
+
+        // Target button placed late so it wins the slot over value +/- when non-potion
+        boolean toTargetLate = pending.isApplyToTarget();
+        setItem(52, createItem(toTargetLate ? Material.REDSTONE : Material.GRAY_STAINED_GLASS_PANE,
+                (toTargetLate ? "<red><bold>TARGET (victim)</bold>" : "<gray>TARGET (victim)"),
+                List.of(
+                        "<gray>Only useful with HIT trigger:",
+                        "<red>Target = the mob/player being hit",
+                        "<yellow>Click to apply to the one you attack"
+                )),
+                ev -> {
+                    pending.setApplyToTarget(true);
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
+                    refresh();
+                });
 
         // Potion area: quick favorites + full browser for ALL potions
         setItem(19, createItem(Material.POTION, "<aqua><bold>Quick Potions</bold>", List.of("<gray>Common ones for speed")));
@@ -259,15 +286,17 @@ public class EffectEditorGui extends AbstractGui {
                         "<gray>Click to open full paginated picker with search"
                 )), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+            // Capture current pending state so selection doesn't reset to defaults
+            final UItemData.ItemEffect capturedPending = this.pending;
             new PotionPickerGui(plugin, player,
                     selected -> {
-                        pending.setType("POTION");
-                        pending.setPotion(selected);
+                        capturedPending.setType("POTION");
+                        capturedPending.setPotion(selected);
                         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.4f);
-                        // Re-open this editor so the choice is visible in the builder
-                        SchedulerUtil.runSync(plugin, () -> new EffectEditorGui(plugin, player, data).open());
+                        // Re-open this editor passing the (updated) pending so choices stick
+                        SchedulerUtil.runSync(plugin, () -> new EffectEditorGui(plugin, player, data, capturedPending).open());
                     },
-                    () -> new EffectEditorGui(plugin, player, data).open()
+                    () -> new EffectEditorGui(plugin, player, data, capturedPending).open()
             ).open();
         });
 
@@ -309,8 +338,8 @@ public class EffectEditorGui extends AbstractGui {
             refresh();
         });
 
-        // Back (use top area slot to avoid conflict with value +/- )
-        setItem(8, createBackButton(), ev -> {
+        // Back at bottom to free top slots
+        setItem(53, createBackButton(), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new ItemEditorGui(plugin, player, data).open();
         });

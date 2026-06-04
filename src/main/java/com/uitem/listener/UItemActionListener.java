@@ -372,9 +372,23 @@ public class UItemActionListener implements Listener {
 
             if ("POTION".equals(t) && eff.getPotion() != null) {
                 try {
-                    // Use Registry to avoid deprecated getByName
-                    PotionEffectType pet = Registry.EFFECT.get(NamespacedKey.minecraft(eff.getPotion().toLowerCase(Locale.ROOT)));
+                    String pName = eff.getPotion();
+                    String lower = pName.toLowerCase(Locale.ROOT);
+                    PotionEffectType pet = Registry.EFFECT.get(NamespacedKey.minecraft(lower));
+                    if (pet == null) {
+                        // Fallback for legacy names that might be in old configs (e.g. from before picker)
+                        switch (lower) {
+                            case "damage_resistance": pet = Registry.EFFECT.get(NamespacedKey.minecraft("resistance")); break;
+                            case "fast_digging": pet = Registry.EFFECT.get(NamespacedKey.minecraft("haste")); break;
+                            case "slow_digging": pet = Registry.EFFECT.get(NamespacedKey.minecraft("mining_fatigue")); break;
+                            case "increase_damage": pet = Registry.EFFECT.get(NamespacedKey.minecraft("strength")); break;
+                            case "slow": pet = Registry.EFFECT.get(NamespacedKey.minecraft("slowness")); break;
+                            default: pet = null;
+                        }
+                    }
                     if (pet != null) {
+                        // Remove first to ensure the new effect (with our amp/dur) applies reliably for both self and target
+                        entity.removePotionEffect(pet);
                         entity.addPotionEffect(new PotionEffect(pet, eff.getDurationTicks(), eff.getAmplifier(), false, true, true));
                     }
                 } catch (Exception ignored) {}
