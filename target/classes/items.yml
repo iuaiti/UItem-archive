@@ -1,0 +1,131 @@
+items:
+  fire_blade:
+    material: DIAMOND_SWORD
+    display-name: "<red><bold>Fire Blade"
+    lore:
+      - "<gray>A legendary fire blade"
+      - "<gray>Burns all enemies"
+    enchantments:
+      sharpness: 5
+      fire_aspect: 2
+    flags:
+      - HIDE_ENCHANTS
+    custom-model-data: 10001
+    unbreakable: true
+    glowing: false
+    rarity: EPIC
+    # (passives not yet implemented in this version; use poison-on-hit or external integrations for skills)
+
+  ice_ender:
+    material: NETHERITE_SWORD
+    display-name: "<aqua><bold>Ice Ender"
+    lore:
+      - "<gray>Eternal frost"
+    enchantments:
+      sharpness: 7
+      unbreaking: 5
+    custom-model-data: 10002
+    rarity: LEGENDARY
+    # passives example removed (feature not implemented)
+
+  healing_staff:
+    material: BLAZE_ROD
+    display-name: "<green><bold>Healing Staff"
+    lore:
+      - "<gray>Healing staff"
+    rarity: RARE
+    # passives example removed (feature not implemented)
+
+  venom_dagger:
+    material: IRON_SWORD
+    display-name: "<dark_green><bold>Venom Dagger"
+    lore:
+      - "<gray>A blade coated in deadly venom"
+      - "<dark_green>Applies <green>Poison <dark_green>on hit"
+      - "<gray>Max <green>5 stacks <gray>— damage scales per stack"
+    enchantments:
+      sharpness: 2
+    flags:
+      - HIDE_ENCHANTS
+    custom-model-data: 10050
+    rarity: RARE
+    poison-on-hit:
+      duration-ticks: 100
+      amplifier: 1
+      max-stacks: 5
+      tick-interval: 20
+      damage-per-tick: 0.5
+
+  plague_staff:
+    material: BLAZE_ROD
+    display-name: "<dark_purple><bold>Plague Staff"
+    lore:
+      - "<gray>Ancient staff of pestilence"
+      - "<dark_green>Applies <green>Virulent Poison <dark_green>on hit"
+      - "<gray>Max <green>8 stacks <gray>— 2× damage amp"
+    rarity: LEGENDARY
+    poison-on-hit:
+      duration-ticks: 200
+      amplifier: 2
+      max-stacks: 8
+      tick-interval: 15
+      damage-per-tick: 0.75
+
+  # Example armor set piece with attached effects (potion system)
+  # You can make helmet/chest/legs/boots all have FULL_SET effects for set bonuses
+  shadow_helmet:
+    material: NETHERITE_HELMET
+    display-name: "<dark_purple><bold>Shadow Helmet</bold>"
+    lore:
+      - "<gray>Part of the Shadow Set"
+      - "<dark_gray>When full set worn: grants Speed + Strength"
+    rarity: LEGENDARY
+    effects:
+      e0:
+        trigger: EQUIP
+        type: POTION
+        potion: NIGHT_VISION
+        amplifier: 0
+        duration-ticks: 999999
+        chance: 100
+      e1:
+        trigger: FULL_SET
+        type: POTION
+        potion: SPEED
+        amplifier: 1
+        duration-ticks: 200
+        chance: 100
+      e2:
+        trigger: FULL_SET
+        type: POTION
+        potion: INCREASE_DAMAGE
+        amplifier: 0
+        duration-ticks: 200
+        chance: 100
+
+  # Example weapon with hit effects
+  thunder_sword:
+    material: DIAMOND_SWORD
+    display-name: "<yellow><bold>Thunder Blade</bold>"
+    lore:
+      - "<gray>Chance to strike with lightning on hit"
+    rarity: EPIC
+    # Example of flexible model mapping (Oraxen/ItemsAdder style)
+    # You can drop ANY .json (even from ItemsAdder) into plugins/UItem/models/
+    # and map it with "model:". Filename does not need to match item ID.
+    # For ItemsAdder models: model: "itemsadder:item/the_name_from_ia"
+    model: "thunder_sword"   # looks for models/thunder_sword.json
+    # model: "itemsadder:item/some_ia_model"  # example for IA models
+    effects:
+      e0:
+        trigger: HIT
+        type: EXTRA_DAMAGE
+        value: 4.0
+        chance: 35
+      e1:
+        trigger: HIT
+        type: POTION
+        potion: SLOW
+        amplifier: 1
+        duration-ticks: 40
+        chance: 25
