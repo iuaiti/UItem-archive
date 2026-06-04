@@ -8,6 +8,7 @@ import com.uitem.api.events.UItemInteractEvent;
 import com.uitem.api.events.UItemPickupEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Item;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -258,7 +259,13 @@ public class UItemActionListener implements Listener {
             ItemStack weapon = damager.getInventory().getItemInMainHand();
             UItemData data = getUItemData(weapon);
             if (data != null) {
+                // Self effects (potions on attacker, etc.)
                 applyItemEffects(data, damager, "HIT", event);
+
+                // Target effects (e.g. potion the victim, when configured with apply-to-target)
+                if (event.getEntity() instanceof LivingEntity victim) {
+                    applyItemEffects(data, victim, "HIT", event, true);
+                }
             }
         }
 
@@ -348,11 +355,16 @@ public class UItemActionListener implements Listener {
         }
     }
 
-    private void applyItemEffects(UItemData data, Player player, String trigger, @Nullable EntityDamageByEntityEvent dmgEvent) {
-        if (data == null || player == null || data.getEffects() == null) return;
+    /**
+     * Apply matching effects to the entity (self or target).
+     * forTarget: when true, only effects with applyToTarget=true are considered (for HIT victim).
+     */
+    private void applyItemEffects(UItemData data, LivingEntity entity, String trigger, @Nullable EntityDamageByEntityEvent dmgEvent, boolean forTarget) {
+        if (data == null || entity == null || data.getEffects() == null) return;
 
         for (UItemData.ItemEffect eff : data.getEffects()) {
             if (eff.getTrigger() == null || !eff.getTrigger().equals(trigger)) continue;
+            if (eff.isApplyToTarget() != forTarget) continue;
             if (eff.getChance() < 100 && ThreadLocalRandom.current().nextDouble(100) > eff.getChance()) continue;
 
             String t = eff.getType();
@@ -363,26 +375,30 @@ public class UItemActionListener implements Listener {
                     // Use Registry to avoid deprecated getByName
                     PotionEffectType pet = Registry.EFFECT.get(NamespacedKey.minecraft(eff.getPotion().toLowerCase(Locale.ROOT)));
                     if (pet != null) {
-                        player.addPotionEffect(new PotionEffect(pet, eff.getDurationTicks(), eff.getAmplifier(), false, true, true));
+                        entity.addPotionEffect(new PotionEffect(pet, eff.getDurationTicks(), eff.getAmplifier(), false, true, true));
                     }
                 } catch (Exception ignored) {}
-            } else if ("REFLECT".equals(t) && dmgEvent != null) {
+            } else if ("REFLECT".equals(t) && dmgEvent != null && !forTarget) {
+                // Reflect usually from the victim's perspective
                 double pct = eff.getValue() > 0 ? eff.getValue() : 20.0;
                 double reflectDmg = dmgEvent.getDamage() * (pct / 100.0);
                 if (dmgEvent.getDamager() instanceof org.bukkit.entity.LivingEntity attacker) {
-                    // Use setHealth to avoid firing another EntityDamageByEntityEvent (prevents potential loops/recursion with mutual reflect items)
                     double newHealth = Math.max(0, attacker.getHealth() - reflectDmg);
                     attacker.setHealth(newHealth);
                 }
-            } else if ("EXTRA_DAMAGE".equals(t) && dmgEvent != null) {
+            } else if ("EXTRA_DAMAGE".equals(t) && dmgEvent != null && !forTarget) {
                 double extra = eff.getValue() > 0 ? eff.getValue() : 3.0;
                 if (dmgEvent.getEntity() instanceof org.bukkit.entity.LivingEntity target) {
-                    // Direct health subtract for extra to minimize extra events
                     double newHealth = Math.max(0, target.getHealth() - extra);
                     target.setHealth(newHealth);
                 }
             }
         }
+    }
+
+    /** Self effects (backward compatible) */
+    private void applyItemEffects(UItemData data, LivingEntity entity, String trigger, @Nullable EntityDamageByEntityEvent dmgEvent) {
+        applyItemEffects(data, entity, trigger, dmgEvent, false);
     }
 
     private boolean hasFullArmor(Player p) {

@@ -53,6 +53,7 @@ com/uitem/gui/ConfirmDeleteGui.class
 com/uitem/api/events/UItemInteractEvent.class
 com/uitem/poison/PoisonEffect$Builder.class
 com/uitem/listener/UItemActionListener$1.class
+com/uitem/gui/PotionPickerGui.class
 com/uitem/gui/GuiListener.class
 com/uitem/api/events/UItemEvent.class
 com/uitem/listener/UItemActionListener.class

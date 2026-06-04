@@ -2,6 +2,7 @@ package com.uitem.gui;
 
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
+import com.uitem.util.SchedulerUtil;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -111,12 +112,33 @@ public class EffectEditorGui extends AbstractGui {
                             sel ? "<green>Selected" : "<yellow>Click to select")),
                     ev -> {
                         pending.setTrigger(trig);
+                        if (!"HIT".equals(trig)) {
+                            pending.setApplyToTarget(false);
+                        }
                         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.6f);
                         refresh();
                     });
         }
 
-        // Type buttons (safe inner cols)
+        // Target / Self toggle - only meaningful for HIT trigger (hitting a target can affect the victim)
+        // Placed at 27 (left side of trigger row)
+        if ("HIT".equalsIgnoreCase(pending.getTrigger())) {
+            boolean toTarget = pending.isApplyToTarget();
+            setItem(27, createItem(toTarget ? Material.REDSTONE : Material.EMERALD,
+                    (toTarget ? "<red><bold>→ TARGET (victim)</bold>" : "<green><bold>→ SELF (holder)</bold>"),
+                    List.of(
+                            "<gray>When trigger = HIT:",
+                            toTarget ? "<red>Effect will be applied to the victim" : "<green>Effect will be applied to you (the attacker)",
+                            "<yellow>Click to toggle"
+                    )),
+                    ev -> {
+                        pending.setApplyToTarget(!pending.isApplyToTarget());
+                        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
+                        refresh();
+                    });
+        }
+
+        // Type buttons (safe inner cols) 33-35
         int typeStart = 33;
         for (int ty = 0; ty < TYPES.size(); ty++) {
             final String typ = TYPES.get(ty);
@@ -212,9 +234,9 @@ public class EffectEditorGui extends AbstractGui {
             });
         }
 
-        // Potion picker grid (clicking sets type + potion). Slots 19-25 (title + 6 choices to avoid overlap)
-        setItem(19, createItem(Material.POTION, "<aqua><bold>Pick Potion</bold>", List.of("<gray>Click → forces POTION type")));
-        for (int pi = 0; pi < Math.min(COMMON_POTIONS.size(), 6); pi++) {
+        // Potion area: quick favorites + full browser for ALL potions
+        setItem(19, createItem(Material.POTION, "<aqua><bold>Quick Potions</bold>", List.of("<gray>Common ones for speed")));
+        for (int pi = 0; pi < Math.min(COMMON_POTIONS.size(), 5); pi++) {
             final String pot = COMMON_POTIONS.get(pi);
             boolean sel = pot.equalsIgnoreCase(pending.getPotion());
             Material m = sel ? Material.LIME_STAINED_GLASS_PANE : Material.POTION;
@@ -228,14 +250,39 @@ public class EffectEditorGui extends AbstractGui {
             });
         }
 
-        // ADD button (slot 36 near controls)
+        // The important one: full access to every potion effect on the server
+        setItem(26, createItem(Material.ENCHANTED_BOOK, "<light_purple><bold>Browse ALL Potions...</bold>",
+                List.of(
+                        "<gray>Access to <white>every</white> PotionEffectType",
+                        "<yellow>Including rare ones: DOLPHINS_GRACE, BAD_OMEN,",
+                        "<yellow>CONDUIT_POWER, SLOW_FALLING, etc.",
+                        "<gray>Click to open full paginated picker with search"
+                )), ev -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+            new PotionPickerGui(plugin, player,
+                    selected -> {
+                        pending.setType("POTION");
+                        pending.setPotion(selected);
+                        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.4f);
+                        // Re-open this editor so the choice is visible in the builder
+                        SchedulerUtil.runSync(plugin, () -> new EffectEditorGui(plugin, player, data).open());
+                    },
+                    () -> new EffectEditorGui(plugin, player, data).open()
+            ).open();
+        });
+
+        // ADD button
+        String targetInfo = "";
+        if ("HIT".equalsIgnoreCase(pending.getTrigger())) {
+            targetInfo = pending.isApplyToTarget() ? " <red>(on TARGET)" : " <green>(on SELF)";
+        }
         setItem(36, createItem(Material.EMERALD_BLOCK, "<green><bold>✔ ADD THIS EFFECT</bold>",
                 List.of(
-                        "<gray>Trigger: <white>" + safe(pending.getTrigger()),
+                        "<gray>Trigger: <white>" + safe(pending.getTrigger()) + targetInfo,
                         "<gray>Type: <white>" + safe(pending.getType()),
                         "<gray>Potion: <white>" + safe(pending.getPotion()),
-                        "<gray>Lvl <white>" + pending.getAmplifier() + "  " + (pending.getDurationTicks() / 20) + "s  " + (int) pending.getChance() + "%",
-                        "<yellow>Click to attach"
+                        "<gray>Lvl <white>" + pending.getAmplifier() + "  Dur <white>" + (pending.getDurationTicks() / 20) + "s  Chance <white>" + (int) pending.getChance() + "%",
+                        "<yellow>Click to attach to the item"
                 )), ev -> {
             if (pending.getTrigger() == null || pending.getType() == null) {
                 player.sendMessage(TextUtil.error("Need Trigger + Type at minimum"));
@@ -244,12 +291,12 @@ public class EffectEditorGui extends AbstractGui {
             }
             data.getEffects().add(pending.copy());
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.4f);
-            player.sendMessage(TextUtil.success("Effect added: " + pending.getTrigger() + " / " + pending.getType()));
+            player.sendMessage(TextUtil.success("Effect added: " + pending.getTrigger() + " / " + pending.getType() + (pending.isApplyToTarget() ? " (target)" : "")));
 
             plugin.getItemManager().registerItem(data);
             plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
 
-            // fresh pending
+            // fresh pending for next
             pending = new UItemData.ItemEffect();
             pending.setTrigger("HIT");
             pending.setType("POTION");
@@ -280,12 +327,22 @@ public class EffectEditorGui extends AbstractGui {
         else if ("DIE".equals(trig)) mat = Material.SKELETON_SKULL;
         else if ("EQUIP".equals(trig) || "FULL_SET".equals(trig)) mat = Material.DIAMOND_CHESTPLATE;
 
-        String name = "<light_purple>" + trig + " <gray>→ <aqua>" + (e.getType() != null ? e.getType() : "");
+        String targetNote = "";
+        if ("HIT".equals(trig) && e.isApplyToTarget()) {
+            targetNote = " <red>→ TARGET";
+        } else if ("HIT".equals(trig)) {
+            targetNote = " <green>→ SELF";
+        }
+
+        String name = "<light_purple>" + trig + targetNote + " <gray>→ <aqua>" + (e.getType() != null ? e.getType() : "");
         List<String> lore = new ArrayList<>();
         if (e.getPotion() != null) lore.add("<gray>Potion: <white>" + e.getPotion() + " <gray>lvl " + e.getAmplifier());
         lore.add("<gray>Duration: <white>" + (e.getDurationTicks() / 20) + "s");
         lore.add("<gray>Chance: <white>" + (int) e.getChance() + "%");
         if (e.getValue() != 0) lore.add("<gray>Value: <white>" + e.getValue());
+        if ("HIT".equals(trig)) {
+            lore.add("<gray>Affects: <white>" + (e.isApplyToTarget() ? "Target (victim)" : "Self (holder)"));
+        }
         lore.add("");
         lore.add("<red>Click to remove");
         return createItem(mat, name, lore);

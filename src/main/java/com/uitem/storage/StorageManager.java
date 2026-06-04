@@ -420,6 +420,7 @@ public class StorageManager {
                 eff.setDurationTicks(es.getInt("duration-ticks", 60));
                 eff.setChance(es.getDouble("chance", 100.0));
                 eff.setValue(es.getDouble("value", 0.0));
+                eff.setApplyToTarget(es.getBoolean("apply-to-target", false));
                 effs.add(eff);
             }
             data.setEffects(effs);
@@ -562,6 +563,7 @@ public class StorageManager {
                     config.set(ep + ".duration-ticks", e.getDurationTicks());
                     config.set(ep + ".chance", e.getChance());
                     if (e.getValue() != 0) config.set(ep + ".value", e.getValue());
+                    if (e.isApplyToTarget()) config.set(ep + ".apply-to-target", true);
                 }
             }
         }

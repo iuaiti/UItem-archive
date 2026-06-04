@@ -255,6 +255,7 @@ public class UItemData {
         private int durationTicks = 60;
         private double chance = 100.0;
         private double value = 0.0; // percent for REFLECT, amount for EXTRA_DAMAGE
+        private boolean applyToTarget = false; // for HIT: true = apply potion/effect to the victim (target), false = self (holder)
 
         public ItemEffect() {}
 
@@ -279,6 +280,9 @@ public class UItemData {
         public double getValue() { return value; }
         public void setValue(double value) { this.value = value; }
 
+        public boolean isApplyToTarget() { return applyToTarget; }
+        public void setApplyToTarget(boolean applyToTarget) { this.applyToTarget = applyToTarget; }
+
         public ItemEffect copy() {
             ItemEffect c = new ItemEffect();
             c.trigger = this.trigger;
@@ -288,6 +292,7 @@ public class UItemData {
             c.durationTicks = this.durationTicks;
             c.chance = this.chance;
             c.value = this.value;
+            c.applyToTarget = this.applyToTarget;
             return c;
         }
     }

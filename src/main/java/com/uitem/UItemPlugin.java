@@ -366,6 +366,14 @@ public final class UItemPlugin extends JavaPlugin {
                     ex.set("items.example_sword.effects.e0.amplifier", 0);
                     ex.set("items.example_sword.effects.e0.duration-ticks", 60);
                     ex.set("items.example_sword.effects.e0.chance", 40);
+                    // Example: on HIT, also poison the *target* (victim)
+                    ex.set("items.example_sword.effects.e1.trigger", "HIT");
+                    ex.set("items.example_sword.effects.e1.type", "POTION");
+                    ex.set("items.example_sword.effects.e1.potion", "POISON");
+                    ex.set("items.example_sword.effects.e1.amplifier", 1);
+                    ex.set("items.example_sword.effects.e1.duration-ticks", 80);
+                    ex.set("items.example_sword.effects.e1.chance", 60);
+                    ex.set("items.example_sword.effects.e1.apply-to-target", true);
                     // Example of flexible model mapping (drop any .json in models/ folder)
                     // ex.set("items.example_sword.model", "my_custom_model");  // looks for models/my_custom_model.json
 
