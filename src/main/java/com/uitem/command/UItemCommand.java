@@ -63,7 +63,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             case "craft", "crafting" -> handleCraft(sender);
             case "check" -> handleCheck(sender);
             case "help" -> sendHelp(sender);
-            default -> sender.sendMessage(TextUtil.error("Invalid command. Use /" + label + " help"));
+            default -> sender.sendMessage(TextUtil.error("Lệnh không hợp lệ. Dùng /" + label + " help"));
         }
 
         return true;
@@ -71,18 +71,18 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleGive(CommandSender sender, String[] args) {
         if (!sender.hasPermission("uitem.give")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            sender.sendMessage(TextUtil.error("Bạn không có quyền sử dụng lệnh này!"));
             return;
         }
 
         if (args.length < 2) {
-            sender.sendMessage(TextUtil.error("Usage: /uitem give <id> [player] [amount]"));
+            sender.sendMessage(TextUtil.error("Cách dùng: /uitem give <id> [player] [amount]"));
             return;
         }
 
         String itemId = args[1].toLowerCase(Locale.ROOT);
         if (!plugin.getItemManager().hasItem(itemId)) {
-            sender.sendMessage(TextUtil.error("Item '" + itemId + "' does not exist!"));
+            sender.sendMessage(TextUtil.error("Item '" + itemId + "' không tồn tại!"));
             return;
         }
 
@@ -103,7 +103,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                         "You received x" + target.amount() + " " + itemId));
             }
         } else {
-            sender.sendMessage(TextUtil.error("Cannot give item (may have been blocked by another plugin)."));
+            sender.sendMessage(TextUtil.error("Không thể give item (có thể bị chặn bởi plugin khác)."));
         }
     }
 
@@ -113,7 +113,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             if (sender instanceof Player player) {
                 return new GiveTarget(player, 1);
             }
-            sender.sendMessage(TextUtil.error("Console must specify a player: /uitem give <id> <player> [amount]"));
+            sender.sendMessage(TextUtil.error("Console phải chỉ định player: /uitem give <id> <player> [amount]"));
             return null;
         }
 
@@ -125,14 +125,14 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             if (sender instanceof Player player) {
                 return new GiveTarget(player, amountFromToken);
             }
-            sender.sendMessage(TextUtil.error("Console must specify a player: /uitem give <id> <player> [amount]"));
+            sender.sendMessage(TextUtil.error("Console phải chỉ định player: /uitem give <id> <player> [amount]"));
             return null;
         }
 
         // /uitem give <id> <player> [amount]
         Player target = Bukkit.getPlayerExact(token);
         if (target == null) {
-            sender.sendMessage(TextUtil.error("Player '" + token + "' is not online!"));
+            sender.sendMessage(TextUtil.error("Player '" + token + "' không online!"));
             return null;
         }
 
@@ -140,7 +140,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         if (args.length >= 4) {
             Integer parsed = tryParseAmount(args[3]);
             if (parsed == null) {
-                sender.sendMessage(TextUtil.error("Invalid amount! Must be an integer from 1 to 64."));
+                sender.sendMessage(TextUtil.error("Số lượng không hợp lệ! Phải là số nguyên từ 1 đến 64."));
                 return null;
             }
             amount = parsed;
@@ -163,12 +163,12 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleEditor(CommandSender sender) {
         if (!sender.hasPermission("uitem.editor")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            sender.sendMessage(TextUtil.error("Bạn không có quyền sử dụng lệnh này!"));
             return;
         }
 
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
+            sender.sendMessage(TextUtil.error("Lệnh này chỉ dùng được bởi người chơi!"));
             return;
         }
 
@@ -228,7 +228,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleCheck(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
+            sender.sendMessage(TextUtil.error("Lệnh này chỉ dùng được bởi người chơi!"));
             return;
         }
 
@@ -253,7 +253,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleCraft(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error("This command can only be used by players!"));
+            sender.sendMessage(TextUtil.error("Lệnh này chỉ dùng được bởi người chơi!"));
             return;
         }
         if (!player.hasPermission("uitem.craft")) {
@@ -265,7 +265,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleList(CommandSender sender) {
         if (!sender.hasPermission("uitem.editor")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            sender.sendMessage(TextUtil.error("Bạn không có quyền sử dụng lệnh này!"));
             return;
         }
 
@@ -297,7 +297,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleResourcePack(CommandSender sender, String[] args) {
         if (!sender.hasPermission("uitem.reload")) {
-            sender.sendMessage(TextUtil.error("You don't have permission to use this command!"));
+            sender.sendMessage(TextUtil.error("Bạn không có quyền sử dụng lệnh này!"));
             return;
         }
 
@@ -358,30 +358,30 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(Component.text(""));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <gray>— Ultimate Item Plugin"));
+                "  <gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <gray>— Plugin Item Tùy Chỉnh"));
         sender.sendMessage(Component.text(""));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem give <id> [player] [amount] <dark_gray>— <gray>Give item"));
+                "  <gold>/uitem give <id> [player] [amount] <dark_gray>— <gray>Give item cho người chơi"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem editor <dark_gray>— <gray>Open editor GUI"));
+                "  <gold>/uitem editor <dark_gray>— <gray>Mở GUI editor item"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem list <dark_gray>— <gray>List items"));
+                "  <gold>/uitem list <dark_gray>— <gray>Liệt kê item"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem rp <generate|export|apply|status> <dark_gray>— <gray>Manage resource pack"));
+                "  <gold>/uitem rp <generate|export|apply|status> <dark_gray>— <gray>Quản lý resource pack"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem check <dark_gray>— <gray>Check if held item is a valid UItem"));
+                "  <gold>/uitem check <dark_gray>— <gray>Kiểm tra item đang cầm có phải UItem không"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem craft <dark_gray>— <gray>Open UItem crafting table"));
+                "  <gold>/uitem craft <dark_gray>— <gray>Mở bàn chế tạo UItem"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/crafting <dark_gray>— <gray>List all crafting recipes"));
+                "  <gold>/crafting <dark_gray>— <gray>Liệt kê tất cả công thức chế tạo"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/crafting craft <dark_gray>— <gray>Open UItem crafting table"));
+                "  <gold>/crafting craft <dark_gray>— <gray>Mở bàn chế tạo UItem"));
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem reload <dark_gray>— <gray>Reload plugin"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem help <dark_gray>— <gray>Show help"));
+                "  <gold>/uitem help <dark_gray>— <gray>Hiển thị trợ giúp"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/ui <dark_gray>— <gray>Short alias for /uitem"));
+                "  <gold>/ui <dark_gray>— <gray>Bí danh ngắn cho /uitem"));
         sender.sendMessage(Component.text(""));
     }
 

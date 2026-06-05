@@ -34,10 +34,7 @@ public class UItemData {
     private String itemsAdderId;
     private String executableItemsId;
 
-    // Poison element — null nếu item không có poison on-hit
-    private PoisonConfig poisonOnHit;
-
-    // General attachable effects (potion, reflect, extra damage, on hit/damage/equip/fullset)
+    // General attachable effects (reflect, extra damage on hit/damage/equip/fullset/die)
     private List<ItemEffect> effects = new ArrayList<>();
 
     // Optional custom model reference for resource pack (Oraxen/ItemsAdder style)
@@ -61,7 +58,6 @@ public class UItemData {
         this.oraxenId = null;
         this.itemsAdderId = null;
         this.executableItemsId = null;
-        this.poisonOnHit = null;
         this.effects = new ArrayList<>();
         this.model = null;
     }
@@ -184,14 +180,6 @@ public class UItemData {
         this.executableItemsId = executableItemsId;
     }
 
-    public PoisonConfig getPoisonOnHit() {
-        return poisonOnHit;
-    }
-
-    public void setPoisonOnHit(PoisonConfig poisonOnHit) {
-        this.poisonOnHit = poisonOnHit;
-    }
-
     public List<ItemEffect> getEffects() {
         return effects;
     }
@@ -209,53 +197,16 @@ public class UItemData {
     }
 
     /**
-     * Cấu hình poison on-hit được embed trong UItemData.
-     *
-     * <p>Giữ nguyên style Data-class như {@link AttributeData} hiện có.
-     * Immutable sau khi tạo (không có setter — dùng constructor).
-     */
-    public static final class PoisonConfig {
-
-        private final int    durationTicks;
-        private final int    amplifier;
-        private final int    maxStacks;
-        private final int    tickInterval;
-        private final double damagePerTick;
-
-        public PoisonConfig(int durationTicks, int amplifier, int maxStacks,
-                            int tickInterval, double damagePerTick) {
-            this.durationTicks = durationTicks;
-            this.amplifier     = amplifier;
-            this.maxStacks     = maxStacks;
-            this.tickInterval  = tickInterval;
-            this.damagePerTick = damagePerTick;
-        }
-
-        public int    getDurationTicks()  { return durationTicks; }
-        public int    getAmplifier()      { return amplifier; }
-        public int    getMaxStacks()      { return maxStacks; }
-        public int    getTickInterval()   { return tickInterval; }
-        public double getDamagePerTick()  { return damagePerTick; }
-
-        public PoisonConfig copy() {
-            return new PoisonConfig(durationTicks, amplifier, maxStacks, tickInterval, damagePerTick);
-        }
-    }
-
-    /**
      * General effect that can be attached to a custom item.
-     * Supports potion application, reflect damage, extra damage on various triggers.
+     * Supports reflect damage, extra damage on various triggers.
      * Configurable in items.yml under "effects:".
      */
     public static class ItemEffect {
         private String trigger;     // HIT, DAMAGE, DIE, EQUIP, FULL_SET (mặc = EQUIP)
-        private String type;        // POTION, REFLECT, EXTRA_DAMAGE
-        private String potion;      // e.g. SPEED, REGENERATION, STRENGTH (for POTION)
-        private int amplifier = 0;
-        private int durationTicks = 60;
+        private String type;        // REFLECT, EXTRA_DAMAGE
         private double chance = 100.0;
         private double value = 0.0; // percent for REFLECT, amount for EXTRA_DAMAGE
-        private boolean applyToTarget = false; // for HIT: true = apply potion/effect to the victim (target), false = self (holder)
+        private boolean applyToTarget = false; // for HIT: true = apply effect to the victim (target), false = self (holder)
 
         public ItemEffect() {}
 
@@ -264,15 +215,6 @@ public class UItemData {
 
         public String getType() { return type; }
         public void setType(String type) { this.type = type != null ? type.toUpperCase(Locale.ROOT) : null; }
-
-        public String getPotion() { return potion; }
-        public void setPotion(String potion) { this.potion = potion; }
-
-        public int getAmplifier() { return amplifier; }
-        public void setAmplifier(int amplifier) { this.amplifier = amplifier; }
-
-        public int getDurationTicks() { return durationTicks; }
-        public void setDurationTicks(int durationTicks) { this.durationTicks = durationTicks; }
 
         public double getChance() { return chance; }
         public void setChance(double chance) { this.chance = Math.max(0, Math.min(100, chance)); }
@@ -287,9 +229,6 @@ public class UItemData {
             ItemEffect c = new ItemEffect();
             c.trigger = this.trigger;
             c.type = this.type;
-            c.potion = this.potion;
-            c.amplifier = this.amplifier;
-            c.durationTicks = this.durationTicks;
             c.chance = this.chance;
             c.value = this.value;
             c.applyToTarget = this.applyToTarget;
@@ -319,7 +258,6 @@ public class UItemData {
         clone.oraxenId = this.oraxenId;
         clone.itemsAdderId = this.itemsAdderId;
         clone.executableItemsId = this.executableItemsId;
-        clone.poisonOnHit = (this.poisonOnHit != null) ? this.poisonOnHit.copy() : null;
         clone.effects = new ArrayList<>();
         for (ItemEffect e : this.effects) {
             clone.effects.add(e.copy());

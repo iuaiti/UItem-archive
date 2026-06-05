@@ -52,12 +52,15 @@ public class RecipeManager {
 
     private final File legacyFile;
     private final File recipesDir;
+    private final File recipesFile;
 
     public RecipeManager(UItemPlugin plugin, UItemManager itemManager) {
         this.plugin      = plugin;
         this.itemManager = itemManager;
         this.legacyFile  = new File(plugin.getDataFolder(), LEGACY_FILE);
         this.recipesDir  = new File(plugin.getDataFolder(), RECIPES_DIR);
+        this.recipesDir.mkdirs();
+        this.recipesFile = new File(this.recipesDir, "recipe.yml");
         loadRecipes();
     }
 
@@ -257,9 +260,9 @@ public class RecipeManager {
     public void saveRecipesAsync() {
         YamlConfiguration cfg = buildConfig();
         SchedulerUtil.runAsync(plugin, () -> {
-            try { cfg.save(legacyFile); }
+            try { cfg.save(recipesFile); }
             catch (IOException e) {
-                plugin.getLogger().log(Level.SEVERE, "[UItem] Could not save " + LEGACY_FILE, e);
+                plugin.getLogger().log(Level.SEVERE, "[UItem] Could not save " + recipesFile.getName(), e);
             }
         });
     }
@@ -276,9 +279,9 @@ public class RecipeManager {
     }
 
     private void doSave() {
-        try { buildConfig().save(legacyFile); }
+        try { buildConfig().save(recipesFile); }
         catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "[UItem] Could not save " + LEGACY_FILE, e);
+            plugin.getLogger().log(Level.SEVERE, "[UItem] Could not save " + recipesFile.getName(), e);
         }
     }
 

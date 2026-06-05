@@ -20,17 +20,12 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -248,8 +243,9 @@ public class UItemActionListener implements Listener {
     }
 
     // ============================================================
-    // Custom Item Effects (potion, reflect, extra damage...)
+    // Custom Item Effects (reflect, extra damage...)
     // Triggers: HIT, DAMAGE, DIE, EQUIP, FULL_SET
+    // Types: REFLECT, EXTRA_DAMAGE
     // ============================================================
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -259,10 +255,10 @@ public class UItemActionListener implements Listener {
             ItemStack weapon = damager.getInventory().getItemInMainHand();
             UItemData data = getUItemData(weapon);
             if (data != null) {
-                // Self effects (potions on attacker, etc.)
+                // Self effects
                 applyItemEffects(data, damager, "HIT", event);
 
-                // Target effects (e.g. potion the victim, when configured with apply-to-target)
+                // Target effects (if apply-to-target set for the effect)
                 if (event.getEntity() instanceof LivingEntity victim) {
                     applyItemEffects(data, victim, "HIT", event, true);
                 }
@@ -358,6 +354,7 @@ public class UItemActionListener implements Listener {
     /**
      * Apply matching effects to the entity (self or target).
      * forTarget: when true, only effects with applyToTarget=true are considered (for HIT victim).
+     * Only REFLECT and EXTRA_DAMAGE types are supported.
      */
     private void applyItemEffects(UItemData data, LivingEntity entity, String trigger, @Nullable EntityDamageByEntityEvent dmgEvent, boolean forTarget) {
         if (data == null || entity == null || data.getEffects() == null) return;
@@ -370,29 +367,7 @@ public class UItemActionListener implements Listener {
             String t = eff.getType();
             if (t == null) continue;
 
-            if ("POTION".equals(t) && eff.getPotion() != null) {
-                try {
-                    String pName = eff.getPotion();
-                    String lower = pName.toLowerCase(Locale.ROOT);
-                    PotionEffectType pet = Registry.EFFECT.get(NamespacedKey.minecraft(lower));
-                    if (pet == null) {
-                        // Fallback for legacy names that might be in old configs (e.g. from before picker)
-                        switch (lower) {
-                            case "damage_resistance": pet = Registry.EFFECT.get(NamespacedKey.minecraft("resistance")); break;
-                            case "fast_digging": pet = Registry.EFFECT.get(NamespacedKey.minecraft("haste")); break;
-                            case "slow_digging": pet = Registry.EFFECT.get(NamespacedKey.minecraft("mining_fatigue")); break;
-                            case "increase_damage": pet = Registry.EFFECT.get(NamespacedKey.minecraft("strength")); break;
-                            case "slow": pet = Registry.EFFECT.get(NamespacedKey.minecraft("slowness")); break;
-                            default: pet = null;
-                        }
-                    }
-                    if (pet != null) {
-                        // Remove first to ensure the new effect (with our amp/dur) applies reliably for both self and target
-                        entity.removePotionEffect(pet);
-                        entity.addPotionEffect(new PotionEffect(pet, eff.getDurationTicks(), eff.getAmplifier(), false, true, true));
-                    }
-                } catch (Exception ignored) {}
-            } else if ("REFLECT".equals(t) && dmgEvent != null && !forTarget) {
+            if ("REFLECT".equals(t) && dmgEvent != null && !forTarget) {
                 // Reflect usually from the victim's perspective
                 double pct = eff.getValue() > 0 ? eff.getValue() : 20.0;
                 double reflectDmg = dmgEvent.getDamage() * (pct / 100.0);

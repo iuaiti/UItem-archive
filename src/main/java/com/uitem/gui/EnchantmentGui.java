@@ -35,7 +35,7 @@ public class EnchantmentGui extends AbstractGui {
     }
 
     public EnchantmentGui(UItemPlugin plugin, Player player, UItemData data, int page) {
-        super(plugin, player, 54, "<light_purple><bold>Enchantments</bold> <dark_gray>- <white>" + data.getId());
+        super(plugin, player, 54, "<light_purple><bold>Phù Phép</bold> <dark_gray>- <white>" + data.getId());
         this.data = data;
         this.page = page;
     }
@@ -46,7 +46,7 @@ public class EnchantmentGui extends AbstractGui {
 
         // Title
         setItem(4, createItem(Material.ENCHANTING_TABLE,
-                "<light_purple><bold>Enchantment Editor</bold>",
+                "<light_purple><bold>Trình Chỉnh Phù Phép</bold>",
                 List.of(
                         "<gray>Edit enchantments for this item",
                         "",

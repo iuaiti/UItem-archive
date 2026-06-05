@@ -30,7 +30,7 @@ public class RecipeListGui extends AbstractGui {
     }
 
     public RecipeListGui(UItemPlugin plugin, Player player, int page) {
-        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d>Recipe List</gradient>");
+        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d>Danh Sách Công Thức</gradient>");
         this.page = page;
     }
 
@@ -39,7 +39,7 @@ public class RecipeListGui extends AbstractGui {
         fillBorder(6);
 
         setItem(4, createItem(Material.KNOWLEDGE_BOOK,
-                "<gradient:#ff6b6b:#ffd93d><bold>Recipe List</bold></gradient>",
+                "<gradient:#ff6b6b:#ffd93d><bold>Danh Sách Công Thức</bold></gradient>",
                 List.of("<gray>Click a recipe to view details")));
 
         List<Map.Entry<String, UItemRecipe>> list = new ArrayList<>(
@@ -70,7 +70,7 @@ public class RecipeListGui extends AbstractGui {
                     if (lore == null) lore = new ArrayList<>();
                     lore.add(TextUtil.parse(""));
                     lore.add(TextUtil.parse("<gold>" + type + " <dark_gray>| <gold>x" + recipe.getResultAmount()));
-                    lore.add(TextUtil.parse("<yellow>Click to view recipe"));
+                    lore.add(TextUtil.parse("<yellow>Click để xem công thức"));
                     meta.lore(lore);
                     item.setItemMeta(meta);
                 }

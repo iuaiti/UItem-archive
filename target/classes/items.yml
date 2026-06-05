@@ -14,7 +14,7 @@ items:
     unbreakable: true
     glowing: false
     rarity: EPIC
-    # (passives not yet implemented in this version; use poison-on-hit or external integrations for skills)
+    # (passives not yet implemented in this version; use effects or external integrations for skills)
 
   ice_ender:
     material: NETHERITE_SWORD
@@ -41,66 +41,49 @@ items:
     display-name: "<dark_green><bold>Venom Dagger"
     lore:
       - "<gray>A blade coated in deadly venom"
-      - "<dark_green>Applies <green>Poison <dark_green>on hit"
-      - "<gray>Max <green>5 stacks <gray>— damage scales per stack"
+      - "<dark_green>Chance for extra damage on hit"
+      - "<gray>Extra damage scales"
     enchantments:
       sharpness: 2
     flags:
       - HIDE_ENCHANTS
     custom-model-data: 10050
     rarity: RARE
-    poison-on-hit:
-      duration-ticks: 100
-      amplifier: 1
-      max-stacks: 5
-      tick-interval: 20
-      damage-per-tick: 0.5
+    effects:
+      e0:
+        trigger: HIT
+        type: EXTRA_DAMAGE
+        value: 2.0
+        chance: 40
 
   plague_staff:
     material: BLAZE_ROD
     display-name: "<dark_purple><bold>Plague Staff"
     lore:
       - "<gray>Ancient staff of pestilence"
-      - "<dark_green>Applies <green>Virulent Poison <dark_green>on hit"
-      - "<gray>Max <green>8 stacks <gray>— 2× damage amp"
+      - "<dark_green>Chance to apply damage over time on hit"
     rarity: LEGENDARY
-    poison-on-hit:
-      duration-ticks: 200
-      amplifier: 2
-      max-stacks: 8
-      tick-interval: 15
-      damage-per-tick: 0.75
+    effects:
+      e0:
+        trigger: HIT
+        type: EXTRA_DAMAGE
+        value: 1.5
+        chance: 60
 
-  # Example armor set piece with attached effects (potion system)
-  # You can make helmet/chest/legs/boots all have FULL_SET effects for set bonuses
+  # Example armor set piece (effects use REFLECT/EXTRA only)
+  # You can make helmet/chest/legs/boots all have FULL_SET effects for set bonuses (reflect/extra on damage triggers)
   shadow_helmet:
     material: NETHERITE_HELMET
     display-name: "<dark_purple><bold>Shadow Helmet</bold>"
     lore:
       - "<gray>Part of the Shadow Set"
-      - "<dark_gray>When full set worn: grants Speed + Strength"
+      - "<dark_gray>When full set worn: grants bonuses via effects"
     rarity: LEGENDARY
     effects:
       e0:
-        trigger: EQUIP
-        type: POTION
-        potion: NIGHT_VISION
-        amplifier: 0
-        duration-ticks: 999999
-        chance: 100
-      e1:
-        trigger: FULL_SET
-        type: POTION
-        potion: SPEED
-        amplifier: 1
-        duration-ticks: 200
-        chance: 100
-      e2:
-        trigger: FULL_SET
-        type: POTION
-        potion: INCREASE_DAMAGE
-        amplifier: 0
-        duration-ticks: 200
+        trigger: DAMAGE
+        type: REFLECT
+        value: 15.0
         chance: 100
 
   # Example weapon with hit effects
@@ -124,8 +107,6 @@ items:
         chance: 35
       e1:
         trigger: HIT
-        type: POTION
-        potion: SLOW
-        amplifier: 1
-        duration-ticks: 40
-        chance: 25
+        type: REFLECT
+        value: 10.0
+        chance: 20

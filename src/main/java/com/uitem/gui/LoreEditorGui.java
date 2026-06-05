@@ -32,7 +32,7 @@ public class LoreEditorGui extends AbstractGui {
     };
 
     public LoreEditorGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 54, "<gold><bold>Lore Editor</bold> <dark_gray>- <white>" + data.getId());
+        super(plugin, player, 54, "<gold><bold>Chỉnh Lore</bold> <dark_gray>- <white>" + data.getId());
         this.data = data;
         this.page = 0;
         this.selectedLine = -1;
@@ -44,7 +44,7 @@ public class LoreEditorGui extends AbstractGui {
 
         // Title
         setItem(4, createItem(Material.WRITABLE_BOOK,
-                "<gold><bold>Lore Editor</bold>",
+                "<gold><bold>Chỉnh Lore</bold>",
                 List.of(
                         "<gray>Edit item description",
                         "",
@@ -85,7 +85,7 @@ public class LoreEditorGui extends AbstractGui {
                     // Sửa dòng
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                     plugin.getChatInputManager().requestInput(player,
-                            "<yellow>Enter new content for line " + (finalLineIndex + 1) + " <gray>(supports MiniMessage):",
+                            "<yellow>Nhập nội dung mới cho dòng " + (finalLineIndex + 1) + " <gray>(hỗ trợ MiniMessage):",
                             input -> {
                                 if (finalLineIndex < data.getLore().size()) {
                                     data.getLore().set(finalLineIndex, input);
@@ -124,7 +124,7 @@ public class LoreEditorGui extends AbstractGui {
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Enter new line content <gray>(supports MiniMessage):",
+                    "<yellow>Nhập nội dung dòng mới <gray>(hỗ trợ MiniMessage):",
                     input -> {
                         data.getLore().add(input);
                         plugin.getItemManager().registerItem(data);
@@ -137,7 +137,7 @@ public class LoreEditorGui extends AbstractGui {
         setItem(47, createItem(Material.BARRIER,
                 "<red><bold>Clear all lore</bold>",
                 List.of(
-                        "<gray>Delete all lore lines"
+                        "<gray>Xóa tất cả dòng lore"
                 )), event -> {
             data.getLore().clear();
             plugin.getItemManager().registerItem(data);

@@ -44,7 +44,7 @@ public class RecipeEditorGui implements InventoryHolder {
             this.resultAmount = Math.max(1, Math.min(64, this.existingRecipe.getResultAmount()));
         }
         this.inventory = org.bukkit.Bukkit.createInventory(this, GUI_SIZE,
-                TextUtil.parse("<gold>Recipe: <white>" + data.getId()));
+                TextUtil.parse("<gold>Công thức: <white>" + data.getId()));
         initialize();
     }
 
@@ -98,58 +98,58 @@ public class RecipeEditorGui implements InventoryHolder {
         preview.setAmount(resultAmount);
         inventory.setItem(RESULT_SLOT, preview);
         inventory.setItem(RESULT_SLOT + 9, createInfoItem(Material.KNOWLEDGE_BOOK,
-                "<gold><bold>Guide</bold>",
+                "<gold><bold>Hướng Dẫn</bold>",
                 List.of(
-                        "<gray>Place ingredients (vanilla or UItem) in left",
-                        "<gray>Result: this item x" + resultAmount,
-                        "<yellow>Tip: /uitem give <id> then drag here",
-                        "<yellow>Stack size = ingredient amount needed",
+                        "<gray>Đặt nguyên liệu (vanilla hoặc UItem) bên trái",
+                        "<gray>Kết quả: item này x" + resultAmount,
+                        "<yellow>Mẹo: /uitem give <id> rồi kéo vào đây",
+                        "<yellow>Kích thước stack = số lượng nguyên liệu cần",
                         "",
-                        "<green>Shaped</green> <gray>save pattern | <aqua>Shapeless</aqua> <gray>any order"
+                        "<green>Shaped</green> <gray>lưu theo mẫu | <aqua>Shapeless</aqua> <gray>bất kỳ thứ tự"
                 )));
 
         inventory.setItem(SAVE_SHAPED_SLOT, createInfoItem(Material.GREEN_STAINED_GLASS_PANE,
-                "<green><bold>Save Shaped</bold>",
-                List.of("<gray>Save shaped recipe (3x3)")));
+                "<green><bold>Lưu Shaped</bold>",
+                List.of("<gray>Lưu công thức shaped (3x3)")));
         inventory.setItem(SAVE_SHAPELESS_SLOT, createInfoItem(Material.LIGHT_BLUE_STAINED_GLASS_PANE,
-                "<aqua><bold>Save Shapeless</bold>",
-                List.of("<gray>Save shapeless recipe")));
+                "<aqua><bold>Lưu Shapeless</bold>",
+                List.of("<gray>Lưu công thức shapeless")));
         inventory.setItem(CLEAR_SLOT, createInfoItem(Material.RED_STAINED_GLASS_PANE,
-                "<red><bold>Delete Recipe</bold>",
-                List.of("<gray>Delete current recipe")));
+                "<red><bold>Xóa Công Thức</bold>",
+                List.of("<gray>Xóa công thức hiện tại")));
 
         // Result amount editor button
         inventory.setItem(RESULT_AMOUNT_SLOT, createInfoItem(Material.GOLD_INGOT,
-                "<gold><bold>Result Amount: x" + resultAmount + "</bold>",
+                "<gold><bold>Số Lượng Kết Quả: x" + resultAmount + "</bold>",
                 List.of(
-                        "<gray>Click to change output count",
-                        "<gray>Current: <white>" + resultAmount,
-                        "<yellow>1 - 64 items per craft"
+                        "<gray>Click để đổi số lượng output",
+                        "<gray>Hiện tại: <white>" + resultAmount,
+                        "<yellow>1 - 64 item mỗi lần chế"
                 )));
 
         // Quick "get this item" button - makes using custom UItem as ingredient for other recipes very easy
         inventory.setItem(GIVE_CURRENT_SLOT, createInfoItem(Material.ENDER_CHEST,
-                "<aqua><bold>Give 1x This Item</bold>",
+                "<aqua><bold>Give 1x Item Này</bold>",
                 List.of(
-                        "<gray>Receive a copy of this custom item",
-                        "<yellow>Drag it into the grid above to use as ingredient",
-                        "<gray>Stack size you place = required amount in recipe",
-                        "<gray>Perfect for making recipes that use other custom items"
+                        "<gray>Nhận 1 bản sao của item tùy chỉnh này",
+                        "<yellow>Kéo vào lưới bên trên để dùng làm nguyên liệu",
+                        "<gray>Kích thước stack bạn đặt = số lượng cần trong recipe",
+                        "<gray>Hoàn hảo để tạo recipe dùng item tùy chỉnh khác"
                 )));
 
         if (existingRecipe != null) {
             inventory.setItem(44, createInfoItem(Material.LIME_DYE,
-                    "<green><bold>Has recipe</bold>",
+                    "<green><bold>Đã có công thức</bold>",
                     List.of(
-                            "<gray>Type: " + (existingRecipe.isShaped() ? "Shaped" : "Shapeless"),
-                            "<gray>Amount: " + existingRecipe.getResultAmount()
+                            "<gray>Loại: " + (existingRecipe.isShaped() ? "Shaped" : "Shapeless"),
+                            "<gray>Số lượng: " + existingRecipe.getResultAmount()
                     )));
         }
 
         int backSlot = 36;
         inventory.setItem(backSlot, createInfoItem(Material.ARROW,
-                "<yellow>← Back",
-                List.of("<gray>Click to go back")));
+                "<yellow>← Quay Lại",
+                List.of("<gray>Click để quay lại")));
 
     }
 
@@ -184,14 +184,14 @@ public class RecipeEditorGui implements InventoryHolder {
             plugin.getRecipeManager().removeRecipe(data.getId());
             plugin.getRecipeManager().saveRecipesAsync();
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 0.5f);
-            player.sendMessage(TextUtil.success("Deleted recipe for '" + data.getId() + "'!"));
+            player.sendMessage(TextUtil.success("Đã xóa công thức cho '" + data.getId() + "'!"));
             refresh();
             return;
         }
         if (slot == RESULT_AMOUNT_SLOT) {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Enter result amount (1-64):",
+                    "<yellow>Nhập số lượng kết quả (1-64):",
                     input -> {
                         try {
                             int amt = Integer.parseInt(input.trim());
@@ -199,10 +199,10 @@ public class RecipeEditorGui implements InventoryHolder {
                                 player.sendMessage(TextUtil.error("Amount must be 1-64!"));
                             } else {
                                 resultAmount = amt;
-                                player.sendMessage(TextUtil.success("Result amount set to x" + amt));
+                                player.sendMessage(TextUtil.success("Đã đặt số lượng kết quả x" + amt));
                             }
                         } catch (NumberFormatException e) {
-                            player.sendMessage(TextUtil.error("Invalid number!"));
+                            player.sendMessage(TextUtil.error("Số không hợp lệ!"));
                         }
                         // Update display in place to preserve placed ingredients in editor grid
                         updateResultAmountDisplay();
@@ -238,20 +238,20 @@ public class RecipeEditorGui implements InventoryHolder {
         inventory.setItem(RESULT_AMOUNT_SLOT, createInfoItem(Material.GOLD_INGOT,
                 "<gold><bold>Result Amount: x" + resultAmount + "</bold>",
                 List.of(
-                        "<gray>Click to change output count",
-                        "<gray>Current: <white>" + resultAmount,
+                        "<gray>Click để đổi số lượng output",
+                        "<gray>Hiện tại: <white>" + resultAmount,
                         "<yellow>1 - 64 items per craft"
                 )));
         // Update guide
         inventory.setItem(RESULT_SLOT + 9, createInfoItem(Material.KNOWLEDGE_BOOK,
-                "<gold><bold>Guide</bold>",
+                "<gold><bold>Hướng Dẫn</bold>",
                 List.of(
-                        "<gray>Place ingredients (vanilla or UItem) in left",
-                        "<gray>Result: this item x" + resultAmount,
-                        "<yellow>Tip: /uitem give <id> then drag here",
-                        "<yellow>Stack size = ingredient amount needed",
+                        "<gray>Đặt nguyên liệu (vanilla hoặc UItem) bên trái",
+                        "<gray>Kết quả: item này x" + resultAmount,
+                        "<yellow>Mẹo: /uitem give <id> rồi kéo vào đây",
+                        "<yellow>Kích thước stack = số lượng nguyên liệu cần",
                         "",
-                        "<green>Shaped</green> <gray>save pattern | <aqua>Shapeless</aqua> <gray>any order"
+                        "<green>Shaped</green> <gray>lưu theo mẫu | <aqua>Shapeless</aqua> <gray>bất kỳ thứ tự"
                 )));
     }
 
@@ -299,7 +299,7 @@ public class RecipeEditorGui implements InventoryHolder {
         plugin.getRecipeManager().setRecipe(data.getId(), recipe);
         plugin.getRecipeManager().saveRecipesAsync();
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.2f);
-        player.sendMessage(TextUtil.success("Saved recipe " + (shaped ? "shaped" : "shapeless") + " for '" + data.getId() + "'!"));
+        player.sendMessage(TextUtil.success("Đã lưu công thức " + (shaped ? "shaped" : "shapeless") + " cho '" + data.getId() + "'!"));
         refresh();
     }
 

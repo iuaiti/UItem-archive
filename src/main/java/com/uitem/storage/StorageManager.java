@@ -54,7 +54,10 @@ public class StorageManager {
 
     private final UItemPlugin plugin;
 
-    /** File ghi khi save qua GUI (luôn là items.yml để không đụng file user). */
+    /** File chính để GUI save vào (trong items/item.yml - external folder, user có thể edit thủ công). */
+    private final File itemsFile;
+
+    /** Legacy items.yml in root for fallback load. */
     private final File legacyFile;
 
     /** Thư mục items/ (có thể chưa tồn tại). */
@@ -72,6 +75,8 @@ public class StorageManager {
         this.plugin    = plugin;
         this.legacyFile = new File(plugin.getDataFolder(), LEGACY_FILE);
         this.itemsDir   = new File(plugin.getDataFolder(), ITEMS_DIR);
+        this.itemsDir.mkdirs();
+        this.itemsFile = new File(this.itemsDir, "item.yml");
     }
 
     // ═════════════════════════════════════════════════════════════════════════
@@ -387,25 +392,7 @@ public class StorageManager {
             data.setModel(modelRef);
         }
 
-        // ── poison-on-hit ─────────────────────────────────────────────────────
-        ConfigurationSection poisonSection = s.getConfigurationSection("poison-on-hit");
-        if (poisonSection != null) {
-            int    dur      = poisonSection.getInt("duration-ticks",  com.uitem.poison.PoisonEffect.DEFAULT_DURATION_TICKS);
-            int    amp      = poisonSection.getInt("amplifier",        com.uitem.poison.PoisonEffect.DEFAULT_AMPLIFIER);
-            int    maxStack = poisonSection.getInt("max-stacks",       com.uitem.poison.PoisonEffect.DEFAULT_MAX_STACKS);
-            int    interval = poisonSection.getInt("tick-interval",    com.uitem.poison.PoisonEffect.DEFAULT_TICK_INTERVAL);
-            double dmg      = poisonSection.getDouble("damage-per-tick", com.uitem.poison.PoisonEffect.DEFAULT_DAMAGE_PER_TICK);
-
-            if (dur < 1)      { logError("[%s] Item '%s': poison duration-ticks < 1, defaulting to %d.", fileName, id, com.uitem.poison.PoisonEffect.DEFAULT_DURATION_TICKS); dur = com.uitem.poison.PoisonEffect.DEFAULT_DURATION_TICKS; hasWarning = true; }
-            if (amp < 1)      { logError("[%s] Item '%s': poison amplifier < 1, defaulting to %d.", fileName, id, com.uitem.poison.PoisonEffect.DEFAULT_AMPLIFIER); amp = com.uitem.poison.PoisonEffect.DEFAULT_AMPLIFIER; hasWarning = true; }
-            if (maxStack < 1) { logError("[%s] Item '%s': poison max-stacks < 1, defaulting to %d.", fileName, id, com.uitem.poison.PoisonEffect.DEFAULT_MAX_STACKS); maxStack = com.uitem.poison.PoisonEffect.DEFAULT_MAX_STACKS; hasWarning = true; }
-            if (interval < 1) { logError("[%s] Item '%s': poison tick-interval < 1, defaulting to %d.", fileName, id, com.uitem.poison.PoisonEffect.DEFAULT_TICK_INTERVAL); interval = com.uitem.poison.PoisonEffect.DEFAULT_TICK_INTERVAL; hasWarning = true; }
-            if (dmg < 0)      { logError("[%s] Item '%s': poison damage-per-tick < 0, defaulting to %.1f.", fileName, id, com.uitem.poison.PoisonEffect.DEFAULT_DAMAGE_PER_TICK); dmg = com.uitem.poison.PoisonEffect.DEFAULT_DAMAGE_PER_TICK; hasWarning = true; }
-
-            data.setPoisonOnHit(new UItemData.PoisonConfig(dur, amp, maxStack, interval, dmg));
-        }
-
-        // effects: general potion/effect system (HIT, DAMAGE, EQUIP, FULL_SET etc)
+        // effects: general effect system (HIT, DAMAGE, DIE, EQUIP, FULL_SET etc) - REFLECT/EXTRA_DAMAGE only
         ConfigurationSection effectsSec = s.getConfigurationSection("effects");
         if (effectsSec != null) {
             List<UItemData.ItemEffect> effs = new ArrayList<>();
@@ -414,10 +401,7 @@ public class StorageManager {
                 if (es == null) continue;
                 UItemData.ItemEffect eff = new UItemData.ItemEffect();
                 eff.setTrigger(es.getString("trigger", "HIT"));
-                eff.setType(es.getString("type", "POTION"));
-                eff.setPotion(es.getString("potion"));
-                eff.setAmplifier(es.getInt("amplifier", 0));
-                eff.setDurationTicks(es.getInt("duration-ticks", 60));
+                eff.setType(es.getString("type", "REFLECT"));
                 eff.setChance(es.getDouble("chance", 100.0));
                 eff.setValue(es.getDouble("value", 0.0));
                 eff.setApplyToTarget(es.getBoolean("apply-to-target", false));
@@ -540,27 +524,13 @@ public class StorageManager {
             if (d.getRarity()             != null) config.set(path + ".rarity",               d.getRarity());
             if (d.getModel()              != null) config.set(path + ".model",                d.getModel());
 
-            // Poison on-hit
-            UItemData.PoisonConfig pc = d.getPoisonOnHit();
-            if (pc != null) {
-                String pp = path + ".poison-on-hit";
-                config.set(pp + ".duration-ticks",   pc.getDurationTicks());
-                config.set(pp + ".amplifier",         pc.getAmplifier());
-                config.set(pp + ".max-stacks",        pc.getMaxStacks());
-                config.set(pp + ".tick-interval",     pc.getTickInterval());
-                config.set(pp + ".damage-per-tick",   pc.getDamagePerTick());
-            }
-
-            // Effects (attachable potions + actions)
+            // Effects (attachable reflect/extra damage + actions)
             if (d.getEffects() != null && !d.getEffects().isEmpty()) {
                 for (int i = 0; i < d.getEffects().size(); i++) {
                     UItemData.ItemEffect e = d.getEffects().get(i);
                     String ep = path + ".effects.e" + i;
                     if (e.getTrigger() != null) config.set(ep + ".trigger", e.getTrigger());
                     if (e.getType() != null) config.set(ep + ".type", e.getType());
-                    if (e.getPotion() != null) config.set(ep + ".potion", e.getPotion());
-                    config.set(ep + ".amplifier", e.getAmplifier());
-                    config.set(ep + ".duration-ticks", e.getDurationTicks());
                     config.set(ep + ".chance", e.getChance());
                     if (e.getValue() != 0) config.set(ep + ".value", e.getValue());
                     if (e.isApplyToTarget()) config.set(ep + ".apply-to-target", true);
@@ -571,10 +541,10 @@ public class StorageManager {
         synchronized (fileLock) {
             if (writeId < minAllowedWriteId.get()) return;
             try {
-                config.save(legacyFile);
+                config.save(itemsFile);
             } catch (IOException e) {
                 plugin.getLogger().log(Level.SEVERE,
-                        "[UItem] Could not save " + LEGACY_FILE + ": " + e.getMessage(), e);
+                        "[UItem] Could not save to " + itemsFile.getName() + ": " + e.getMessage(), e);
             }
         }
     }
@@ -585,27 +555,27 @@ public class StorageManager {
 
     private void createDefaultLegacyFile() {
         YamlConfiguration cfg = new YamlConfiguration();
-        cfg.options().header("""
-                ╔══════════════════════════════════════════╗
-                ║         UItem - items.yml (legacy)       ║
-                ║                                          ║
-                ║  RECOMMENDED: Use external folder config ║
-                ║  for easy copy-paste of items!           ║
-                ║                                          ║
-                ║  Drop your item configs into:            ║
-                ║    plugins/UItem/items/                  ║
-                ║                                          ║
-                ║  You can use either style:               ║
-                ║    - Wrapped: items: { id: {..} }        ║
-                ║    - Flat (easy copy-paste):             ║
-                ║        my_item:                          ║
-                ║          material: DIAMOND_SWORD         ║
-                ║          ...                             ║
-                ║                                          ║
-                ║  Multiple files supported (weapons.yml,  ║
-                ║  armor.yml, boss/mythic.yml ...).        ║
-                ╚══════════════════════════════════════════╝
-                """);
+        cfg.options().setHeader(java.util.Arrays.asList(
+                "╔══════════════════════════════════════════╗",
+                "║         UItem - items.yml (legacy)       ║",
+                "║                                          ║",
+                "║  RECOMMENDED: Use external folder config ║",
+                "║  for easy copy-paste of items!           ║",
+                "║                                          ║",
+                "║  Drop your item configs into:            ║",
+                "║    plugins/UItem/items/                  ║",
+                "║                                          ║",
+                "║  You can use either style:               ║",
+                "║    - Wrapped: items: { id: {..} }        ║",
+                "║    - Flat (easy copy-paste):             ║",
+                "║        my_item:                          ║",
+                "║          material: DIAMOND_SWORD         ║",
+                "║          ...                             ║",
+                "║                                          ║",
+                "║  Multiple files supported (weapons.yml,  ║",
+                "║  armor.yml, boss/mythic.yml ...).        ║",
+                "╚══════════════════════════════════════════╝"
+        ));
 
         cfg.set("items.ruby_sword.material", "DIAMOND_SWORD");
         cfg.set("items.ruby_sword.display-name",

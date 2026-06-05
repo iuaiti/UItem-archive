@@ -1,6 +1,5 @@
 com/uitem/command/UItemCommand$GiveTarget.class
 com/uitem/storage/StorageManager$LoadResult.class
-com/uitem/poison/PoisonState.class
 com/uitem/resourcepack/ResourcePackServer.class
 com/uitem/recipe/UItemRecipe$Ingredient.class
 com/uitem/integration/IntegrationManager.class
@@ -29,7 +28,6 @@ com/uitem/UItemPlugin$2.class
 com/uitem/api/events/UItemPickupEvent.class
 com/uitem/gui/RecipeDetailGui.class
 com/uitem/UItemData.class
-com/uitem/UItemData$PoisonConfig.class
 com/uitem/gui/RecipeListGui.class
 com/uitem/storage/StorageManager$PendingSave.class
 com/uitem/gui/EnchantmentGui.class
@@ -39,10 +37,7 @@ com/uitem/recipe/UItemRecipe.class
 com/uitem/api/package-info.class
 com/uitem/util/TextUtil.class
 com/uitem/search/SearchManager.class
-com/uitem/poison/PoisonManager.class
 com/uitem/api/events/UItemEquipEvent.class
-com/uitem/poison/PoisonEffect.class
-com/uitem/poison/PoisonCombatListener.class
 com/uitem/api/events/UItemGiveEvent.class
 com/uitem/gui/CraftingGui.class
 com/uitem/UItemManager.class
@@ -51,9 +46,7 @@ com/uitem/util/Messages.class
 com/uitem/storage/StorageManager$FileLoadResult.class
 com/uitem/gui/ConfirmDeleteGui.class
 com/uitem/api/events/UItemInteractEvent.class
-com/uitem/poison/PoisonEffect$Builder.class
 com/uitem/listener/UItemActionListener$1.class
-com/uitem/gui/PotionPickerGui.class
 com/uitem/gui/GuiListener.class
 com/uitem/api/events/UItemEvent.class
 com/uitem/listener/UItemActionListener.class

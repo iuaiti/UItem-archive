@@ -628,6 +628,7 @@ public class ResourcePackManager {
         applyResourcePack(player, url, hash);
     }
 
+    @SuppressWarnings("deprecation")
     public void applyResourcePack(Player player, String url, byte[] hash) {
         if (player == null || url == null || url.isBlank()) {
             return;

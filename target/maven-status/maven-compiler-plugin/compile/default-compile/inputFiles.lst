@@ -25,7 +25,6 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ItemListGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/LoreEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/MaterialPickerGui.java
-/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PotionPickerGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/RecipeDetailGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/RecipeEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/RecipeListGui.java
@@ -34,10 +33,6 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/integration/ItemsAdderIntegration.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/integration/OraxenIntegration.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/listener/UItemActionListener.java
-/workspaces/Ultimate-Item/src/main/java/com/uitem/poison/PoisonCombatListener.java
-/workspaces/Ultimate-Item/src/main/java/com/uitem/poison/PoisonEffect.java
-/workspaces/Ultimate-Item/src/main/java/com/uitem/poison/PoisonManager.java
-/workspaces/Ultimate-Item/src/main/java/com/uitem/poison/PoisonState.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/rarity/RarityConfig.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/recipe/RecipeManager.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/recipe/UItemRecipe.java

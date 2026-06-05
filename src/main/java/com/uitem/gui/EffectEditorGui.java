@@ -2,7 +2,6 @@ package com.uitem.gui;
 
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
-import com.uitem.util.SchedulerUtil;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -12,24 +11,15 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
- * GUI editor for attaching effects (potion on triggers, reflect, extra damage).
- * Supports selecting trigger (incl. DIE), type, potion, and especially amplifier (level).
+ * GUI editor for attaching effects (reflect, extra damage on triggers).
+ * Supports selecting trigger (incl. DIE, HIT for target), type (REFLECT/EXTRA_DAMAGE), chance, value.
  */
 public class EffectEditorGui extends AbstractGui {
 
     private static final List<String> TRIGGERS = List.of("HIT", "DAMAGE", "DIE", "EQUIP", "FULL_SET");
-    private static final List<String> TYPES = List.of("POTION", "REFLECT", "EXTRA_DAMAGE");
-
-    // Popular potion keys using canonical registry names (upper) so lookup always succeeds.
-    // These .toLowerCase() work with Registry.EFFECT.get(NamespacedKey.minecraft(...))
-    private static final List<String> COMMON_POTIONS = List.of(
-            "SPEED", "STRENGTH", "REGENERATION", "RESISTANCE", "FIRE_RESISTANCE",
-            "NIGHT_VISION", "INVISIBILITY", "JUMP_BOOST", "HASTE", "HEALTH_BOOST",
-            "ABSORPTION", "SATURATION", "POISON", "WEAKNESS", "SLOWNESS", "DARKNESS"
-    );
+    private static final List<String> TYPES = List.of("REFLECT", "EXTRA_DAMAGE");
 
     private final UItemData data;
     private UItemData.ItemEffect pending;
@@ -47,10 +37,7 @@ public class EffectEditorGui extends AbstractGui {
             this.pending = new UItemData.ItemEffect();
             // sensible defaults
             this.pending.setTrigger("HIT");
-            this.pending.setType("POTION");
-            this.pending.setPotion("SPEED");
-            this.pending.setAmplifier(0);
-            this.pending.setDurationTicks(200); // ~10s
+            this.pending.setType("REFLECT");
             this.pending.setChance(100.0);
             this.pending.setValue(20.0);
         }
@@ -61,18 +48,18 @@ public class EffectEditorGui extends AbstractGui {
         fillBorder(6);
 
         // Header
-        setItem(4, createItem(Material.BREWING_STAND,
-                "<light_purple><bold>Effects for " + data.getId() + "</bold>",
+        setItem(4, createItem(Material.BOOK,
+                "<light_purple><bold>Hiệu Ứng cho " + data.getId() + "</bold>",
                 List.of(
-                        "<gray>Trigger on action → apply potion or combat effect",
-                        "<yellow>Choose trigger + type + potion (if any) + level",
-                        "<red>IMPORTANT: After save, use /uitem give <id> or craft to get updated item!",
-                        "<gray>HIT target effects only work when holding the item in main hand & attacking"
+                        "<gray>Kích hoạt khi hành động → áp dụng hiệu ứng chiến đấu (phản đòn/sát thương thêm)",
+                        "<yellow>Chọn trigger + loại + tỷ lệ + giá trị",
+                        "<red>QUAN TRỌNG: Sau khi lưu, dùng /uitem give <id> hoặc craft để lấy item đã cập nhật!",
+                        "<gray>HIT target: hiệu ứng có thể áp dụng cho nạn nhân (nếu loại hỗ trợ)"
                 )));
 
-        // === Current effects list (click to remove) - first row only to leave room ===
-        setItem(9, createItem(Material.WRITABLE_BOOK, "<gold><bold>Current Effects</bold>",
-                List.of("<gray>Click an effect to remove it", "<gray>Max recommended: 4-6 per item")));
+        // === Danh sách hiệu ứng hiện tại (click để xóa) - chỉ hàng đầu để chừa chỗ ===
+        setItem(9, createItem(Material.WRITABLE_BOOK, "<gold><bold>Hiệu Ứng Hiện Tại</bold>",
+                List.of("<gray>Click hiệu ứng để xóa", "<gray>Khuyến nghị tối đa: 4-6 mỗi item")));
 
         List<UItemData.ItemEffect> current = data.getEffects() != null ? new ArrayList<>(data.getEffects()) : new ArrayList<>();
         int[] currentSlots = {10, 11, 12, 13, 14, 15, 16, 17};
@@ -91,13 +78,13 @@ public class EffectEditorGui extends AbstractGui {
             });
         }
         if (current.isEmpty()) {
-            setItem(10, createItem(Material.BARRIER, "<gray><italic>No effects yet</italic>",
-                    List.of("<yellow>Use builder below to add one")));
+            setItem(10, createItem(Material.BARRIER, "<gray><italic>Chưa có hiệu ứng</italic>",
+                    List.of("<yellow>Dùng trình tạo bên dưới để thêm")));
         }
 
-        // Clear all button
-        setItem(18, createItem(Material.TNT, "<red><bold>Clear All Effects</bold>",
-                List.of("<gray>Remove every attached effect")), ev -> {
+        // Nút xóa tất cả
+        setItem(18, createItem(Material.TNT, "<red><bold>Xóa Tất Cả Hiệu Ứng</bold>",
+                List.of("<gray>Xóa mọi hiệu ứng đã gắn")), ev -> {
             if (!data.getEffects().isEmpty()) {
                 data.getEffects().clear();
                 player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 0.4f, 1.2f);
@@ -108,8 +95,8 @@ public class EffectEditorGui extends AbstractGui {
         });
 
         // === BUILDER (uses lower area) ===
-        setItem(27, createItem(Material.ANVIL, "<gold><bold>NEW EFFECT BUILDER</bold>",
-                List.of("<gray>Pick trigger → type → potion (if any) → level (amplifier) then Add")));
+        setItem(25, createItem(Material.ANVIL, "<gold><bold>TRÌNH TẠO HIỆU ỨNG MỚI</bold>",
+                List.of("<gray>Chọn trigger → loại (REFLECT/EXTRA) → tỷ lệ + giá trị rồi Add")));
 
         // Trigger buttons
         int tStart = 28;
@@ -120,7 +107,7 @@ public class EffectEditorGui extends AbstractGui {
             setItem(tStart + ti, createItem(mat,
                     (sel ? "<green>✔ " : "<gray>") + trig,
                     List.of("<gray>Trigger: " + trig,
-                            sel ? "<green>Selected" : "<yellow>Click to select")),
+                            sel ? "<green>Đã chọn" : "<yellow>Click để chọn")),
                     ev -> {
                         pending.setTrigger(trig);
                         if (!"HIT".equals(trig)) {
@@ -131,14 +118,15 @@ public class EffectEditorGui extends AbstractGui {
                     });
         }
 
-        // Affects: Self / Target - always visible in builder (only has effect for HIT trigger)
+        // Affects: Bản thân / Mục tiêu - luôn hiển thị trong builder (chỉ có hiệu lực với trigger HIT)
+        // Đặt ngay sau triggers để dễ truy cập
         boolean toTarget = pending.isApplyToTarget();
-        setItem(27, createItem(!toTarget ? Material.EMERALD : Material.GRAY_STAINED_GLASS_PANE,
-                (!toTarget ? "<green><bold>SELF (holder)</bold>" : "<gray>SELF (holder)"),
+        setItem(33, createItem(!toTarget ? Material.EMERALD : Material.GRAY_STAINED_GLASS_PANE,
+                (!toTarget ? "<green><bold>BẢN THÂN (người cầm/mặc)</bold>" : "<gray>BẢN THÂN (người cầm/mặc)"),
                 List.of(
-                        "<gray>Who receives the effect?",
-                        "<green>Self = the player holding/wearing the item",
-                        "<yellow>Click to apply to holder"
+                        "<gray>Ai nhận hiệu ứng?",
+                        "<green>Bản thân = người chơi cầm hoặc mặc item",
+                        "<yellow>Click để áp dụng cho bản thân"
                 )),
                 ev -> {
                     pending.setApplyToTarget(false);
@@ -146,114 +134,62 @@ public class EffectEditorGui extends AbstractGui {
                     refresh();
                 });
 
-        // (target button moved to after value block to avoid overwrite)
+        // (nút target được đặt sau khối value để tránh bị ghi đè)
 
-        // Type buttons (after triggers, before target toggle)
-        int typeStart = 33;
+        // Nút Type (sau phần affects self/target ở 33/34)
+        int typeStart = 36;
         for (int ty = 0; ty < TYPES.size(); ty++) {
             final String typ = TYPES.get(ty);
             boolean sel = typ.equalsIgnoreCase(pending.getType());
             Material mat = sel ? Material.LIGHT_BLUE_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE;
             setItem(typeStart + ty, createItem(mat,
                     (sel ? "<aqua>✔ " : "<gray>") + typ,
-                    List.of("<gray>Effect type: " + typ, sel ? "<green>Selected" : "<yellow>Click to select")),
+                    List.of("<gray>Loại hiệu ứng: " + typ, sel ? "<green>Đã chọn" : "<yellow>Click để chọn")),
                     ev -> {
                         pending.setType(typ);
-                        if (!"POTION".equals(typ)) {
-                            pending.setPotion(null);
-                        } else if (pending.getPotion() == null) {
-                            pending.setPotion("SPEED");
-                        }
                         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.6f);
                         refresh();
                     });
         }
 
-        // Amplifier (level) - the requested feature front and center (row 4)
-        setItem(37, createItem(Material.EXPERIENCE_BOTTLE, "<gold><bold>Amplifier (Level)</bold>",
-                List.of("<gray>0 = I, 1 = II ...", "<gray>Current: <white>" + pending.getAmplifier())));
-        setItem(38, createItem(Material.RED_DYE, "<red>−1", List.of("<yellow>Lower level")), ev -> {
-            pending.setAmplifier(Math.max(0, pending.getAmplifier() - 1));
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.3f, 0.8f);
-            refresh();
-        });
-        setItem(39, createItem(Material.PAPER, "<white>Lvl <gold><bold>" + pending.getAmplifier() + "</bold>",
-                List.of("<yellow>Click to type exact level")), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            plugin.getChatInputManager().requestInput(player, "<yellow>Enter amplifier (0-20):", input -> {
-                try { pending.setAmplifier(Math.max(0, Math.min(20, Integer.parseInt(input.trim())))); } catch (Exception ignored) {}
-                refresh();
-            });
-        });
-        setItem(40, createItem(Material.LIME_DYE, "<green>+1", List.of("<yellow>Higher level")), ev -> {
-            pending.setAmplifier(Math.min(20, pending.getAmplifier() + 1));
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.3f, 1.2f);
-            refresh();
-        });
-
-        // Duration (UX shows seconds)
-        int secs = Math.max(1, pending.getDurationTicks() / 20);
-        setItem(41, createItem(Material.CLOCK, "<gold><bold>Duration</bold> <white>" + secs + "s",
-                List.of("<gray>Current ticks: " + pending.getDurationTicks())));
-        setItem(42, createItem(Material.RED_DYE, "<red>−5s", List.of()), ev -> {
-            pending.setDurationTicks(Math.max(20, pending.getDurationTicks() - 100));
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.3f, 0.8f);
-            refresh();
-        });
-        setItem(43, createItem(Material.PAPER, secs + "s", List.of("<yellow>Click for exact seconds")), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            plugin.getChatInputManager().requestInput(player, "<yellow>Duration seconds:", input -> {
-                try { pending.setDurationTicks(Math.max(20, Integer.parseInt(input.trim()) * 20)); } catch (Exception ignored) {}
-                refresh();
-            });
-        });
-        setItem(44, createItem(Material.LIME_DYE, "<green>+10s", List.of()), ev -> {
-            pending.setDurationTicks(Math.min(12000, pending.getDurationTicks() + 200));
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.3f, 1.2f);
-            refresh();
-        });
-
-        // Chance presets
+        // Preset Tỷ lệ (sau value ở 39)
         double ch = pending.getChance();
-        setItem(45, createItem(Material.GHAST_TEAR, "<gold><bold>Chance: <white>" + (int)ch + "%</bold>", List.of()));
-        int[] chanceSlots = {46, 47, 48, 49, 50};
-        double[] chances = {100, 75, 50, 25, 10};
+        setItem(40, createItem(Material.GHAST_TEAR, "<gold><bold>Tỷ lệ: <white>" + (int)ch + "%</bold>", List.of()));
+        int[] chanceSlots = {41, 42, 43, 44};
+        double[] chances = {100, 75, 50, 25};
         for (int ci = 0; ci < chances.length; ci++) {
             final double c = chances[ci];
             boolean sel = Math.abs(ch - c) < 0.1;
             setItem(chanceSlots[ci], createItem(sel ? Material.LIME_DYE : Material.GRAY_DYE,
                     (sel ? "<green>" : "<gray>") + (int) c + "%",
-                    List.of("<yellow>Set proc chance to " + (int) c + "%")), ev -> {
+                    List.of("<yellow>Đặt tỷ lệ kích hoạt thành " + (int) c + "%")), ev -> {
                 pending.setChance(c);
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
                 refresh();
             });
         }
 
-        // Value controls (non-potion only)
-        if (!"POTION".equalsIgnoreCase(pending.getType())) {
-            setItem(51, createItem(Material.DIAMOND_SWORD, "<gold>Value <white>" + pending.getValue(),
-                    List.of("<gray>REFLECT % or EXTRA flat dmg", "<yellow>Click label for exact value via chat")), ev -> {
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                plugin.getChatInputManager().requestInput(player, "<yellow>Enter value (e.g. 25 for 25% or amount):", input -> {
-                    try {
-                        double v = Double.parseDouble(input.trim());
-                        pending.setValue(Math.max(0, v));
-                    } catch (Exception ignored) {}
-                    refresh();
-                });
+        // Điều khiển Giá trị (cho REFLECT / EXTRA_DAMAGE) - ở 39
+        setItem(39, createItem(Material.DIAMOND_SWORD, "<gold>Giá trị <white>" + pending.getValue(),
+                List.of("<gray>REFLECT = % sát thương phản đòn", "<gray>EXTRA_DAMAGE = lượng sát thương thêm phẳng", "<yellow>Click nhãn để nhập giá trị chính xác qua chat")), ev -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            plugin.getChatInputManager().requestInput(player, "<yellow>Nhập giá trị (ví dụ: 25 cho 25% hoặc lượng):", input -> {
+                try {
+                    double v = Double.parseDouble(input.trim());
+                    pending.setValue(Math.max(0, v));
+                } catch (Exception ignored) {}
+                refresh();
             });
-            // +/- hidden by target/back, use label click or switch to potion type to see target
-        }
+        });
 
-        // Target button placed late so it wins the slot over value +/- when non-potion
+        // Nút Mục tiêu cạnh Bản thân (slot 34)
         boolean toTargetLate = pending.isApplyToTarget();
-        setItem(52, createItem(toTargetLate ? Material.REDSTONE : Material.GRAY_STAINED_GLASS_PANE,
-                (toTargetLate ? "<red><bold>TARGET (victim)</bold>" : "<gray>TARGET (victim)"),
+        setItem(34, createItem(toTargetLate ? Material.REDSTONE : Material.GRAY_STAINED_GLASS_PANE,
+                (toTargetLate ? "<red><bold>MỤC TIÊU (nạn nhân)</bold>" : "<gray>MỤC TIÊU (nạn nhân)"),
                 List.of(
-                        "<gray>Only useful with HIT trigger:",
-                        "<red>Target = the mob/player being hit",
-                        "<yellow>Click to apply to the one you attack"
+                        "<gray>Chỉ hữu ích với trigger HIT:",
+                        "<red>Mục tiêu = mob/người chơi bị đánh",
+                        "<yellow>Click để áp dụng cho kẻ bị đánh"
                 )),
                 ev -> {
                     pending.setApplyToTarget(true);
@@ -261,66 +197,29 @@ public class EffectEditorGui extends AbstractGui {
                     refresh();
                 });
 
-        // Potion area: quick favorites + full browser for ALL potions
-        setItem(19, createItem(Material.POTION, "<aqua><bold>Quick Potions</bold>", List.of("<gray>Common ones for speed")));
-        for (int pi = 0; pi < Math.min(COMMON_POTIONS.size(), 5); pi++) {
-            final String pot = COMMON_POTIONS.get(pi);
-            boolean sel = pot.equalsIgnoreCase(pending.getPotion());
-            Material m = sel ? Material.LIME_STAINED_GLASS_PANE : Material.POTION;
-            setItem(20 + pi, createItem(m,
-                    (sel ? "<green>✔ " : "<white>") + pot,
-                    List.of("<gray>Effect: " + pot, sel ? "<green>Selected" : "<yellow>Click to choose")), ev -> {
-                pending.setType("POTION");
-                pending.setPotion(pot);
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.3f);
-                refresh();
-            });
-        }
+        // Nhãn nhỏ cho cặp
+        setItem(35, createItem(Material.PAPER, "<gray>Áp dụng cho", List.of()));
 
-        // The important one: full access to every potion effect on the server
-        setItem(26, createItem(Material.ENCHANTED_BOOK, "<light_purple><bold>Browse ALL Potions...</bold>",
-                List.of(
-                        "<gray>Access to <white>every</white> PotionEffectType",
-                        "<yellow>Including rare ones: DOLPHINS_GRACE, BAD_OMEN,",
-                        "<yellow>CONDUIT_POWER, SLOW_FALLING, etc.",
-                        "<gray>Click to open full paginated picker with search"
-                )), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
-            // Capture current pending state so selection doesn't reset to defaults
-            final UItemData.ItemEffect capturedPending = this.pending;
-            new PotionPickerGui(plugin, player,
-                    selected -> {
-                        capturedPending.setType("POTION");
-                        capturedPending.setPotion(selected);
-                        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.4f);
-                        // Re-open this editor passing the (updated) pending so choices stick
-                        SchedulerUtil.runSync(plugin, () -> new EffectEditorGui(plugin, player, data, capturedPending).open());
-                    },
-                    () -> new EffectEditorGui(plugin, player, data, capturedPending).open()
-            ).open();
-        });
-
-        // ADD button
+        // Nút THÊM
         String targetInfo = "";
         if ("HIT".equalsIgnoreCase(pending.getTrigger())) {
-            targetInfo = pending.isApplyToTarget() ? " <red>(on TARGET)" : " <green>(on SELF)";
+            targetInfo = pending.isApplyToTarget() ? " <red>(cho MỤC TIÊU)" : " <green>(cho BẢN THÂN)";
         }
-        setItem(36, createItem(Material.EMERALD_BLOCK, "<green><bold>✔ ADD THIS EFFECT</bold>",
+        setItem(45, createItem(Material.EMERALD_BLOCK, "<green><bold>✔ THÊM HIỆU ỨNG NÀY</bold>",
                 List.of(
                         "<gray>Trigger: <white>" + safe(pending.getTrigger()) + targetInfo,
-                        "<gray>Type: <white>" + safe(pending.getType()),
-                        "<gray>Potion: <white>" + safe(pending.getPotion()),
-                        "<gray>Lvl <white>" + pending.getAmplifier() + "  Dur <white>" + (pending.getDurationTicks() / 20) + "s  Chance <white>" + (int) pending.getChance() + "%",
-                        "<yellow>Click to attach to the item"
+                        "<gray>Loại: <white>" + safe(pending.getType()),
+                        "<gray>Tỷ lệ: <white>" + (int) pending.getChance() + "%  Giá trị: <white>" + pending.getValue(),
+                        "<yellow>Click để gắn vào item"
                 )), ev -> {
             if (pending.getTrigger() == null || pending.getType() == null) {
-                player.sendMessage(TextUtil.error("Need Trigger + Type at minimum"));
+                player.sendMessage(TextUtil.error("Cần ít nhất Trigger + Loại"));
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.5f, 1.0f);
                 return;
             }
             data.getEffects().add(pending.copy());
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.4f);
-            player.sendMessage(TextUtil.success("Effect added: " + pending.getTrigger() + " / " + pending.getType() + (pending.isApplyToTarget() ? " (target)" : "")));
+            player.sendMessage(TextUtil.success("Đã thêm hiệu ứng: " + pending.getTrigger() + " / " + pending.getType() + (pending.isApplyToTarget() ? " (mục tiêu)" : "")));
 
             plugin.getItemManager().registerItem(data);
             plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
@@ -328,17 +227,14 @@ public class EffectEditorGui extends AbstractGui {
             // fresh pending for next
             pending = new UItemData.ItemEffect();
             pending.setTrigger("HIT");
-            pending.setType("POTION");
-            pending.setPotion("SPEED");
-            pending.setAmplifier(0);
-            pending.setDurationTicks(200);
+            pending.setType("REFLECT");
             pending.setChance(100.0);
             pending.setValue(20.0);
 
             refresh();
         });
 
-        // Back at bottom to free top slots
+        // Nút Quay lại ở dưới
         setItem(53, createBackButton(), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new ItemEditorGui(plugin, player, data).open();
@@ -350,7 +246,7 @@ public class EffectEditorGui extends AbstractGui {
     }
 
     private ItemStack buildEffectIcon(UItemData.ItemEffect e) {
-        Material mat = Material.POTION;
+        Material mat = Material.IRON_SWORD;
         String trig = e.getTrigger() != null ? e.getTrigger() : "?";
         if ("HIT".equals(trig) || "DAMAGE".equals(trig)) mat = Material.IRON_SWORD;
         else if ("DIE".equals(trig)) mat = Material.SKELETON_SKULL;
@@ -365,15 +261,13 @@ public class EffectEditorGui extends AbstractGui {
 
         String name = "<light_purple>" + trig + targetNote + " <gray>→ <aqua>" + (e.getType() != null ? e.getType() : "");
         List<String> lore = new ArrayList<>();
-        if (e.getPotion() != null) lore.add("<gray>Potion: <white>" + e.getPotion() + " <gray>lvl " + e.getAmplifier());
-        lore.add("<gray>Duration: <white>" + (e.getDurationTicks() / 20) + "s");
         lore.add("<gray>Chance: <white>" + (int) e.getChance() + "%");
         if (e.getValue() != 0) lore.add("<gray>Value: <white>" + e.getValue());
         if ("HIT".equals(trig)) {
-            lore.add("<gray>Affects: <white>" + (e.isApplyToTarget() ? "Target (victim)" : "Self (holder)"));
+            lore.add("<gray>Áp dụng cho: <white>" + (e.isApplyToTarget() ? "Mục tiêu (nạn nhân)" : "Bản thân (người cầm/mặc)"));
         }
         lore.add("");
-        lore.add("<red>Click to remove");
+        lore.add("<red>Click để xóa");
         return createItem(mat, name, lore);
     }
 

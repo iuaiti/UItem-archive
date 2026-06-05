@@ -37,7 +37,7 @@ public class ItemListGui extends AbstractGui {
     }
 
     public ItemListGui(UItemPlugin plugin, Player player, int page) {
-        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d><bold>UItem Editor</bold></gradient>");
+        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d><bold>Trình Chỉnh Sửa UItem</bold></gradient>");
         this.page = page;
     }
 
@@ -60,14 +60,14 @@ public class ItemListGui extends AbstractGui {
         if (plugin.getConfig().getBoolean("gui.search.enabled", true)
                 && player.hasPermission("uitem.search")) {
             setItem(48, createItem(Material.MAGENTA_GLAZED_TERRACOTTA,
-                    "<aqua><bold>Search Item</bold>",
+                    "<aqua><bold>Tìm Item</bold>",
                     List.of(
-                            "<gray>Enter keyword to filter list",
-                            "<gray>Type 'clear' to clear filter"
+                            "<gray>Nhập từ khóa để lọc danh sách",
+                            "<gray>Gõ 'clear' để xóa bộ lọc"
                     )), event -> {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                 plugin.getChatInputManager().requestInput(player,
-                        "<yellow>Enter search keyword (<gray>or 'clear' to clear):",
+                        "<yellow>Nhập từ khóa tìm (<gray>hoặc 'clear' để xóa):",
                         input -> {
                             SearchManager sm = plugin.getSearchManager();
                             if (input.equalsIgnoreCase("clear")) {
@@ -132,19 +132,19 @@ public class ItemListGui extends AbstractGui {
 
         // Create new item button
         setItem(49, createItem(Material.EMERALD,
-                "<green><bold>+ Create New Item</bold>",
+                "<green><bold>+ Tạo Item Mới</bold>",
                 List.of(
-                        "<gray>Click to create a new custom item",
+                        "<gray>Click để tạo item tùy chỉnh mới",
                         "",
-                        "<yellow>You will be prompted to enter an ID"
+                        "<yellow>Bạn sẽ được yêu cầu nhập ID"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Enter ID for new item <gray>(letters, numbers, underscores only):",
+                    "<yellow>Nhập ID cho item mới <gray>(chỉ chữ cái, số, gạch dưới):",
                     input -> {
                         String id = input.toLowerCase().replaceAll("[^a-z0-9_]", "_");
                         if (id.isEmpty()) {
-                            player.sendMessage(TextUtil.error("Invalid ID!"));
+                            player.sendMessage(TextUtil.error("ID không hợp lệ!"));
                             new ItemListGui(plugin, player, page).open();
                             return;
                         }

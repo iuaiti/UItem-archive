@@ -281,7 +281,7 @@ public class ExecutableItemsIntegration {
                                 || java.util.Map.class.isAssignableFrom(ret)
                                 || ret.isArray()) {
                             logInfo("Found candidate: " + m.getName() + "() -> " + ret.getSimpleName());
-                            if (!m.isAccessible()) m.setAccessible(true);
+                            if (!m.canAccess(manager)) m.setAccessible(true);
                             Object result = m.invoke(manager);
                             if (result != null) {
                                 if (extractAndLogIds(m.getName(), result)) return true;
@@ -438,7 +438,7 @@ public class ExecutableItemsIntegration {
                 if (m.getParameterCount() != 1) continue;
                 Class<?> p = m.getParameterTypes()[0];
                 if (p.isAssignableFrom(paramType) || paramType.isAssignableFrom(p)) {
-                    if (!m.isAccessible()) m.setAccessible(true);
+                    if (!m.canAccess(manager)) m.setAccessible(true);
                     return m;
                 }
             } catch (Throwable t) {}
@@ -453,7 +453,7 @@ public class ExecutableItemsIntegration {
                 for (Method m : cur.getDeclaredMethods()) {
                     try {
                         if (m.getName().equals(name) && m.getParameterCount() == 0) {
-                            if (!m.isAccessible()) m.setAccessible(true);
+                            if (!m.canAccess(manager)) m.setAccessible(true);
                             return m;
                         }
                     } catch (Throwable ignored) {}

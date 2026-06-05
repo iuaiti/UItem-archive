@@ -61,7 +61,7 @@ public class IntegrationManager {
         // ── Check Oraxen ──
         Plugin oraxenPlugin = Bukkit.getPluginManager().getPlugin("Oraxen");
         if (oraxenPlugin != null && oraxenPlugin.isEnabled()) {
-            oraxenVersion = oraxenPlugin.getDescription().getVersion();
+            oraxenVersion = oraxenPlugin.getPluginMeta().getVersion();
             try {
                 Class<?> oraxenItemsClass = tryFindClass("io.th0rgal.oraxen.api.OraxenItems");
                 if (oraxenItemsClass != null) {
@@ -80,7 +80,7 @@ public class IntegrationManager {
         // ── Check ItemsAdder ──
         Plugin itemsAdderPlugin = Bukkit.getPluginManager().getPlugin("ItemsAdder");
         if (itemsAdderPlugin != null && itemsAdderPlugin.isEnabled()) {
-            itemsAdderVersion = itemsAdderPlugin.getDescription().getVersion();
+            itemsAdderVersion = itemsAdderPlugin.getPluginMeta().getVersion();
             try {
                 Class<?> customStackClass = tryFindClass(
                     "dev.lone.itemsadder.api.CustomStack",
@@ -103,7 +103,7 @@ public class IntegrationManager {
         Plugin executableItemsPlugin = findEiPlugin();
 
         if (executableItemsPlugin != null && executableItemsPlugin.isEnabled()) {
-            executableItemsVersion = executableItemsPlugin.getDescription().getVersion();
+            executableItemsVersion = executableItemsPlugin.getPluginMeta().getVersion();
             try {
                 // BUG-6 FIX: Pass logger vào để không swallow lỗi lặng lẽ
                 ExecutableItemsIntegration testEi = new ExecutableItemsIntegration(plugin.getLogger());

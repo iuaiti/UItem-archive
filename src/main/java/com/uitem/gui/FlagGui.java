@@ -20,7 +20,7 @@ public class FlagGui extends AbstractGui {
     private final UItemData data;
 
     public FlagGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 36, "<blue><bold>Item Flags</bold> <dark_gray>- <white>" + data.getId());
+        super(plugin, player, 36, "<blue><bold>Cờ Item (Flags)</bold> <dark_gray>- <white>" + data.getId());
         this.data = data;
     }
 
@@ -58,7 +58,7 @@ public class FlagGui extends AbstractGui {
                         TextUtil.parse(""),
                         TextUtil.parse("<gray>" + getFlagDescription(flag)),
                         TextUtil.parse(""),
-                        TextUtil.parse("<yellow>Click to toggle")
+                        TextUtil.parse("<yellow>Click để bật/tắt")
                 ));
                 if (isEnabled) {
                     meta.setEnchantmentGlintOverride(true);
@@ -89,15 +89,15 @@ public class FlagGui extends AbstractGui {
 
     private String getFlagDescription(ItemFlag flag) {
         return switch (flag) {
-            case HIDE_ENCHANTS -> "Hide enchantments";
-            case HIDE_ATTRIBUTES -> "Hide attributes (damage, speed...)";
-            case HIDE_UNBREAKABLE -> "Hide Unbreakable line";
-            case HIDE_DESTROYS -> "Hide destroyable blocks list";
-            case HIDE_PLACED_ON -> "Hide placeable-on blocks list";
-            case HIDE_ADDITIONAL_TOOLTIP -> "Hide additional tooltip (potion, banner...)";
-            case HIDE_DYE -> "Hide leather armor dye color";
-            case HIDE_ARMOR_TRIM -> "Hide armor trim";
-            default -> "No description";
+            case HIDE_ENCHANTS -> "Ẩn phù phép";
+            case HIDE_ATTRIBUTES -> "Ẩn thuộc tính (sát thương, tốc độ...)";
+            case HIDE_UNBREAKABLE -> "Ẩn dòng Unbreakable";
+            case HIDE_DESTROYS -> "Ẩn danh sách block có thể phá";
+            case HIDE_PLACED_ON -> "Ẩn danh sách block có thể đặt lên";
+            case HIDE_ADDITIONAL_TOOLTIP -> "Ẩn tooltip bổ sung (potion, banner...)";
+            case HIDE_DYE -> "Ẩn màu nhuộm giáp da";
+            case HIDE_ARMOR_TRIM -> "Ẩn armor trim";
+            default -> "Không có mô tả";
         };
     }
 }

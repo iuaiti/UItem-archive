@@ -6,8 +6,6 @@ import com.uitem.command.UItemCommand;
 import com.uitem.gui.GuiListener;
 import com.uitem.integration.IntegrationManager;
 import com.uitem.listener.UItemActionListener;
-import com.uitem.poison.PoisonCombatListener;
-import com.uitem.poison.PoisonManager;
 import com.uitem.rarity.RarityConfig;
 import com.uitem.recipe.RecipeManager;
 import com.uitem.resourcepack.ResourcePackManager;
@@ -25,6 +23,8 @@ import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,7 +44,6 @@ public final class UItemPlugin extends JavaPlugin {
     private ResourcePackServer packServer;
     private RecipeManager recipeManager;
     private Listener resourcePackJoinListener;
-    private PoisonManager poisonManager;
 
     @Override
     public void onEnable() {
@@ -66,6 +65,11 @@ public final class UItemPlugin extends JavaPlugin {
 
         // Seed example external config files if folders are empty (makes copy-paste easy)
         seedExampleConfigsIfNeeded(itemsDir, recipesDir);
+
+        // Create main external config files item.yml and recipe.yml in the subfolders
+        // so GUI can load/edit/save to external config, and plugin receives them on load/reload.
+        createMainExternalConfigIfNeeded(itemsDir, "item.yml", "items");
+        createMainExternalConfigIfNeeded(recipesDir, "recipe.yml", "recipes");
 
         saveDefaultConfig();
 
@@ -91,14 +95,9 @@ public final class UItemPlugin extends JavaPlugin {
         // Khởi tạo Public API — phải trước khi đăng ký listener
         UItemAPI.init(this);
 
-        // Khởi tạo PoisonManager — phải sau UItemAPI.init()
-        this.poisonManager = new PoisonManager(this);
-        this.poisonManager.start();
-
         getServer().getPluginManager().registerEvents(guiListener, this);
         getServer().getPluginManager().registerEvents(chatInputManager, this);
         getServer().getPluginManager().registerEvents(new UItemActionListener(this), this);
-        getServer().getPluginManager().registerEvents(new PoisonCombatListener(this, poisonManager), this);
 
         UItemCommand command = new UItemCommand(this);
         Objects.requireNonNull(getCommand("uitem")).setExecutor(command);
@@ -114,7 +113,7 @@ public final class UItemPlugin extends JavaPlugin {
         startPackServer();
 
         getLogger().info("╔══════════════════════════════════════════════╗");
-        getLogger().info("║        ⚡ UItem v" + getDescription().getVersion() + " — Custom Item Engine");
+        getLogger().info("║        ⚡ UItem v" + getPluginMeta().getVersion() + " — Custom Item Engine");
         getLogger().info("║        ✦ Author: iuaititi");
         getLogger().info("╠══════════════════════════════════════════════╣");
         getLogger().info("║  ■ Loaded: " + itemManager.getAllItems().size() + " custom items");
@@ -175,9 +174,6 @@ public final class UItemPlugin extends JavaPlugin {
 
         if (packServer != null) {
             packServer.stop();
-        }
-        if (poisonManager != null) {
-            poisonManager.shutdown();
         }
         if (storageManager != null && itemManager != null) {
             storageManager.saveAllNow(itemManager);
@@ -240,11 +236,15 @@ public final class UItemPlugin extends JavaPlugin {
                     return;
                 }
 
-                player.sendTitle(
-                        "Loading resource packs, please wait",
-                        "Loading resource packs, please wait",
-                        5, 60, 10
-                );
+                player.showTitle(net.kyori.adventure.title.Title.title(
+                        net.kyori.adventure.text.Component.text("Loading resource packs, please wait"),
+                        net.kyori.adventure.text.Component.text("Loading resource packs, please wait"),
+                        net.kyori.adventure.title.Title.Times.times(
+                                java.time.Duration.ofMillis(250),
+                                java.time.Duration.ofMillis(3000),
+                                java.time.Duration.ofMillis(500)
+                        )
+                ));
 
                 byte[] finalHash = hash;
                 String finalUrl = url;
@@ -335,13 +335,9 @@ public final class UItemPlugin extends JavaPlugin {
         return recipeManager;
     }
 
-    public PoisonManager getPoisonManager() {
-        return poisonManager;
-    }
-
     /**
-     * If items/ or recipes/ folders are empty (no .yml files), create example files.
-     * This makes it very easy for users to copy-paste external item/recipe configs.
+     * Nếu thư mục items/ hoặc recipes/ trống (không có file .yml), tạo file ví dụ.
+     * Điều này giúp người dùng dễ dàng copy-paste config item/recipe bên ngoài.
      */
     private void seedExampleConfigsIfNeeded(File itemsDir, File recipesDir) {
         try {
@@ -354,31 +350,26 @@ public final class UItemPlugin extends JavaPlugin {
                 File exampleItems = new File(itemsDir, "examples.yml");
                 if (!exampleItems.exists()) {
                     org.bukkit.configuration.file.YamlConfiguration ex = new org.bukkit.configuration.file.YamlConfiguration();
-                    ex.set("items.example_sword.material", "DIAMOND_SWORD");
-                    ex.set("items.example_sword.display-name", "<gold>Example Sword");
-                    ex.set("items.example_sword.lore", List.of("<gray>A sample custom item", "<yellow>Put your own configs here!"));
-                    ex.set("items.example_sword.enchantments.sharpness", 3);
-                    ex.set("items.example_sword.rarity", "RARE");
-                    // Example with effects (new system)
-                    ex.set("items.example_sword.effects.e0.trigger", "HIT");
-                    ex.set("items.example_sword.effects.e0.type", "POTION");
-                    ex.set("items.example_sword.effects.e0.potion", "SPEED");
-                    ex.set("items.example_sword.effects.e0.amplifier", 0);
-                    ex.set("items.example_sword.effects.e0.duration-ticks", 60);
-                    ex.set("items.example_sword.effects.e0.chance", 40);
-                    // Example: on HIT, also poison the *target* (victim)
-                    ex.set("items.example_sword.effects.e1.trigger", "HIT");
-                    ex.set("items.example_sword.effects.e1.type", "POTION");
-                    ex.set("items.example_sword.effects.e1.potion", "POISON");
-                    ex.set("items.example_sword.effects.e1.amplifier", 1);
-                    ex.set("items.example_sword.effects.e1.duration-ticks", 80);
-                    ex.set("items.example_sword.effects.e1.chance", 60);
-                    ex.set("items.example_sword.effects.e1.apply-to-target", true);
-                    // Example of flexible model mapping (drop any .json in models/ folder)
-                    // ex.set("items.example_sword.model", "my_custom_model");  // looks for models/my_custom_model.json
+                    ex.set("items.kiem_vi_du.material", "DIAMOND_SWORD");
+                    ex.set("items.kiem_vi_du.display-name", "<gold>Kiếm Ví Dụ");
+                    ex.set("items.kiem_vi_du.lore", List.of("<gray>Một item tùy chỉnh mẫu", "<yellow>Đặt config của bạn ở đây!"));
+                    ex.set("items.kiem_vi_du.enchantments.sharpness", 3);
+                    ex.set("items.kiem_vi_du.rarity", "RARE");
+                    // Ví dụ với hiệu ứng (phản đòn / sát thương thêm)
+                    ex.set("items.kiem_vi_du.effects.e0.trigger", "HIT");
+                    ex.set("items.kiem_vi_du.effects.e0.type", "EXTRA_DAMAGE");
+                    ex.set("items.kiem_vi_du.effects.e0.value", 3.0);
+                    ex.set("items.kiem_vi_du.effects.e0.chance", 50);
+                    // Ví dụ: khi bị DAMAGE (bị đánh), phản đòn một phần sát thương
+                    ex.set("items.kiem_vi_du.effects.e1.trigger", "DAMAGE");
+                    ex.set("items.kiem_vi_du.effects.e1.type", "REFLECT");
+                    ex.set("items.kiem_vi_du.effects.e1.value", 25.0);
+                    ex.set("items.kiem_vi_du.effects.e1.chance", 100);
+                    // Ví dụ mapping model linh hoạt (thả bất kỳ .json nào vào thư mục models/)
+                    // ex.set("items.kiem_vi_du.model", "my_custom_model");  // tìm models/my_custom_model.json
 
                     ex.save(exampleItems);
-                    getLogger().info("[UItem] Created example item config in items/examples.yml (copy-paste friendly flat style supported).");
+                    getLogger().info("[UItem] Đã tạo config item ví dụ trong items/examples.yml (hỗ trợ kiểu phẳng dễ copy-paste).");
                 }
             }
 
@@ -391,23 +382,78 @@ public final class UItemPlugin extends JavaPlugin {
                 File exampleRecipes = new File(recipesDir, "examples.yml");
                 if (!exampleRecipes.exists()) {
                     org.bukkit.configuration.file.YamlConfiguration ex = new org.bukkit.configuration.file.YamlConfiguration();
-                    // Flat style also supported
-                    // Flat style (very easy for copy-paste single recipes)
-                    ex.set("example_sword_recipe.result-item", "example_sword");
-                    ex.set("example_sword_recipe.result-amount", 1);
-                    ex.set("example_sword_recipe.shaped", true);
-                    ex.set("example_sword_recipe.shape", List.of(" I ", " S ", " S "));
-                    ex.set("example_sword_recipe.ingredient-map.I.uitem-id", "example_sword"); // using another custom UItem as ingredient
-                    ex.set("example_sword_recipe.ingredient-map.I.amount", 1);
-                    ex.set("example_sword_recipe.ingredient-map.S.material", "STICK");
-                    ex.set("example_sword_recipe.ingredient-map.S.amount", 1);
+                    // Hỗ trợ kiểu phẳng
+                    // Kiểu phẳng (rất dễ copy-paste recipe đơn lẻ)
+                    ex.set("cong_thuc_kiem_vi_du.result-item", "kiem_vi_du");
+                    ex.set("cong_thuc_kiem_vi_du.result-amount", 1);
+                    ex.set("cong_thuc_kiem_vi_du.shaped", true);
+                    ex.set("cong_thuc_kiem_vi_du.shape", List.of(" I ", " S ", " S "));
+                    ex.set("cong_thuc_kiem_vi_du.ingredient-map.I.uitem-id", "kiem_vi_du"); // dùng UItem tùy chỉnh khác làm nguyên liệu
+                    ex.set("cong_thuc_kiem_vi_du.ingredient-map.I.amount", 1);
+                    ex.set("cong_thuc_kiem_vi_du.ingredient-map.S.material", "STICK");
+                    ex.set("cong_thuc_kiem_vi_du.ingredient-map.S.amount", 1);
 
                     ex.save(exampleRecipes);
-                    getLogger().info("[UItem] Created example recipe config in recipes/examples.yml (supports custom UItem ingredients + flat copy-paste).");
+                    getLogger().info("[UItem] Đã tạo config recipe ví dụ trong recipes/examples.yml (hỗ trợ nguyên liệu UItem tùy chỉnh + kiểu phẳng dễ copy-paste).");
                 }
             }
         } catch (Exception e) {
             getLogger().warning("[UItem] Could not seed example configs: " + e.getMessage());
+        }
+    }
+
+    private void createMainExternalConfigIfNeeded(File dir, String fileName, String section) {
+        File mainFile = new File(dir, fileName);
+        if (mainFile.exists()) return;
+        try {
+            YamlConfiguration cfg = new YamlConfiguration();
+            cfg.options().setHeader(java.util.Arrays.asList(
+                    "File config chính bên ngoài cho " + section + " - có thể chỉnh sửa qua GUI trong game.",
+                    "Plugin tải tất cả .yml trong thư mục này (kiểu phẳng hoặc gói).",
+                    "GUI chỉnh sửa sẽ lưu vào file " + fileName + " này (tổng hợp trạng thái hiện tại).",
+                    "Demo: recipe cho kiếm_cơ_bản + recipe cho kiếm_nâng_cao dùng kiếm_cơ_bản làm nguyên liệu uitem."
+            ));
+            // Nội dung mẫu minh họa:
+            // - Item tùy chỉnh có recipe
+            // - Một item (kiếm_cơ_bản) được dùng làm nguyên liệu (uitem-id) trong recipe cho item khác (kiếm_nâng_cao)
+            // - Cả hai item đều có recipe riêng
+            if ("items".equals(section)) {
+                // kiếm_cơ_bản - item đơn giản có recipe
+                cfg.set("items.kiem_co_ban.material", "IRON_SWORD");
+                cfg.set("items.kiem_co_ban.display-name", "<gray>Kiếm Cơ Bản");
+                cfg.set("items.kiem_co_ban.lore", java.util.List.of("<gray>Kiếm sắt đơn giản", "<yellow>Dùng làm nguyên liệu cho item nâng cao"));
+                cfg.set("items.kiem_co_ban.enchantments.sharpness", 1);
+
+                // kiếm_nâng_cao - dùng kiếm_cơ_bản trong recipe (chuỗi)
+                cfg.set("items.kiem_nang_cao.material", "DIAMOND_SWORD");
+                cfg.set("items.kiem_nang_cao.display-name", "<aqua>Kiếm Nâng Cao");
+                cfg.set("items.kiem_nang_cao.lore", java.util.List.of("<gray>Được rèn từ Kiếm Cơ Bản", "<yellow>Sắc bén cao!"));
+                cfg.set("items.kiem_nang_cao.enchantments.sharpness", 5);
+            } else {
+                // recipe cho kiếm_cơ_bản dùng vật liệu vanilla
+                cfg.set("recipes.cong_thuc_kiem_co_ban.result-item", "kiem_co_ban");
+                cfg.set("recipes.cong_thuc_kiem_co_ban.result-amount", 1);
+                cfg.set("recipes.cong_thuc_kiem_co_ban.shaped", true);
+                cfg.set("recipes.cong_thuc_kiem_co_ban.shape", java.util.List.of(" I ", " S ", " S "));
+                cfg.set("recipes.cong_thuc_kiem_co_ban.ingredient-map.I.material", "IRON_INGOT");
+                cfg.set("recipes.cong_thuc_kiem_co_ban.ingredient-map.I.amount", 1);
+                cfg.set("recipes.cong_thuc_kiem_co_ban.ingredient-map.S.material", "STICK");
+                cfg.set("recipes.cong_thuc_kiem_co_ban.ingredient-map.S.amount", 1);
+
+                // recipe cho kiếm_nâng_cao dùng kiếm_cơ_bản tùy chỉnh làm nguyên liệu (uitem-id)
+                cfg.set("recipes.cong_thuc_kiem_nang_cao.result-item", "kiem_nang_cao");
+                cfg.set("recipes.cong_thuc_kiem_nang_cao.result-amount", 1);
+                cfg.set("recipes.cong_thuc_kiem_nang_cao.shaped", true);
+                cfg.set("recipes.cong_thuc_kiem_nang_cao.shape", java.util.List.of(" B ", " S ", " S "));
+                cfg.set("recipes.cong_thuc_kiem_nang_cao.ingredient-map.B.uitem-id", "kiem_co_ban");
+                cfg.set("recipes.cong_thuc_kiem_nang_cao.ingredient-map.B.amount", 1);
+                cfg.set("recipes.cong_thuc_kiem_nang_cao.ingredient-map.S.material", "STICK");
+                cfg.set("recipes.cong_thuc_kiem_nang_cao.ingredient-map.S.amount", 1);
+            }
+            cfg.save(mainFile);
+            getLogger().info("[UItem] Đã tạo file config chính bên ngoài " + fileName + " trong " + dir.getName() + "/ (có thể chỉnh qua GUI + lưu, hỗ trợ nguyên liệu uitem trong recipe)");
+        } catch (Exception e) {
+            getLogger().warning("[UItem] Could not create main " + fileName + ": " + e.getMessage());
         }
     }
 }

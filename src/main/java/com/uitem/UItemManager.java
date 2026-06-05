@@ -120,22 +120,19 @@ public class UItemManager {
     public ItemStack buildItemStack(UItemData data) {
         if (data == null) return new ItemStack(Material.STONE);
 
-        // Kiểm tra integration trước
-        ItemStack integrationItem = plugin.getIntegrationManager().tryBuildFromIntegration(data);
-        if (integrationItem != null) {
-            // Nếu integration trả về item, chỉ áp dụng thêm display name và lore
-            applyDisplayProperties(integrationItem, data);
-            tagItem(integrationItem, data.getId());
-            return integrationItem;
+        // Build base (integration or vanilla)
+        ItemStack integrationBase = plugin.getIntegrationManager().tryBuildFromIntegration(data);
+        ItemStack itemStack;
+        if (integrationBase != null) {
+            itemStack = integrationBase;
+        } else {
+            Material material = data.getMaterial() != null && data.getMaterial().isItem() ? data.getMaterial() : Material.STONE;
+            itemStack = new ItemStack(material);
         }
-
-        // Build từ vanilla
-        Material material = data.getMaterial() != null && data.getMaterial().isItem() ? data.getMaterial() : Material.STONE;
-        ItemStack itemStack = new ItemStack(material);
         ItemMeta meta = itemStack.getItemMeta();
         if (meta == null) return itemStack;
 
-        // Display Name with rarity prefix
+        // Always apply/override display name + lore from UItemData (for both vanilla and integration base)
         String displayName = data.getDisplayName();
         String rarity = data.getRarity();
         if (displayName != null && !displayName.isEmpty()) {
@@ -148,7 +145,6 @@ public class UItemManager {
             meta.displayName(safeDeserialize(displayName, data.getId()));
         }
 
-        // Lore with rarity lore
         List<Component> loreComponents = new ArrayList<>();
         if (data.getLore() != null) {
             for (String line : data.getLore()) {
@@ -299,29 +295,9 @@ public class UItemManager {
         }
     }
 
-    private void applyDisplayProperties(ItemStack item, UItemData data) {
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null) return;
-        if (data.getDisplayName() != null && !data.getDisplayName().isEmpty()) {
-            meta.displayName(safeDeserialize(data.getDisplayName(), data.getId()));
-        }
-        if (data.getLore() != null && !data.getLore().isEmpty()) {
-            List<Component> loreComponents = new ArrayList<>();
-            for (String line : data.getLore()) {
-                loreComponents.add(safeDeserialize(line, data.getId()));
-            }
-            meta.lore(loreComponents);
-        }
-        item.setItemMeta(meta);
-    }
-
-    private void tagItem(ItemStack item, String id) {
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.getPersistentDataContainer().set(uitemKey, PersistentDataType.STRING, id);
-            item.setItemMeta(meta);
-        }
-    }
+    // (removed applyDisplayProperties and tagItem - logic inlined in buildItemStack for both vanilla + integration cases,
+    // so enchants/flags/attributes/etc from UItemData now apply on top of IA/Oraxen/EI base items too.
+    // This fixes "fake" high-level enchants not being real on external model items.)
 
     /**
      * Lấy enchantment từ key string (e.g., "sharpness", "minecraft:sharpness").
@@ -335,6 +311,7 @@ public class UItemManager {
         try {
             NamespacedKey namespacedKey = NamespacedKey.fromString(cleanKey);
             if (namespacedKey == null) return null;
+            @SuppressWarnings("deprecation")
             Registry<Enchantment> registry = Registry.ENCHANTMENT;
             return registry.get(namespacedKey);
         } catch (Exception e) {

@@ -148,7 +148,7 @@ public abstract class AbstractGui implements InventoryHolder {
      * Tạo button quay lại.
      */
     protected ItemStack createBackButton() {
-        return createItem(Material.ARROW, "<yellow>← Back", List.of("<gray>Click to go back"));
+        return createItem(Material.ARROW, "<yellow>← Quay Lại", List.of("<gray>Click để quay lại"));
     }
 
     /**
