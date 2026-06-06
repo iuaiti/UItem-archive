@@ -254,10 +254,41 @@ public class RecipeManager {
     // ═════════════════════════════════════════════════════════════════════════
 
     public void saveRecipes() {
-        doSave();
+        // Prefer individual files now (recipes/<id>.yml). Full doSave kept for legacy.
+        // doSave();
+    }
+
+    public void saveRecipeIndividual(String resultItemId, UItemRecipe recipe) {
+        if (resultItemId == null || recipe == null) return;
+        File target = new File(recipesDir, resultItemId + ".yml");
+        YamlConfiguration cfg = new YamlConfiguration();
+        cfg.options().setHeader(List.of(
+            "Individual recipe file (copy-paste friendly).",
+            "Full shaped/shapeless + ingredients (uitem or material) are supported."
+        ));
+
+        // Use the existing save logic from UItemRecipe for complete fidelity
+        ConfigurationSection recipeSection = cfg.createSection(resultItemId);
+        recipe.save(recipeSection);
+
+        try {
+            cfg.save(target);
+            recipes.put(normalise(resultItemId), recipe);
+        } catch (IOException e) {
+            plugin.getLogger().warning("[UItem] Failed to save individual recipe file: " + e.getMessage());
+        }
     }
 
     public void saveRecipesAsync() {
+        boolean useConsolidated = plugin.getConfig().getBoolean("storage.use-consolidated-files", false);
+        if (!useConsolidated) {
+            // Prefer individual files
+            for (String id : new ArrayList<>(recipes.keySet())) {
+                UItemRecipe r = recipes.get(id);
+                if (r != null) saveRecipeIndividual(id, r);
+            }
+            return;
+        }
         YamlConfiguration cfg = buildConfig();
         SchedulerUtil.runAsync(plugin, () -> {
             try { cfg.save(recipesFile); }
@@ -279,6 +310,14 @@ public class RecipeManager {
     }
 
     private void doSave() {
+        boolean useConsolidated = plugin.getConfig().getBoolean("storage.use-consolidated-files", false);
+        if (!useConsolidated) {
+            for (String id : new ArrayList<>(recipes.keySet())) {
+                UItemRecipe r = recipes.get(id);
+                if (r != null) saveRecipeIndividual(id, r);
+            }
+            return;
+        }
         try { buildConfig().save(recipesFile); }
         catch (IOException e) {
             plugin.getLogger().log(Level.SEVERE, "[UItem] Could not save " + recipesFile.getName(), e);

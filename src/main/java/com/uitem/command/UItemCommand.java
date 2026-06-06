@@ -202,7 +202,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                 try {
                     plugin.getResourcePackManager().exportZip();
                     com.uitem.util.SchedulerUtil.runSync(plugin,
-                            () -> sender.sendMessage(TextUtil.success("Resource pack has been re-generated and exported.")));
+                            () -> sender.sendMessage(TextUtil.success(Messages.rpRegenerated())));
                     if (autoApply && url != null && !url.isBlank()) {
                         com.uitem.util.SchedulerUtil.runSync(plugin, () -> {
                             for (Player player : Bukkit.getOnlinePlayers()) {
@@ -212,7 +212,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                     }
                 } catch (Exception e) {
                     com.uitem.util.SchedulerUtil.runSync(plugin,
-                            () -> sender.sendMessage(TextUtil.error("Cannot generate/export resource pack: " + e.getMessage())));
+                            () -> sender.sendMessage(TextUtil.error(Messages.rpGenerateFailed(e.getMessage()))));
                 }
             });
         } else if (autoApply && url != null && !url.isBlank()) {
@@ -221,14 +221,13 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             }
         }
 
-        sender.sendMessage(TextUtil.success("Reloaded UItem! Loaded "
-                + plugin.getItemManager().getAllItems().size() + " item(s), "
-                + plugin.getRecipeManager().getAllRecipes().size() + " recipe(s)."));
+        sender.sendMessage(TextUtil.success(Messages.reloaded(
+                plugin.getItemManager().getAllItems().size())));
     }
 
     private void handleCheck(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error("Lệnh này chỉ dùng được bởi người chơi!"));
+            sender.sendMessage(TextUtil.error(Messages.playersOnly()));
             return;
         }
 
@@ -245,15 +244,15 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(TextUtil.prefixed("<green>ID: <white>" + id));
             sender.sendMessage(TextUtil.prefixed("<green>Type: <white>" + item.getType().name()));
         } else {
-            sender.sendMessage(TextUtil.error("✗ Item is NOT a valid UItem!"));
-            sender.sendMessage(TextUtil.prefixed("<red>Missing PDC tag 'uitem_id'. This item was not obtained through /uitem give."));
-            sender.sendMessage(TextUtil.prefixed("<red>Use <white>/uitem give <id> <player><red> to get properly tagged items."));
+            sender.sendMessage(TextUtil.error(Messages.notUItem()));
+            sender.sendMessage(TextUtil.prefixed("<red>" + Messages.missingPDC()));
+            sender.sendMessage(TextUtil.prefixed("<red>" + Messages.useGiveToGet()));
         }
     }
 
     private void handleCraft(CommandSender sender) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error("Lệnh này chỉ dùng được bởi người chơi!"));
+            sender.sendMessage(TextUtil.error(Messages.playersOnly()));
             return;
         }
         if (!player.hasPermission("uitem.craft")) {
@@ -265,13 +264,13 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private void handleList(CommandSender sender) {
         if (!sender.hasPermission("uitem.editor")) {
-            sender.sendMessage(TextUtil.error("Bạn không có quyền sử dụng lệnh này!"));
+            sender.sendMessage(TextUtil.error(Messages.noPermission()));
             return;
         }
 
         var items = plugin.getItemManager().getAllItems();
         if (items.isEmpty()) {
-            sender.sendMessage(TextUtil.info("No custom items yet. Use /uitem editor to create one."));
+            sender.sendMessage(TextUtil.info(Messages.noItemsYet()));
             return;
         }
 
@@ -304,10 +303,10 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         ResourcePackManager rpm = plugin.getResourcePackManager();
 
         if (args.length == 1) {
-            sender.sendMessage(TextUtil.prefixed("<gold>Generate resource pack: <white>/uitem rp generate"));
-            sender.sendMessage(TextUtil.prefixed("<gold>Export zip: <white>/uitem rp export"));
-            sender.sendMessage(TextUtil.prefixed("<gold>Apply to player: <white>/uitem rp apply <player> <url> [hash]"));
-            sender.sendMessage(TextUtil.prefixed("<gold>Status: <white>/uitem rp status"));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpGenerate()));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpExport()));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpApply()));
+            sender.sendMessage(TextUtil.prefixed(Messages.rpHelpStatus()));
             return;
         }
 
@@ -316,23 +315,23 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             case "generate", "gen", "reload" -> {
                 plugin.getResourcePackManager().syncCmdsToLiveItems();
                 rpm.generatePack();
-                sender.sendMessage(TextUtil.success("Generated resource pack at data/resourcepack/"));
+                sender.sendMessage(TextUtil.success(Messages.rpGenerated()));
             }
             case "export", "zip" -> {
                 try {
                     var zip = rpm.exportZip();
-                    sender.sendMessage(TextUtil.success("Exported zip: " + zip.getAbsolutePath()));
+                    sender.sendMessage(TextUtil.success(Messages.rpExported(zip.getAbsolutePath())));
                     String hashHex = rpm.getLastPackHashHex();
                     if (hashHex != null) {
                         sender.sendMessage(TextUtil.prefixed("<gold>SHA-1: <white>" + hashHex));
                     }
                 } catch (Exception e) {
-                    sender.sendMessage(TextUtil.error("Export failed: " + e.getMessage()));
+                    sender.sendMessage(TextUtil.error(Messages.rpExportFailed(e.getMessage())));
                 }
             }
             case "apply" -> {
                 if (args.length < 4) {
-                    sender.sendMessage(TextUtil.error("Usage: /uitem rp apply <player> <url> [hash]"));
+                    sender.sendMessage(TextUtil.error(Messages.rpApplyUsage()));
                     return;
                 }
                 Player target = Bukkit.getPlayerExact(args[2]);
@@ -343,7 +342,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                 String url = args[3];
                 String hash = args.length >= 5 ? args[4] : null;
                 rpm.applyResourcePack(target, url, hash);
-                sender.sendMessage(TextUtil.success("Sent resource pack to " + target.getName()));
+                sender.sendMessage(TextUtil.success(Messages.rpSent(target.getName())));
             }
             case "status" -> {
                 sender.sendMessage(TextUtil.prefixed("<gold>Pack directory: <white>" + rpm.getResourcePackDirectory().getAbsolutePath()));
@@ -351,7 +350,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(TextUtil.prefixed("<gold>Last zip: <white>" + (rpm.getLastZipFile() == null ? "Not exported" : rpm.getLastZipFile().getAbsolutePath())));
                 sender.sendMessage(TextUtil.prefixed("<gold>Current hash: <white>" + (rpm.getLastPackHashHex() == null ? "None" : rpm.getLastPackHashHex())));
             }
-            default -> sender.sendMessage(TextUtil.error("Usage: /uitem rp <generate|export|apply|status>"));
+            default -> sender.sendMessage(TextUtil.error(Messages.rpUsage()));
         }
     }
 
@@ -367,7 +366,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem list <dark_gray>— <gray>Liệt kê item"));
         sender.sendMessage(miniMessage.deserialize(
-                "  <gold>/uitem rp <generate|export|apply|status> <dark_gray>— <gray>Quản lý resource pack"));
+                "  <gold>/uitem rp <generate|export|apply|status> <dark_gray>— <gray>" + (Messages.isVietnamese() ? "Quản lý resource pack" : "Manage resource pack") ));
         sender.sendMessage(miniMessage.deserialize(
                 "  <gold>/uitem check <dark_gray>— <gray>Kiểm tra item đang cầm có phải UItem không"));
         sender.sendMessage(miniMessage.deserialize(

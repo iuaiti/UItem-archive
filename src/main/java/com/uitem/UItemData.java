@@ -37,6 +37,9 @@ public class UItemData {
     // General attachable effects (reflect, extra damage on hit/damage/equip/fullset/die)
     private List<ItemEffect> effects = new ArrayList<>();
 
+    // Native UItem Skills & Passives (dễ dùng, ổn định hơn ExecutableItems)
+    private List<com.uitem.skill.Skill> skills = new ArrayList<>();
+
     // Optional custom model reference for resource pack (Oraxen/ItemsAdder style)
     // Can be just name "my_model" -> looks for models/my_model.json and uses uitem:item/my_model
     // Or full "uitem:item/some_path" or even different namespace.
@@ -59,6 +62,7 @@ public class UItemData {
         this.itemsAdderId = null;
         this.executableItemsId = null;
         this.effects = new ArrayList<>();
+        this.skills = new ArrayList<>();
         this.model = null;
     }
 
@@ -188,6 +192,14 @@ public class UItemData {
         this.effects = (effects != null) ? effects : new ArrayList<>();
     }
 
+    public List<com.uitem.skill.Skill> getSkills() {
+        return skills;
+    }
+
+    public void setSkills(List<com.uitem.skill.Skill> skills) {
+        this.skills = (skills != null) ? skills : new ArrayList<>();
+    }
+
     public String getModel() {
         return model;
     }
@@ -261,6 +273,10 @@ public class UItemData {
         clone.effects = new ArrayList<>();
         for (ItemEffect e : this.effects) {
             clone.effects.add(e.copy());
+        }
+        clone.skills = new ArrayList<>();
+        for (com.uitem.skill.Skill s : this.skills) {
+            clone.skills.add(s.copy());
         }
         clone.model = this.model;
         return clone;

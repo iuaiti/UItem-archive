@@ -11,6 +11,7 @@ import com.uitem.recipe.RecipeManager;
 import com.uitem.resourcepack.ResourcePackManager;
 import com.uitem.resourcepack.ResourcePackServer;
 import com.uitem.storage.StorageManager;
+import com.uitem.util.Messages;
 import com.uitem.util.SchedulerUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -45,6 +46,11 @@ public final class UItemPlugin extends JavaPlugin {
     private RecipeManager recipeManager;
     private Listener resourcePackJoinListener;
 
+    // Native Skill system (dễ + ổn định thay thế ExecutableItems)
+    private com.uitem.skill.CooldownManager skillCooldownManager;
+    private com.uitem.skill.SkillExecutor skillExecutor;
+    private com.uitem.listener.UItemSkillListener skillListener;
+
     @Override
     public void onEnable() {
         instance = this;
@@ -66,10 +72,12 @@ public final class UItemPlugin extends JavaPlugin {
         // Seed example external config files if folders are empty (makes copy-paste easy)
         seedExampleConfigsIfNeeded(itemsDir, recipesDir);
 
-        // Create main external config files item.yml and recipe.yml in the subfolders
-        // so GUI can load/edit/save to external config, and plugin receives them on load/reload.
-        createMainExternalConfigIfNeeded(itemsDir, "item.yml", "items");
-        createMainExternalConfigIfNeeded(recipesDir, "recipe.yml", "recipes");
+        // Create main external config files item.yml and recipe.yml ONLY if user wants consolidated files
+        boolean useConsolidated = getConfig().getBoolean("storage.use-consolidated-files", false);
+        if (useConsolidated) {
+            createMainExternalConfigIfNeeded(itemsDir, "item.yml", "items");
+            createMainExternalConfigIfNeeded(recipesDir, "recipe.yml", "recipes");
+        }
 
         saveDefaultConfig();
 
@@ -87,6 +95,11 @@ public final class UItemPlugin extends JavaPlugin {
 
         this.recipeManager = new RecipeManager(this, this.itemManager);
 
+        // === Native Skill & Passive System ===
+        this.skillCooldownManager = new com.uitem.skill.CooldownManager(this);
+        this.skillExecutor = new com.uitem.skill.SkillExecutor(this, this.skillCooldownManager);
+        this.skillListener = new com.uitem.listener.UItemSkillListener(this, this.skillExecutor);
+
         RarityConfig.load(this);
 
         // Khởi tạo Messages (language system)
@@ -98,6 +111,7 @@ public final class UItemPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(guiListener, this);
         getServer().getPluginManager().registerEvents(chatInputManager, this);
         getServer().getPluginManager().registerEvents(new UItemActionListener(this), this);
+        getServer().getPluginManager().registerEvents(skillListener, this);
 
         UItemCommand command = new UItemCommand(this);
         Objects.requireNonNull(getCommand("uitem")).setExecutor(command);
@@ -181,6 +195,9 @@ public final class UItemPlugin extends JavaPlugin {
         if (recipeManager != null) {
             recipeManager.saveRecipes();
         }
+        if (skillListener != null) {
+            skillListener.shutdown();
+        }
         UItemAPI.shutdown();
         getLogger().info("╔══════════════════════════════════════════════╗");
         getLogger().info("║   ✦ UItem disabled. All items saved.         ");
@@ -236,9 +253,10 @@ public final class UItemPlugin extends JavaPlugin {
                     return;
                 }
 
+                String title = Messages.isVietnamese() ? "Đang tải resource pack, vui lòng chờ" : "Loading resource packs, please wait";
                 player.showTitle(net.kyori.adventure.title.Title.title(
-                        net.kyori.adventure.text.Component.text("Loading resource packs, please wait"),
-                        net.kyori.adventure.text.Component.text("Loading resource packs, please wait"),
+                        net.kyori.adventure.text.Component.text(title),
+                        net.kyori.adventure.text.Component.text(title),
                         net.kyori.adventure.title.Title.Times.times(
                                 java.time.Duration.ofMillis(250),
                                 java.time.Duration.ofMillis(3000),
@@ -335,6 +353,14 @@ public final class UItemPlugin extends JavaPlugin {
         return recipeManager;
     }
 
+    public com.uitem.skill.CooldownManager getSkillCooldownManager() {
+        return skillCooldownManager;
+    }
+
+    public com.uitem.skill.SkillExecutor getSkillExecutor() {
+        return skillExecutor;
+    }
+
     /**
      * Nếu thư mục items/ hoặc recipes/ trống (không có file .yml), tạo file ví dụ.
      * Điều này giúp người dùng dễ dàng copy-paste config item/recipe bên ngoài.
@@ -365,6 +391,20 @@ public final class UItemPlugin extends JavaPlugin {
                     ex.set("items.kiem_vi_du.effects.e1.type", "REFLECT");
                     ex.set("items.kiem_vi_du.effects.e1.value", 25.0);
                     ex.set("items.kiem_vi_du.effects.e1.chance", 100);
+
+                    // Ví dụ skill native (giống ExecutableItems nhưng dễ hơn)
+                    ex.set("items.kiem_vi_du.skills.fireball.trigger", "RIGHT_CLICK");
+                    ex.set("items.kiem_vi_du.skills.fireball.cooldown", 5.0);
+                    ex.set("items.kiem_vi_du.skills.fireball.cancel-event", true);
+                    ex.set("items.kiem_vi_du.skills.fireball.display-name", "<red>Fireball");
+                    ex.set("items.kiem_vi_du.skills.fireball.actions.a0.type", "PLAY_SOUND");
+                    ex.set("items.kiem_vi_du.skills.fireball.actions.a0.sound", "ENTITY_BLAZE_SHOOT");
+                    ex.set("items.kiem_vi_du.skills.fireball.actions.a0.volume", 1.0);
+                    ex.set("items.kiem_vi_du.skills.fireball.actions.a0.pitch", 1.0);
+                    ex.set("items.kiem_vi_du.skills.fireball.actions.a1.type", "SHOOT_PROJECTILE");
+                    ex.set("items.kiem_vi_du.skills.fireball.actions.a1.projectile", "SMALL_FIREBALL");
+                    ex.set("items.kiem_vi_du.skills.fireball.actions.a1.speed", 1.6);
+                    ex.set("items.kiem_vi_du.skills.fireball.actions.a1.damage", 7.0);
                     // Ví dụ mapping model linh hoạt (thả bất kỳ .json nào vào thư mục models/)
                     // ex.set("items.kiem_vi_du.model", "my_custom_model");  // tìm models/my_custom_model.json
 

@@ -1,6 +1,7 @@
 package com.uitem.gui;
 
 import com.uitem.UItemPlugin;
+import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -148,7 +149,7 @@ public abstract class AbstractGui implements InventoryHolder {
      * Tạo button quay lại.
      */
     protected ItemStack createBackButton() {
-        return createItem(Material.ARROW, "<yellow>← Quay Lại", List.of("<gray>Click để quay lại"));
+        return createItem(Material.ARROW, Messages.guiBack(), List.of(Messages.guiBackDesc()));
     }
 
     /**

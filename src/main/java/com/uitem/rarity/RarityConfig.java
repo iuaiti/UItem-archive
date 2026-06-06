@@ -2,20 +2,58 @@ package com.uitem.rarity;
 
 import com.uitem.UItemPlugin;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class RarityConfig {
 
     private static final Map<String, RarityEntry> rarities = new LinkedHashMap<>();
+    private static UItemPlugin plugin;
+    private static File rarityFile;
 
-    public static void load(UItemPlugin plugin) {
+    public static void load(UItemPlugin pluginInstance) {
+        plugin = pluginInstance;
         rarities.clear();
-        ConfigurationSection section = plugin.getConfig().getConfigurationSection("rarity");
-        if (section == null) {
+
+        // Dedicated rarity file (user requested separate file for easy copy-paste)
+        rarityFile = new File(plugin.getDataFolder(), "rarity.yml");
+        if (!rarityFile.exists()) {
+            // Try legacy from config.yml
+            ConfigurationSection section = plugin.getConfig().getConfigurationSection("rarity");
+            if (section != null && !section.getKeys(false).isEmpty()) {
+                loadFromSection(section);
+                saveRarities(); // migrate to new file
+                plugin.getLogger().info("[UItem] Migrated rarity config from config.yml to rarity.yml");
+                return;
+            }
             createDefaults();
+            saveRarities();
             return;
         }
+
+        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(rarityFile);
+        ConfigurationSection section = null;
+
+        // Support both:
+        // rarity: { COMMON: {..} }   or flat: COMMON: {..} at root
+        if (cfg.isConfigurationSection("rarity")) {
+            section = cfg.getConfigurationSection("rarity");
+        } else if (cfg.getKeys(false).stream().anyMatch(k -> cfg.isConfigurationSection(k))) {
+            section = cfg; // flat mode at root
+        }
+
+        if (section == null) {
+            createDefaults();
+            saveRarities();
+            return;
+        }
+        loadFromSection(section);
+    }
+
+    private static void loadFromSection(ConfigurationSection section) {
         for (String key : section.getKeys(false)) {
             ConfigurationSection rs = section.getConfigurationSection(key);
             if (rs == null) continue;
@@ -27,7 +65,39 @@ public class RarityConfig {
         }
     }
 
+    public static void saveRarities() {
+        if (plugin == null || rarityFile == null) return;
+        YamlConfiguration cfg = new YamlConfiguration();
+        cfg.options().setHeader(List.of(
+            "Rarity definitions for UItem.",
+            "You can copy-paste entire rarity blocks easily.",
+            "Supports flat style (recommended for copy-paste):",
+            "  COMMON:",
+            "    color: \"<gray>\"",
+            "    prefix: \"\"",
+            "    lore: []",
+            "",
+            "Or wrapped under 'rarity:' section."
+        ));
+
+        // Write in flat style at root for easy copy-paste
+        for (Map.Entry<String, RarityEntry> entry : rarities.entrySet()) {
+            String key = entry.getKey();
+            RarityEntry r = entry.getValue();
+            cfg.set(key + ".color", r.color());
+            cfg.set(key + ".prefix", r.prefix());
+            cfg.set(key + ".lore", r.lore());
+        }
+
+        try {
+            cfg.save(rarityFile);
+        } catch (IOException e) {
+            plugin.getLogger().warning("[UItem] Could not save rarity.yml: " + e.getMessage());
+        }
+    }
+
     private static void createDefaults() {
+        rarities.clear();
         rarities.put("COMMON", new RarityEntry("COMMON", "<gray>", "", List.of()));
         rarities.put("UNCOMMON", new RarityEntry("UNCOMMON", "<green>", "<green>", List.of(
                 "<dark_gray>──────────────",
@@ -73,6 +143,32 @@ public class RarityConfig {
     public static String getRarityPrefix(String rarity) {
         RarityEntry entry = get(rarity);
         return entry != null ? entry.prefix() : "";
+    }
+
+    // === Editing support (for GUI) ===
+    public static void setRarity(String name, String color, String prefix, List<String> lore) {
+        if (name == null || name.isBlank()) return;
+        String key = name.toUpperCase(Locale.ROOT);
+        rarities.put(key, new RarityEntry(key, color != null ? color : "<white>", prefix != null ? prefix : "", lore != null ? lore : List.of()));
+    }
+
+    public static void removeRarity(String name) {
+        if (name == null) return;
+        rarities.remove(name.toUpperCase(Locale.ROOT));
+    }
+
+    public static void reloadFromFile() {
+        if (plugin != null) {
+            load(plugin);
+        }
+    }
+
+    public static File getRarityFile() {
+        return rarityFile;
+    }
+
+    public static Map<String, RarityEntry> getAll() {
+        return Collections.unmodifiableMap(rarities);
     }
 
     public record RarityEntry(String name, String color, String prefix, List<String> lore) {

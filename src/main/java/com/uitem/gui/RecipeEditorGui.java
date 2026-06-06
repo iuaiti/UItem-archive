@@ -182,7 +182,14 @@ public class RecipeEditorGui implements InventoryHolder {
         }
         if (slot == CLEAR_SLOT) {
             plugin.getRecipeManager().removeRecipe(data.getId());
-            plugin.getRecipeManager().saveRecipesAsync();
+            // Save this recipe as its own file (recipes/<result>.yml)
+            String resultId = data.getId();
+            UItemRecipe current = plugin.getRecipeManager().getRecipe(resultId);
+            if (current != null) {
+                plugin.getRecipeManager().saveRecipeIndividual(resultId, current);
+            } else {
+                plugin.getRecipeManager().saveRecipesAsync(); // fallback
+            }
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 0.5f);
             player.sendMessage(TextUtil.success("Đã xóa công thức cho '" + data.getId() + "'!"));
             refresh();

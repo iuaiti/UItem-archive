@@ -1,7 +1,10 @@
 package com.uitem.util;
 
 import com.uitem.UItemPlugin;
+import com.uitem.skill.SkillAction;
 import org.bukkit.configuration.file.FileConfiguration;
+
+import java.util.Locale;
 
 /**
  * Centralized message system with EN/VI language support.
@@ -315,6 +318,108 @@ public final class Messages {
 
     // ==================== Search ====================
     public static String searchNoPermission() { return get("search-no-permission", "You don't have permission to use search (uitem.search).", "Ban khong co quyen su dung tim kiem (uitem.search)."); }
+
+    // ==================== Skill System (EN/VI) ====================
+    public static String skillListTitle(String id) { return get("skill-list-title", "<light_purple><bold>Skills & Passives</bold> <dark_gray>- " + id, "<light_purple><bold>Ki Nang & Passive</bold> <dark_gray>- " + id).replace("{id}", id); }
+    public static String skillListHeader(String id) { return get("skill-list-header", "<light_purple><bold>Skills & Passives for " + id + "</bold>", "<light_purple><bold>Ki Nang & Passive cho " + id + "</bold>").replace("{id}", id); }
+    public static String skillListDesc() { return get("skill-list-desc", "<gray>Native UItem skill system (no ExecutableItems needed)", "<gray>He thong skill native cua UItem (khong can ExecutableItems)"); }
+    public static String skillListAdd() { return get("skill-list-add", "<green><bold>+ ADD NEW SKILL</bold>", "<green><bold>+ THEM SKILL MOI</bold>"); }
+    public static String skillListAddDesc() { return get("skill-list-add-desc", "<gray>Create active or passive skill", "<gray>Tao skill active hoac passive"); }
+    public static String skillListPresetFireball() { return get("skill-preset-fireball", "<red><bold>Preset: Fireball</bold>", "<red><bold>Preset: Bong lua</bold>"); }
+    public static String skillListPresetLifesteal() { return get("skill-preset-lifesteal", "<green><bold>Preset: Lifesteal</bold>", "<green><bold>Preset: Hut mau</bold>"); }
+    public static String skillListPresetRegen() { return get("skill-preset-regen", "<aqua><bold>Preset: Regen Aura</bold>", "<aqua><bold>Preset: Hoi mau Aura</bold>"); }
+    public static String skillListPresetFireballDesc() { return get("skill-preset-fireball-desc", "<gray>Right Click → shoot Small Fireball", "<gray>Click phai → ban Small Fireball"); }
+    public static String skillListPresetLifestealDesc() { return get("skill-preset-lifesteal-desc", "<gray>On Hit → heal with chance", "<gray>Danh trung → hoi mau theo ty le"); }
+    public static String skillListPresetRegenDesc() { return get("skill-preset-regen-desc", "<gray>While Holding → periodic heal", "<gray>Dang cam → hoi mau dinh ky"); }
+    public static String skillListClickEdit() { return get("skill-list-click-edit", "<yellow>Left click: Edit", "<yellow>Click trai: Chinh sua"); }
+    public static String skillListClickDelete() { return get("skill-list-click-delete", "<red>Right click: Delete", "<red>Click phai: Xoa"); }
+
+    public static String skillEditorTitle(String skillId) { return get("skill-editor-title", "<light_purple><bold>Edit Skill:</bold> <white>" + skillId, "<light_purple><bold>Chinh Skill:</bold> <white>" + skillId).replace("{id}", skillId); }
+    public static String skillEditorActiveTriggers() { return get("skill-editor-active-triggers", "<gold><bold>Active Triggers</bold>", "<gold><bold>Active Triggers</bold>"); }
+    public static String skillEditorPassiveTriggers() { return get("skill-editor-passive-triggers", "<gold><bold>Passive / Combat Triggers</bold>", "<gold><bold>Passive / Combat Triggers</bold>"); }
+    public static String skillEditorCooldown() { return get("skill-editor-cooldown", "<gold><bold>Cooldown: <white>{seconds}s</bold>", "<gold><bold>Cooldown: <white>{seconds}s</bold>").replace("{seconds}", "%s"); }
+    public static String skillEditorCooldownHint() { return get("skill-editor-cooldown-hint", "<yellow>Click to enter cooldown in seconds", "<yellow>Click de nhap cooldown (giay)"); }
+    public static String skillEditorChance() { return get("skill-editor-chance", "<gold><bold>Chance: <white>{percent}%</bold>", "<gold><bold>Ty le: <white>{percent}%</bold>").replace("{percent}", "%s"); }
+    public static String skillEditorCancelEvent() { return get("skill-editor-cancel", "<gold><bold>Cancel Event: <white>{state}</bold>", "<gold><bold>Cancel Event: <white>{state}</bold>").replace("{state}", "%s"); }
+    public static String skillEditorActionsHeader(int count) { return get("skill-editor-actions", "<gold><bold>Actions ({count})</bold>", "<gold><bold>Actions ({count})</bold>").replace("{count}", String.valueOf(count)); }
+    public static String skillEditorActionsHint() { return get("skill-editor-actions-hint", "<gray>Left click: Edit value | Right click: Delete", "<gray>Click trai: Sua | Click phai: Xoa"); }
+    public static String skillEditorAddAction() { return get("skill-editor-add-action", "<green><bold>+ ADD ACTION</bold>", "<green><bold>+ THEM ACTION</bold>"); }
+    public static String skillEditorChooseAction() { return get("skill-editor-choose-action", "<green><bold>CHOOSE ACTION TYPE (Click to add)</bold>", "<green><bold>CHON LOAI ACTION (Click de them)</bold>"); }
+    public static String skillEditorNoActions() { return get("skill-editor-no-actions", "<gray><italic>No actions yet</italic>", "<gray><italic>Chua co action</italic>"); }
+
+    // Skill trigger display names (used in GUI + lore)
+    public static String skillTriggerDisplayName(String key) {
+        return switch (key.toUpperCase(Locale.ROOT)) {
+            case "RIGHT_CLICK" -> get("trigger-right", "Right Click", "Click Phai");
+            case "LEFT_CLICK" -> get("trigger-left", "Left Click", "Click Trai");
+            case "SHIFT_RIGHT_CLICK" -> get("trigger-sright", "Shift + Right Click", "Shift + Click Phai");
+            case "SHIFT_LEFT_CLICK" -> get("trigger-sleft", "Shift + Left Click", "Shift + Click Trai");
+            case "DROP" -> get("trigger-drop", "Drop (Q)", "Tha Item (Q)");
+            case "SWAP_HAND" -> get("trigger-swap", "Swap Hand (F)", "Doi Tay (F)");
+            case "HIT" -> get("trigger-hit", "On Hit", "Danh Trung");
+            case "TAKE_DAMAGE" -> get("trigger-damage", "On Damaged", "Bi Danh");
+            case "KILL" -> get("trigger-kill", "On Kill", "Giet");
+            case "EQUIP" -> get("trigger-equip", "On Equip", "Trang Bi / Cam");
+            case "UNEQUIP" -> get("trigger-unequip", "On Unequip", "Thao Ra");
+            case "PERIODIC" -> get("trigger-periodic", "Periodic", "Dinh Ky");
+            case "WHILE_HOLDING" -> get("trigger-holding", "While Holding", "Dang Cam");
+            case "WHILE_WEARING" -> get("trigger-wearing", "While Wearing", "Dang Mac");
+            default -> key;
+        };
+    }
+
+    public static String skillTriggerDescription(String key) {
+        return switch (key.toUpperCase(Locale.ROOT)) {
+            case "RIGHT_CLICK" -> get("trigger-desc-right", "Activate on right click", "Kich hoat khi click phai");
+            case "LEFT_CLICK" -> get("trigger-desc-left", "Activate on left click", "Kich hoat khi click trai");
+            case "SHIFT_RIGHT_CLICK" -> get("trigger-desc-sright", "Activate on shift + right click", "Kich hoat khi shift + click phai");
+            case "SHIFT_LEFT_CLICK" -> get("trigger-desc-sleft", "Activate on shift + left click", "Kich hoat khi shift + click trai");
+            case "DROP" -> get("trigger-desc-drop", "Activate when dropping the item (Q)", "Kich hoat khi tha item (Q)");
+            case "SWAP_HAND" -> get("trigger-desc-swap", "Activate when swapping hands (F)", "Kich hoat khi doi tay (F)");
+            case "HIT" -> get("trigger-desc-hit", "Activate when hitting a target", "Kich hoat khi danh trung muc tieu");
+            case "TAKE_DAMAGE" -> get("trigger-desc-damage", "Activate when taking damage", "Kich hoat khi bi danh");
+            case "KILL" -> get("trigger-desc-kill", "Activate when killing with this item", "Kich hoat khi giet bang item nay");
+            case "EQUIP" -> get("trigger-desc-equip", "Activate when equipping or holding", "Kich hoat khi mac hoac cam");
+            case "UNEQUIP" -> get("trigger-desc-unequip", "Activate when unequipping", "Kich hoat khi thao ra");
+            case "PERIODIC" -> get("trigger-desc-periodic", "Repeats every period (for regen, aura...)", "Chay lap lai dinh ky (regen, aura...)");
+            case "WHILE_HOLDING" -> get("trigger-desc-holding", "Repeats while holding in hand", "Chay dinh ky khi dang cam tren tay");
+            case "WHILE_WEARING" -> get("trigger-desc-wearing", "Repeats while wearing as armor", "Chay dinh ky khi dang mac giap");
+            default -> "";
+        };
+    }
+
+    // Action type display (for buttons)
+    public static String skillActionDisplay(SkillAction.ActionType type) {
+        String key = "action-" + type.name().toLowerCase(Locale.ROOT);
+        String en = type.getDisplay();
+        String vi = switch (type) {
+            case MESSAGE -> "Tin nhan";
+            case ACTION_BAR -> "Action bar";
+            case TITLE -> "Title";
+            case PLAY_SOUND -> "Phat am thanh";
+            case SPAWN_PARTICLE -> "Particle";
+            case GIVE_POTION -> "Cho hieu ung";
+            case REMOVE_POTION -> "Xoa hieu ung";
+            case HEAL -> "Hoi mau";
+            case DAMAGE -> "Gay sat thuong";
+            case LAUNCH -> "Day nguoi choi";
+            case TELEPORT -> "Dich chuyen";
+            case STRIKE_LIGHTNING -> "Goi set";
+            case SHOOT_PROJECTILE -> "Ban dan";
+            case PLAYER_COMMAND -> "Lenh nhu player";
+            case CONSOLE_COMMAND -> "Lenh console";
+            case CONSUME_DURABILITY -> "Tieu hao do ben";
+            case FEED -> "Hoi doi";
+            case SET_FIRE -> "Dot chay";
+            default -> type.getDisplay();
+        };
+        return get(key, en, vi);
+    }
+
+    // Feedback messages
+    public static String skillAdded(String type) { return get("skill-added", "Added " + type, "Da them " + type); }
+    public static String skillUpdated(String type) { return get("skill-updated", "Updated " + type, "Da cap nhat " + type); }
+    public static String skillPresetAdded(String name) { return get("skill-preset-added", "Added preset: " + name, "Da them preset: " + name).replace("{name}", name); }
 
     // ==================== Help ====================
     public static String helpTitle() { return get("help-title", "  <gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <gray>— Ultimate Item Plugin", "  <gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <gray>— Ultimate Item Plugin"); }

@@ -3,6 +3,7 @@ package com.uitem.gui;
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.rarity.RarityConfig;
+import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -11,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -64,7 +66,7 @@ public class ItemEditorGui extends AbstractGui {
                     input -> {
                         data.setDisplayName(input);
                         saveAndReopen();
-                        player.sendMessage(TextUtil.success("Đã đổi tên thành: " + input));
+                        player.sendMessage(TextUtil.success(Messages.renamedTo(input)));
                     });
         });
 
@@ -154,10 +156,10 @@ public class ItemEditorGui extends AbstractGui {
                         String val = input.trim();
                         if (val.equalsIgnoreCase("none") || val.isEmpty()) {
                             data.setModel(null);
-                            player.sendMessage(TextUtil.success("Đã xóa custom model (sẽ dùng item ID)."));
+                            player.sendMessage(TextUtil.success("Custom model removed (will use item ID).")); // TODO: add to Messages if needed
                         } else {
                             data.setModel(val);
-                            player.sendMessage(TextUtil.success("Đã đặt custom model: " + val));
+                            player.sendMessage(TextUtil.success("Custom model set: " + val));
                         }
                         saveAndReopen();
                     });
@@ -197,7 +199,7 @@ public class ItemEditorGui extends AbstractGui {
                             int dur = Integer.parseInt(input.trim());
                             data.setMaxDurability(dur);
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Độ bền tối đa = " + (dur > 0 ? dur : (dur == 0 ? "Không thanh" : "Mặc định"))));
+                            player.sendMessage(TextUtil.success(Messages.durabilitySet((dur > 0 ? String.valueOf(dur) : (dur == 0 ? "No bar" : "Default")))));
                         } catch (NumberFormatException e) {
                             player.sendMessage(TextUtil.error("Số không hợp lệ!"));
                             new ItemEditorGui(plugin, player, data).open();
@@ -240,7 +242,7 @@ public class ItemEditorGui extends AbstractGui {
                         if (input.equalsIgnoreCase("clear")) {
                             data.getAttributes().clear();
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Đã xóa tất cả thuộc tính!"));
+                            player.sendMessage(TextUtil.success(Messages.guiAttributesCleared()));
                             return;
                         }
                         String[] parts = input.trim().split("\\s+");
@@ -256,7 +258,7 @@ public class ItemEditorGui extends AbstractGui {
                             String slot = parts[3].toUpperCase();
                             data.getAttributes().add(new UItemData.AttributeData(attr, amount, operation, slot));
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Đã thêm thuộc tính " + attr + "!"));
+                            player.sendMessage(TextUtil.success(Messages.guiAttributesAdded(attr)));
                         } catch (Exception e) {
                             player.sendMessage(TextUtil.error("Lỗi: " + e.getMessage()));
                             new ItemEditorGui(plugin, player, data).open();
@@ -288,19 +290,51 @@ public class ItemEditorGui extends AbstractGui {
                         if (input.equalsIgnoreCase("none")) {
                             data.setRarity(null);
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Đã xóa độ hiếm!"));
+                            player.sendMessage(TextUtil.success(Messages.guiRarityRemoved()));
                             return;
                         }
                         String upper = input.toUpperCase().trim();
                         if (RarityConfig.getKeys().contains(upper)) {
                             data.setRarity(upper);
                             saveAndReopen();
-                            player.sendMessage(TextUtil.success("Đã đặt độ hiếm = " + upper));
+                            player.sendMessage(TextUtil.success(Messages.guiRaritySet(upper)));
                         } else {
-                            player.sendMessage(TextUtil.error("Độ hiếm '" + input + "' không tồn tại!"));
-                            new ItemEditorGui(plugin, player, data).open();
+                            // Allow creating new rarity on the fly (copy-paste friendly)
+                            data.setRarity(upper);
+                            // Ask for definition
+                            plugin.getChatInputManager().requestInput(player,
+                                "<yellow>Độ hiếm mới '" + upper + "'. Nhập color (MiniMessage, ví dụ <gold>) hoặc enter cho mặc định:",
+                                colorInput -> {
+                                    String color = colorInput.trim().isEmpty() ? "<white>" : colorInput.trim();
+                                    plugin.getChatInputManager().requestInput(player,
+                                        "<yellow>Prefix (ví dụ <gold>Legendary ) hoặc enter:",
+                                        prefixInput -> {
+                                            String prefix = prefixInput.trim();
+                                            plugin.getChatInputManager().requestInput(player,
+                                                "<yellow>Lore lines (phân cách bằng | ) hoặc enter để bỏ qua:",
+                                                loreInput -> {
+                                                    List<String> lore = loreInput.trim().isEmpty() ? List.of() : Arrays.asList(loreInput.split("\\|"));
+                                                    RarityConfig.setRarity(upper, color, prefix, lore);
+                                                    RarityConfig.saveRarities();
+                                                    saveAndReopen();
+                                                    player.sendMessage(TextUtil.success("Đã tạo/sửa rarity '" + upper + "' (lưu vào rarity.yml)"));
+                                                });
+                                        });
+                                });
                         }
                     });
+        });
+
+        // === Manage Rarities (new button for full GUI management) ===
+        setItem(30, createItem(Material.NETHER_STAR,
+                "<gold><bold>⚙ Quản lý Rarities</bold>",
+                List.of(
+                        "<gray>Mở danh sách rarity để tạo/sửa/xóa",
+                        "<yellow>Định nghĩa rarity được lưu tại rarity.yml",
+                        "<gray>Dễ copy-paste và chỉnh sửa"
+                )), event -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            new RarityListGui(plugin, player).open();
         });
 
         // === ExecutableItems ID (slot 22) - only show if ExecutableItems is present ===
@@ -314,7 +348,7 @@ public class ItemEditorGui extends AbstractGui {
                             "<gray>Kỹ năng/Passive sẽ do EI xử lý"
                     )), event -> {
                 plugin.getChatInputManager().requestInput(player,
-                        "<yellow>Nhập ID item ExecutableItems <gray>(hoặc 'none' để xóa):",
+                        "<yellow>Enter ExecutableItems item ID <gray>(or 'none' to remove):",
                         input -> {
                             if (input.equalsIgnoreCase("none")) {
                                 data.setExecutableItemsId(null);
@@ -337,7 +371,7 @@ public class ItemEditorGui extends AbstractGui {
                             "<gray>Dùng item từ Oraxen làm base"
                     )), event -> {
                 plugin.getChatInputManager().requestInput(player,
-                        "<yellow>Nhập ID item Oraxen <gray>(hoặc 'none' để xóa):",
+                        "<yellow>Enter Oraxen item ID <gray>(or 'none' to remove):",
                         input -> {
                             if (input.equalsIgnoreCase("none")) {
                                 data.setOraxenId(null);
@@ -360,7 +394,7 @@ public class ItemEditorGui extends AbstractGui {
                             "<gray>Dùng item từ ItemsAdder làm base"
                     )), event -> {
                 plugin.getChatInputManager().requestInput(player,
-                        "<yellow>Nhập ID namespaced ItemsAdder <gray>(hoặc 'none' để xóa):",
+                        "<yellow>Enter ItemsAdder namespaced ID <gray>(or 'none' to remove):",
                         input -> {
                             if (input.equalsIgnoreCase("none")) {
                                 data.setItemsAdderId(null);
@@ -371,6 +405,22 @@ public class ItemEditorGui extends AbstractGui {
                         });
             });
         }
+
+        // === SKILLS & PASSIVES (Native UItem system - dễ và ổn định hơn ExecutableItems) ===
+        int skillCount = (data.getSkills() != null) ? data.getSkills().size() : 0;
+        setItem(26, createItem(Material.ENCHANTED_BOOK,
+                "<light_purple><bold>⚡ Kỹ Năng & Passive (UItem)</bold>",
+                List.of(
+                        "<gray>Số skill: <white>" + skillCount,
+                        "",
+                        "<yellow>Click để mở Skill Editor",
+                        "<gray>Hệ thống skill native của UItem",
+                        "<gray>→ Dễ cấu hình, ổn định, không cần EI",
+                        "<gray>Hỗ trợ: Right/Left Click, Hit, Equip, Periodic, v.v."
+                )), event -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            new SkillListGui(plugin, player, data).open();
+        });
 
         // === Recipe (slot 25) - Open Recipe Editor ===
         boolean hasRecipe = plugin.getRecipeManager().hasRecipe(data.getId());
@@ -414,27 +464,27 @@ public class ItemEditorGui extends AbstractGui {
 
         // === SAVE button (slot 49) ===
         setItem(49, createItem(Material.EMERALD,
-                "<green><bold>💾 LƯU</bold>",
+                "<green><bold>💾 SAVE</bold>",
                 List.of(
-                        "<gray>Lưu tất cả thay đổi vào file",
+                        "<gray>Save this item to its individual file (items/<id>.yml)",
                         "",
-                        "<yellow>Click để lưu"
+                        "<yellow>Click to save"
                 )), event -> {
             plugin.getItemManager().registerItem(data);
             plugin.getResourcePackManager().syncCmdsToLiveItems();
-            plugin.getStorageManager().saveAllNow(plugin.getItemManager());
-            player.sendMessage(TextUtil.success("Đã lưu item '" + data.getId() + "'!"));
+            plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
+            player.sendMessage(TextUtil.success(Messages.savedItem(data.getId())));
             player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.0f);
             refresh();
         });
 
         // === DELETE button (slot 52) ===
         setItem(52, createItem(Material.BARRIER,
-                "<red><bold>🗑 XÓA</bold>",
+                "<red><bold>🗑 DELETE</bold>",
                 List.of(
-                        "<gray>Xóa item này",
+                        "<gray>Delete this item",
                         "",
-                        "<red>⚠ Click để xóa"
+                        "<red>⚠ Click to delete"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 0.5f);
             new ConfirmDeleteGui(plugin, player, data, 0).open();
@@ -444,14 +494,15 @@ public class ItemEditorGui extends AbstractGui {
     private void saveAndReopen() {
         plugin.getItemManager().registerItem(data);
         plugin.getResourcePackManager().syncCmdsToLiveItems();
-        plugin.getStorageManager().saveAllNow(plugin.getItemManager());
+        // Save as individual file (items/<id>.yml) - copy-paste friendly, avoids recreating big item.yml
+        plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
         new ItemEditorGui(plugin, player, data).open();
     }
 
     private void saveAndRefresh() {
         plugin.getItemManager().registerItem(data);
         plugin.getResourcePackManager().syncCmdsToLiveItems();
-        plugin.getStorageManager().saveAllNow(plugin.getItemManager());
+        plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
         refresh();
     }
 

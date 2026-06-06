@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -410,6 +411,74 @@ public class StorageManager {
             data.setEffects(effs);
         }
 
+        // skills: native UItem skill/passive system (giống ExecutableItems nhưng dễ và ổn định hơn)
+        ConfigurationSection skillsSec = s.getConfigurationSection("skills");
+        if (skillsSec != null) {
+            List<com.uitem.skill.Skill> skillList = new ArrayList<>();
+            for (String skey : skillsSec.getKeys(false)) {
+                ConfigurationSection ss = skillsSec.getConfigurationSection(skey);
+                if (ss == null) continue;
+
+                com.uitem.skill.Skill sk = new com.uitem.skill.Skill(skey);
+                sk.setDisplayName(ss.getString("display-name", skey));
+                sk.setTrigger(com.uitem.skill.SkillTrigger.fromString(ss.getString("trigger", "RIGHT_CLICK")));
+                sk.setCooldown(ss.getDouble("cooldown", 0.0));
+                sk.setCancelEvent(ss.getBoolean("cancel-event", true));
+                sk.setChance(ss.getDouble("chance", 100.0));
+                sk.setPeriodTicks(ss.getInt("period-ticks", 20));
+
+                // conditions
+                ConfigurationSection condSec = ss.getConfigurationSection("conditions");
+                if (condSec != null) {
+                    List<com.uitem.skill.SkillCondition> conds = new ArrayList<>();
+                    for (String ck : condSec.getKeys(false)) {
+                        ConfigurationSection cs = condSec.getConfigurationSection(ck);
+                        if (cs == null) continue;
+                        com.uitem.skill.SkillCondition c = new com.uitem.skill.SkillCondition();
+                        String ctype = cs.getString("type", "ALWAYS");
+                        try {
+                            c.setType(com.uitem.skill.SkillCondition.ConditionType.valueOf(ctype.toUpperCase(Locale.ROOT)));
+                        } catch (Exception e) {
+                            c.setType(com.uitem.skill.SkillCondition.ConditionType.ALWAYS);
+                        }
+                        // copy all other keys as params
+                        for (String pk : cs.getKeys(false)) {
+                            if ("type".equals(pk)) continue;
+                            c.setParam(pk, cs.get(pk));
+                        }
+                        conds.add(c);
+                    }
+                    sk.setConditions(conds);
+                }
+
+                // actions
+                ConfigurationSection actSec = ss.getConfigurationSection("actions");
+                if (actSec != null) {
+                    List<com.uitem.skill.SkillAction> acts = new ArrayList<>();
+                    for (String ak : actSec.getKeys(false)) {
+                        ConfigurationSection as = actSec.getConfigurationSection(ak);
+                        if (as == null) continue;
+                        String atype = as.getString("type", "MESSAGE");
+                        com.uitem.skill.SkillAction a = new com.uitem.skill.SkillAction();
+                        try {
+                            a.setType(com.uitem.skill.SkillAction.ActionType.valueOf(atype.toUpperCase(Locale.ROOT)));
+                        } catch (Exception e) {
+                            a.setType(com.uitem.skill.SkillAction.ActionType.MESSAGE);
+                        }
+                        for (String pk : as.getKeys(false)) {
+                            if ("type".equals(pk)) continue;
+                            a.setParam(pk, as.get(pk));
+                        }
+                        acts.add(a);
+                    }
+                    sk.setActions(acts);
+                }
+
+                skillList.add(sk);
+            }
+            data.setSkills(skillList);
+        }
+
         if (hasWarning) {
             plugin.getLogger().warning(
                     "[UItem] Item '" + id + "' loaded with warnings (see [ERROR] lines above).");
@@ -457,7 +526,123 @@ public class StorageManager {
     }
 
     public void saveItem(UItemManager manager, UItemData data) {
-        saveAll(manager);
+        // Preferred: save as individual file for easy copy-paste and separate management
+        saveItemIndividual(data);
+        // Also keep in-memory
+        manager.registerItem(data);
+    }
+
+    /**
+     * Save a single item as its own file: items/<id>.yml (flat style, copy-paste friendly).
+     * This avoids constantly recreating/overwriting a big item.yml.
+     */
+    public void saveItemIndividual(UItemData d) {
+        if (d == null) return;
+        String id = d.getId();
+        File target = new File(itemsDir, id + ".yml");
+
+        YamlConfiguration cfg = new YamlConfiguration();
+        cfg.options().setHeader(List.of(
+            "Single UItem definition (copy-paste friendly).",
+            "You can move this file anywhere inside the items/ folder (including subfolders).",
+            "Flat style is supported."
+        ));
+
+        Material mat = d.getMaterial() != null ? d.getMaterial() : Material.STONE;
+        cfg.set(id + ".material", mat.name());
+        if (d.getDisplayName() != null) cfg.set(id + ".display-name", d.getDisplayName());
+        if (d.getLore() != null && !d.getLore().isEmpty()) cfg.set(id + ".lore", d.getLore());
+
+        if (d.getEnchantments() != null && !d.getEnchantments().isEmpty()) {
+            d.getEnchantments().forEach((k, v) -> cfg.set(id + ".enchantments." + k, v));
+        }
+        cfg.set(id + ".flags", d.getFlags() != null ? new ArrayList<>(d.getFlags()) : List.of());
+        cfg.set(id + ".custom-model-data", d.getCustomModelData());
+        cfg.set(id + ".unbreakable", d.isUnbreakable());
+        cfg.set(id + ".glowing", d.isGlowing());
+        cfg.set(id + ".max-durability", d.getMaxDurability());
+
+        if (d.getAttributes() != null && !d.getAttributes().isEmpty()) {
+            for (int i = 0; i < d.getAttributes().size(); i++) {
+                UItemData.AttributeData a = d.getAttributes().get(i);
+                String ap = id + ".attributes.attr_" + i;
+                cfg.set(ap + ".attribute", a.getAttribute());
+                cfg.set(ap + ".amount", a.getAmount());
+                cfg.set(ap + ".operation", a.getOperation());
+                cfg.set(ap + ".slot", a.getSlot());
+            }
+        }
+
+        // Skills (native skill/passive system) - full copy of serialization logic for individual files
+        if (d.getSkills() != null && !d.getSkills().isEmpty()) {
+            for (int i = 0; i < d.getSkills().size(); i++) {
+                com.uitem.skill.Skill sk = d.getSkills().get(i);
+                String sp = id + ".skills." + (sk.getId() != null ? sk.getId() : "skill" + i);
+
+                if (sk.getDisplayName() != null) cfg.set(sp + ".display-name", sk.getDisplayName());
+                if (sk.getTrigger() != null) cfg.set(sp + ".trigger", sk.getTrigger().name());
+                if (sk.getCooldown() > 0) cfg.set(sp + ".cooldown", sk.getCooldown());
+                cfg.set(sp + ".cancel-event", sk.isCancelEvent());
+                if (sk.getChance() < 100) cfg.set(sp + ".chance", sk.getChance());
+                if (sk.getPeriodTicks() != 20) cfg.set(sp + ".period-ticks", sk.getPeriodTicks());
+
+                // conditions
+                if (sk.getConditions() != null && !sk.getConditions().isEmpty()) {
+                    for (int ci = 0; ci < sk.getConditions().size(); ci++) {
+                        com.uitem.skill.SkillCondition c = sk.getConditions().get(ci);
+                        String cp = sp + ".conditions.c" + ci;
+                        if (c.getType() != null) cfg.set(cp + ".type", c.getType().name());
+                        if (c.getParams() != null) {
+                            for (Map.Entry<String, Object> pe : c.getParams().entrySet()) {
+                                cfg.set(cp + "." + pe.getKey(), pe.getValue());
+                            }
+                        }
+                    }
+                }
+
+                // actions
+                if (sk.getActions() != null && !sk.getActions().isEmpty()) {
+                    for (int ai = 0; ai < sk.getActions().size(); ai++) {
+                        com.uitem.skill.SkillAction a = sk.getActions().get(ai);
+                        String ap = sp + ".actions.a" + ai;
+                        if (a.getType() != null) cfg.set(ap + ".type", a.getType().name());
+                        if (a.getParams() != null) {
+                            for (Map.Entry<String, Object> pe : a.getParams().entrySet()) {
+                                cfg.set(ap + "." + pe.getKey(), pe.getValue());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Effects, integrations, model, rarity...
+        if (d.getRarity() != null) cfg.set(id + ".rarity", d.getRarity());
+        if (d.getModel() != null) cfg.set(id + ".model", d.getModel());
+        if (d.getOraxenId() != null) cfg.set(id + ".oraxen-id", d.getOraxenId());
+        if (d.getItemsAdderId() != null) cfg.set(id + ".itemsadder-id", d.getItemsAdderId());
+        if (d.getExecutableItemsId() != null) cfg.set(id + ".executableitems-id", d.getExecutableItemsId());
+
+        // Effects
+        if (d.getEffects() != null && !d.getEffects().isEmpty()) {
+            for (int i = 0; i < d.getEffects().size(); i++) {
+                UItemData.ItemEffect e = d.getEffects().get(i);
+                String ep = id + ".effects.e" + i;
+                if (e.getTrigger() != null) cfg.set(ep + ".trigger", e.getTrigger());
+                if (e.getType() != null) cfg.set(ep + ".type", e.getType());
+                cfg.set(ep + ".chance", e.getChance());
+                if (e.getValue() != 0) cfg.set(ep + ".value", e.getValue());
+                if (e.isApplyToTarget()) cfg.set(ep + ".apply-to-target", true);
+            }
+        }
+
+        synchronized (fileLock) {
+            try {
+                cfg.save(target);
+            } catch (IOException e) {
+                plugin.getLogger().warning("[UItem] Failed to save individual item file " + target.getName() + ": " + e.getMessage());
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -482,6 +667,16 @@ public class StorageManager {
 
     private void writeSnapshot(Map<String, UItemData> snapshot, long writeId) {
         if (snapshot == null || writeId < minAllowedWriteId.get()) return;
+
+        boolean useConsolidated = plugin.getConfig().getBoolean("storage.use-consolidated-files", false);
+        if (!useConsolidated) {
+            // User prefers individual files only (items/<id>.yml)
+            // Still write individuals for safety
+            for (UItemData d : snapshot.values()) {
+                saveItemIndividual(d);
+            }
+            return;
+        }
 
         YamlConfiguration config = new YamlConfiguration();
 
@@ -534,6 +729,49 @@ public class StorageManager {
                     config.set(ep + ".chance", e.getChance());
                     if (e.getValue() != 0) config.set(ep + ".value", e.getValue());
                     if (e.isApplyToTarget()) config.set(ep + ".apply-to-target", true);
+                }
+            }
+
+            // Skills (native skill/passive system)
+            if (d.getSkills() != null && !d.getSkills().isEmpty()) {
+                for (int i = 0; i < d.getSkills().size(); i++) {
+                    com.uitem.skill.Skill sk = d.getSkills().get(i);
+                    String sp = path + ".skills." + (sk.getId() != null ? sk.getId() : "skill" + i);
+
+                    if (sk.getDisplayName() != null) config.set(sp + ".display-name", sk.getDisplayName());
+                    if (sk.getTrigger() != null) config.set(sp + ".trigger", sk.getTrigger().name());
+                    if (sk.getCooldown() > 0) config.set(sp + ".cooldown", sk.getCooldown());
+                    config.set(sp + ".cancel-event", sk.isCancelEvent());
+                    if (sk.getChance() < 100) config.set(sp + ".chance", sk.getChance());
+                    if (sk.getPeriodTicks() != 20) config.set(sp + ".period-ticks", sk.getPeriodTicks());
+
+                    // conditions
+                    if (sk.getConditions() != null && !sk.getConditions().isEmpty()) {
+                        for (int ci = 0; ci < sk.getConditions().size(); ci++) {
+                            com.uitem.skill.SkillCondition c = sk.getConditions().get(ci);
+                            String cp = sp + ".conditions.c" + ci;
+                            if (c.getType() != null) config.set(cp + ".type", c.getType().name());
+                            if (c.getParams() != null) {
+                                for (Map.Entry<String, Object> pe : c.getParams().entrySet()) {
+                                    config.set(cp + "." + pe.getKey(), pe.getValue());
+                                }
+                            }
+                        }
+                    }
+
+                    // actions
+                    if (sk.getActions() != null && !sk.getActions().isEmpty()) {
+                        for (int ai = 0; ai < sk.getActions().size(); ai++) {
+                            com.uitem.skill.SkillAction a = sk.getActions().get(ai);
+                            String ap = sp + ".actions.a" + ai;
+                            if (a.getType() != null) config.set(ap + ".type", a.getType().name());
+                            if (a.getParams() != null) {
+                                for (Map.Entry<String, Object> pe : a.getParams().entrySet()) {
+                                    config.set(ap + "." + pe.getKey(), pe.getValue());
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

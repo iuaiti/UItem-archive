@@ -78,7 +78,8 @@ Mỗi custom item có thể có:
 - **Rarity** — độ hiếm (COMMON → ULTRA)
 - **oraxen-id** — tích hợp Oraxen
 - **itemsadder-id** — tích hợp ItemsAdder
-- **executableitems-id** — tích hợp ExecutableItems
+- **executableitems-id** — tích hợp ExecutableItems (tùy chọn)
+- **skills** — hệ thống **Skill & Passive native** (giống ExecutableItems nhưng dễ và ổn định hơn)
 - **Recipe** — công thức chế tạo (shaped/shapeless)
 
 ### Resource Pack tự động
@@ -99,6 +100,66 @@ Mỗi custom item có thể có:
 ### Hỗ trợ Folia
 
 Plugin chạy ổn định trên cả Paper, Spigot và Folia nhờ `SchedulerUtil`.
+
+---
+
+## ⚡ Hệ thống Skill & Passive Native (Mới)
+
+UItem có hệ thống **skill/passive tích hợp sẵn**, mạnh mẽ, dễ dùng và ổn định hơn ExecutableItems rất nhiều:
+
+- Không cần plugin nặng bên ngoài.
+- Cấu hình qua GUI trực quan + YAML sạch.
+- Cooldown lưu PersistentDataContainer (giữ sau restart/logout).
+- Hỗ trợ Folia tốt.
+- Dễ mở rộng.
+
+### Trigger phổ biến
+
+| Trigger              | Loại     | Mô tả                              |
+|----------------------|----------|------------------------------------|
+| RIGHT_CLICK          | Active   | Click phải                         |
+| SHIFT_RIGHT_CLICK    | Active   | Shift + click phải                 |
+| HIT                  | Passive  | Đánh trúng mục tiêu                |
+| TAKE_DAMAGE          | Passive  | Bị đánh                            |
+| EQUIP / WHILE_HOLDING| Passive  | Khi mặc/cầm (có PERIODIC)          |
+| PERIODIC             | Passive  | Chạy lặp lại theo period-ticks     |
+
+### Ví dụ config skill (trong items/*.yml)
+
+```yaml
+items:
+  ruby_sword:
+    material: DIAMOND_SWORD
+    skills:
+      fireball:
+        trigger: RIGHT_CLICK
+        cooldown: 6.0
+        cancel-event: true
+        display-name: "<red>Fireball"
+        actions:
+          a0:
+            type: PLAY_SOUND
+            sound: ENTITY_BLAZE_SHOOT
+            volume: 1.0
+            pitch: 1.0
+          a1:
+            type: SHOOT_PROJECTILE
+            projectile: SMALL_FIREBALL
+            speed: 1.6
+            damage: 7.0
+      lifesteal:
+        trigger: HIT
+        cooldown: 0
+        chance: 40
+        actions:
+          a0:
+            type: HEAL
+            amount: 2.5
+```
+
+**Mở editor:** `/uitem editor` → chọn item → nhấn nút **Skills & Passives**.
+
+Các action hỗ trợ sẵn: MESSAGE, ACTION_BAR, PLAY_SOUND, GIVE_POTION, HEAL/DAMAGE, LAUNCH, SHOOT_PROJECTILE, CONSOLE_COMMAND, PLAYER_COMMAND, STRIKE_LIGHTNING, CONSUME_DURABILITY...
 
 ---
 
