@@ -89,7 +89,7 @@ public class SkillEditorGui extends AbstractGui {
             });
         }
 
-        // === Cooldown ===
+        // === Cooldown (row 3) ===
         setItem(28, createItem(Material.CLOCK, String.format(Messages.skillEditorCooldown(), skill.getCooldown()),
                 List.of("<yellow>" + Messages.skillEditorCooldownHint().replace("<yellow>", ""))), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
@@ -102,22 +102,8 @@ public class SkillEditorGui extends AbstractGui {
             });
         });
 
-        // Quick cooldown presets
-        double[] cds = {0, 1, 3, 5, 8, 12, 20};
-        int[] cdSlots = {29,30,31,32,33,34,35};
-        for (int i = 0; i < cds.length; i++) {
-            final double c = cds[i];
-            boolean sel = Math.abs(skill.getCooldown() - c) < 0.1;
-            setItem(cdSlots[i], createItem(sel ? Material.LIME_DYE : Material.GRAY_DYE,
-                    (sel ? "<green>" : "<gray>") + c + "s"), ev -> {
-                skill.setCooldown(c);
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
-                saveAndRefresh();
-            });
-        }
-
         // Chance
-        setItem(37, createItem(Material.GHAST_TEAR, "<gold><bold>Chance: <white>" + (int)skill.getChance() + "%</bold>",
+        setItem(29, createItem(Material.GHAST_TEAR, "<gold><bold>Chance: <white>" + (int)skill.getChance() + "%</bold>",
                 List.of("<gray>% kích hoạt (hữu ích cho passive)")), ev -> {
             plugin.getChatInputManager().requestInput(player, "<yellow>Nhập chance (0-100):", input -> {
                 try { skill.setChance(Double.parseDouble(input.trim())); } catch (Exception ignored) {}
@@ -126,103 +112,89 @@ public class SkillEditorGui extends AbstractGui {
         });
 
         // Cancel event
-        boolean cancel = skill.isCancelEvent();
-        setItem(38, createItem(cancel ? Material.BARRIER : Material.PAPER,
-                "<gold><bold>Cancel Event: <white>" + (cancel ? "BẬT" : "TẮT") + "</bold>",
+        setItem(30, createItem(skill.isCancelEvent() ? Material.BARRIER : Material.PAPER,
+                "<gold><bold>Cancel Event: <white>" + (skill.isCancelEvent() ? "BẬT" : "TẮT") + "</bold>",
                 List.of("<gray>Chỉ ảnh hưởng active trigger (click/drop)",
                         "<yellow>Click để bật/tắt")), ev -> {
-            skill.setCancelEvent(!cancel);
+            skill.setCancelEvent(!skill.isCancelEvent());
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
             saveAndRefresh();
         });
 
-        // === Actions section ===
-        setItem(39, createItem(Material.WRITABLE_BOOK,
+        // === Actions section header (row 3) ===
+        setItem(31, createItem(Material.WRITABLE_BOOK,
                 Messages.skillEditorActionsHeader(skill.getActions().size()),
-                List.of(
-                        Messages.skillEditorActionsHint(),
-                        "<yellow>" + Messages.skillEditorAddAction().replace("<green><bold>+ ", "").replace("</bold>", "")
-                )));
+                List.of(Messages.skillEditorActionsHint())));
 
-        // List current actions (click trái = edit, phải = xóa)
+        // Action list items (row 3-4, slots 32-35 + 36)
         List<SkillAction> acts = skill.getActions();
-        int[] actSlots = {40, 41, 42, 43, 44, 45, 46, 47};
+        int[] actSlots = {32, 33, 34, 35, 36};
         for (int i = 0; i < Math.min(acts.size(), actSlots.length); i++) {
             final int idx = i;
             SkillAction a = acts.get(i);
             ItemStack icon = buildActionIcon(a);
             setItem(actSlots[i], icon, ev -> {
                 if (idx >= skill.getActions().size()) return;
-
                 if (ev.isRightClick()) {
-                    // Xóa
                     skill.getActions().remove(idx);
                     player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
                     saveAndRefresh();
                 } else {
-                    // Edit giá trị chính của action
                     editActionMainValue(a);
                 }
             });
         }
 
         if (acts.isEmpty()) {
-            setItem(49, createItem(Material.BARRIER, "<gray><italic>" + Messages.skillEditorNoActions() + "</italic>",
-                    List.of("<yellow>Click buttons below to add actions")));
+            setItem(31, createItem(Material.BARRIER, "<gray><italic>" + Messages.skillEditorNoActions() + "</italic>",
+                    List.of("<yellow>Use the action buttons below to add actions")));
         }
 
-        setItem(26, createItem(Material.EMERALD_BLOCK, Messages.skillEditorChooseAction(),
-                List.of("<gray>Native skill system - fully GUI driven")) );
-
-        // Quick condition buttons
-        setItem(50, createItem(Material.EMERALD, "<green>Cond: Chance 75%", List.of("<gray>Click to add 75% chance")), ev -> {
+        // Quick condition buttons (row 1, after active triggers)
+        setItem(16, createItem(Material.EMERALD, "<green>Cond: Chance 75%", List.of("<gray>Click to add 75% chance")), ev -> {
             skill.addCondition(com.uitem.skill.SkillCondition.chance(75));
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             saveAndRefresh();
         });
-        setItem(51, createItem(Material.REDSTONE, "<red>Cond: Chance 50%", List.of("<gray>Click to add 50% chance")), ev -> {
+        setItem(17, createItem(Material.REDSTONE, "<red>Cond: Chance 50%", List.of("<gray>Click to add 50% chance")), ev -> {
             skill.addCondition(com.uitem.skill.SkillCondition.chance(50));
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             saveAndRefresh();
         });
-        setItem(52, createItem(Material.BOOK, "<blue>Cond: Permission...", List.of("<gray>Click to set permission")), ev -> {
-            plugin.getChatInputManager().requestInput(player, "<yellow>Enter required permission:", input -> {
-                skill.addCondition(com.uitem.skill.SkillCondition.permission(input.trim()));
-                saveAndRefresh();
-            });
+
+        // === Action type buttons (rows 4-5, không overlap với core config) ===
+        addActionTypeButton(37, Material.PAPER, "MESSAGE", Messages.skillActionDisplay(SkillAction.ActionType.MESSAGE), () -> addActionWithPrompt(SkillAction.ActionType.MESSAGE));
+        addActionTypeButton(38, Material.PAPER, "ACTION_BAR", Messages.skillActionDisplay(SkillAction.ActionType.ACTION_BAR), () -> addActionWithPrompt(SkillAction.ActionType.ACTION_BAR));
+        addActionTypeButton(39, Material.PAPER, "TITLE", Messages.skillActionDisplay(SkillAction.ActionType.TITLE), () -> addActionWithPrompt(SkillAction.ActionType.TITLE));
+        addActionTypeButton(40, Material.NOTE_BLOCK, "PLAY_SOUND", Messages.skillActionDisplay(SkillAction.ActionType.PLAY_SOUND), () -> addActionWithPrompt(SkillAction.ActionType.PLAY_SOUND));
+        addActionTypeButton(41, Material.BLAZE_POWDER, "SPAWN_PARTICLE", Messages.skillActionDisplay(SkillAction.ActionType.SPAWN_PARTICLE), () -> addActionWithPrompt(SkillAction.ActionType.SPAWN_PARTICLE));
+        addActionTypeButton(42, Material.POTION, "GIVE_POTION", Messages.skillActionDisplay(SkillAction.ActionType.GIVE_POTION), () -> addActionWithPrompt(SkillAction.ActionType.GIVE_POTION));
+        addActionTypeButton(43, Material.MILK_BUCKET, "REMOVE_POTION", Messages.skillActionDisplay(SkillAction.ActionType.REMOVE_POTION), () -> addDirectAction(SkillAction.ActionType.REMOVE_POTION));
+        addActionTypeButton(44, Material.GOLDEN_APPLE, "HEAL", Messages.skillActionDisplay(SkillAction.ActionType.HEAL), () -> addNumericAction(SkillAction.ActionType.HEAL, "Enter heal amount (e.g. 3.5):", 3.0));
+        addActionTypeButton(45, Material.IRON_SWORD, "DAMAGE", Messages.skillActionDisplay(SkillAction.ActionType.DAMAGE), () -> addNumericAction(SkillAction.ActionType.DAMAGE, "Enter damage amount (e.g. 5):", 4.0));
+
+        addActionTypeButton(46, Material.FIRE_CHARGE, "SET_FIRE", Messages.skillActionDisplay(SkillAction.ActionType.SET_FIRE), () -> addNumericAction(SkillAction.ActionType.SET_FIRE, "Enter seconds on fire:", 4));
+        addActionTypeButton(47, Material.ELYTRA, "LAUNCH", Messages.skillActionDisplay(SkillAction.ActionType.LAUNCH), () -> addActionWithPrompt(SkillAction.ActionType.LAUNCH));
+        addActionTypeButton(48, Material.ENDER_PEARL, "TELEPORT", Messages.skillActionDisplay(SkillAction.ActionType.TELEPORT), () -> addActionWithPrompt(SkillAction.ActionType.TELEPORT));
+        addActionTypeButton(49, Material.FIRE_CHARGE, "STRIKE_LIGHTNING", Messages.skillActionDisplay(SkillAction.ActionType.STRIKE_LIGHTNING), () -> addDirectAction(SkillAction.ActionType.STRIKE_LIGHTNING));
+        addActionTypeButton(50, Material.BOW, "SHOOT_PROJECTILE", Messages.skillActionDisplay(SkillAction.ActionType.SHOOT_PROJECTILE), () -> addActionWithPrompt(SkillAction.ActionType.SHOOT_PROJECTILE));
+        addActionTypeButton(51, Material.COMMAND_BLOCK, "CONSOLE_COMMAND", Messages.skillActionDisplay(SkillAction.ActionType.CONSOLE_COMMAND), () -> addActionWithPrompt(SkillAction.ActionType.CONSOLE_COMMAND));
+        addActionTypeButton(52, Material.COMMAND_BLOCK, "PLAYER_COMMAND", Messages.skillActionDisplay(SkillAction.ActionType.PLAYER_COMMAND), () -> addActionWithPrompt(SkillAction.ActionType.PLAYER_COMMAND));
+
+        // Potion presets
+        setItem(34, createItem(Material.REDSTONE, "<light_purple>⚡ Potion Presets",
+                List.of("<gray>Click để xem danh sách potion")), ev -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+            new PotionPresetGui(plugin, player, itemData, skill).openAsChildOf(this);
         });
-
-        // ==================== GRID THÊM ACTION BẰNG GUI (dùng slot nội dung an toàn) ====================
-        // Hàng trên (36-44)
-        addActionTypeButton(36, Material.PAPER, "MESSAGE", Messages.skillActionDisplay(SkillAction.ActionType.MESSAGE), () -> addActionWithPrompt(SkillAction.ActionType.MESSAGE));
-        addActionTypeButton(37, Material.PAPER, "ACTION_BAR", Messages.skillActionDisplay(SkillAction.ActionType.ACTION_BAR), () -> addActionWithPrompt(SkillAction.ActionType.ACTION_BAR));
-        addActionTypeButton(38, Material.PAPER, "TITLE", Messages.skillActionDisplay(SkillAction.ActionType.TITLE), () -> addActionWithPrompt(SkillAction.ActionType.TITLE));
-
-        addActionTypeButton(39, Material.NOTE_BLOCK, "PLAY_SOUND", Messages.skillActionDisplay(SkillAction.ActionType.PLAY_SOUND), () -> addActionWithPrompt(SkillAction.ActionType.PLAY_SOUND));
-        addActionTypeButton(40, Material.BLAZE_POWDER, "SPAWN_PARTICLE", Messages.skillActionDisplay(SkillAction.ActionType.SPAWN_PARTICLE), () -> addActionWithPrompt(SkillAction.ActionType.SPAWN_PARTICLE));
-
-        addActionTypeButton(41, Material.POTION, "GIVE_POTION", Messages.skillActionDisplay(SkillAction.ActionType.GIVE_POTION), () -> addActionWithPrompt(SkillAction.ActionType.GIVE_POTION));
-        addActionTypeButton(42, Material.MILK_BUCKET, "REMOVE_POTION", Messages.skillActionDisplay(SkillAction.ActionType.REMOVE_POTION), () -> addDirectAction(SkillAction.ActionType.REMOVE_POTION));
-        addActionTypeButton(43, Material.GOLDEN_APPLE, "HEAL", Messages.skillActionDisplay(SkillAction.ActionType.HEAL), () -> addNumericAction(SkillAction.ActionType.HEAL, "Enter heal amount (e.g. 3.5):", 3.0));
-        addActionTypeButton(44, Material.IRON_SWORD, "DAMAGE", Messages.skillActionDisplay(SkillAction.ActionType.DAMAGE), () -> addNumericAction(SkillAction.ActionType.DAMAGE, "Enter damage amount (e.g. 5):", 4.0));
-
-        // Second row
-        addActionTypeButton(27, Material.FIRE_CHARGE, "SET_FIRE", Messages.skillActionDisplay(SkillAction.ActionType.SET_FIRE), () -> addNumericAction(SkillAction.ActionType.SET_FIRE, "Enter seconds on fire:", 4));
-        addActionTypeButton(28, Material.ELYTRA, "LAUNCH", Messages.skillActionDisplay(SkillAction.ActionType.LAUNCH), () -> addActionWithPrompt(SkillAction.ActionType.LAUNCH));
-        addActionTypeButton(29, Material.ENDER_PEARL, "TELEPORT", Messages.skillActionDisplay(SkillAction.ActionType.TELEPORT), () -> addActionWithPrompt(SkillAction.ActionType.TELEPORT));
-        addActionTypeButton(30, Material.FIRE_CHARGE, "STRIKE_LIGHTNING", Messages.skillActionDisplay(SkillAction.ActionType.STRIKE_LIGHTNING), () -> addDirectAction(SkillAction.ActionType.STRIKE_LIGHTNING));
-        addActionTypeButton(31, Material.BOW, "SHOOT_PROJECTILE", Messages.skillActionDisplay(SkillAction.ActionType.SHOOT_PROJECTILE), () -> addActionWithPrompt(SkillAction.ActionType.SHOOT_PROJECTILE));
-
-        addActionTypeButton(32, Material.COMMAND_BLOCK, "CONSOLE_COMMAND", Messages.skillActionDisplay(SkillAction.ActionType.CONSOLE_COMMAND), () -> addActionWithPrompt(SkillAction.ActionType.CONSOLE_COMMAND));
-        addActionTypeButton(33, Material.COMMAND_BLOCK, "PLAYER_COMMAND", Messages.skillActionDisplay(SkillAction.ActionType.PLAYER_COMMAND), () -> addActionWithPrompt(SkillAction.ActionType.PLAYER_COMMAND));
-        addActionTypeButton(34, Material.ANVIL, "CONSUME_DURABILITY", Messages.skillActionDisplay(SkillAction.ActionType.CONSUME_DURABILITY), () -> addNumericAction(SkillAction.ActionType.CONSUME_DURABILITY, "Enter durability to consume:", 1));
-        addActionTypeButton(35, Material.COOKED_BEEF, "FEED", Messages.skillActionDisplay(SkillAction.ActionType.FEED), () -> addNumericAction(SkillAction.ActionType.FEED, "Enter hunger amount:", 4));
+        setItem(35, createItem(Material.BREWING_STAND, "<light_purple>🍶 Potion Combos",
+                List.of("<gray>Click để xem preset combo")), ev -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+            new PotionPresetComboGui(plugin, player, itemData, skill).openAsChildOf(this);
+        });
 
         // Back
-        setItem(53, createBackButton(), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new SkillListGui(plugin, player, itemData).open();
-        });
+        setItem(53, createBackButton(), ev -> goBack());
     }
 
     private ItemStack buildActionIcon(SkillAction a) {
@@ -278,6 +250,7 @@ public class SkillEditorGui extends AbstractGui {
 
     /**
      * Thêm action và ngay lập tức hỏi giá trị chính qua chat (dễ dùng nhất cho text/command).
+     * Action chỉ được thêm vào skill sau khi người dùng xác nhận input.
      */
     private void addActionWithPrompt(SkillAction.ActionType type) {
         SkillAction action = new SkillAction(type);
@@ -307,28 +280,29 @@ public class SkillEditorGui extends AbstractGui {
             }
         }
 
-        skill.addAction(action);
-        saveAndRefresh();
-
-        // Ask for the most important value right after adding (bilingual via Messages fallback)
+        // Ask for the most important value first, before adding to skill
+        // Chỉ addAction khi user cung cấp input hợp lệ
         switch (type) {
-            case MESSAGE -> promptForActionParam(action, "text", "Enter message content (supports %player% %target%):", Messages.skillUpdated("MESSAGE"));
-            case ACTION_BAR -> promptForActionParam(action, "text", "Enter action bar text:", Messages.skillUpdated("ACTION_BAR"));
-            case TITLE -> promptForActionParam(action, "title", "Enter Title:", Messages.skillUpdated("TITLE"));
-            case PLAY_SOUND -> promptForActionParam(action, "sound", "Enter sound name (e.g. ENTITY_BLAZE_SHOOT):", Messages.skillUpdated("SOUND"));
-            case GIVE_POTION -> promptForActionParam(action, "effect", "Enter potion effect (e.g. SPEED, STRENGTH):", Messages.skillUpdated("POTION"));
-            case SHOOT_PROJECTILE -> promptForActionParam(action, "projectile", "Projectile (SMALL_FIREBALL / ARROW / WITHER_SKULL...):", Messages.skillUpdated("PROJECTILE"));
-            case CONSOLE_COMMAND, PLAYER_COMMAND -> promptForActionParam(action, "command", "Enter command (supports %player% %target%):", Messages.skillUpdated("COMMAND"));
-            case LAUNCH -> promptForActionParam(action, "y", "Enter launch Y power (e.g. 1.5):", Messages.skillUpdated("LAUNCH"));
-            case TELEPORT -> promptForActionParam(action, "y", "Enter teleport Y offset:", Messages.skillUpdated("TELEPORT"));
+            case MESSAGE -> promptForActionParamThenAdd(action, "text", "Enter message content (supports %player% %target%):");
+            case ACTION_BAR -> promptForActionParamThenAdd(action, "text", "Enter action bar text:");
+            case TITLE -> promptForActionParamThenAdd(action, "title", "Enter Title:");
+            case PLAY_SOUND -> promptForActionParamThenAdd(action, "sound", "Enter sound name (e.g. ENTITY_BLAZE_SHOOT):");
+            case GIVE_POTION -> promptForActionParamThenAdd(action, "effect", "Enter potion effect (e.g. SPEED, STRENGTH):");
+            case SHOOT_PROJECTILE -> promptForActionParamThenAdd(action, "projectile", "Projectile (SMALL_FIREBALL / ARROW / WITHER_SKULL...):");
+            case CONSOLE_COMMAND, PLAYER_COMMAND -> promptForActionParamThenAdd(action, "command", "Enter command (supports %player% %target%):");
+            case LAUNCH -> promptForActionParamThenAdd(action, "y", "Enter launch Y power (e.g. 1.5):");
+            case TELEPORT -> promptForActionParamThenAdd(action, "y", "Enter teleport Y offset:");
             default -> {
+                skill.addAction(action);
                 player.sendMessage(TextUtil.success(Messages.skillAdded(type.name())));
+                saveAndRefresh();
             }
         }
     }
 
     /**
      * Thêm action có giá trị số, cho phép chọn nhanh bằng button trước khi hỏi custom.
+     * Action chỉ được thêm vào skill sau khi người dùng xác nhận input.
      */
     private void addNumericAction(SkillAction.ActionType type, String prompt, double defaultValue) {
         SkillAction action = new SkillAction(type);
@@ -342,11 +316,8 @@ public class SkillEditorGui extends AbstractGui {
             case SET_FIRE -> action.setParam("seconds", (int) defaultValue);
         }
 
-        skill.addAction(action);
-        saveAndRefresh();
-
-        // Cho người dùng chỉnh ngay giá trị số
-        promptForActionParam(action, (type == SkillAction.ActionType.SET_FIRE ? "seconds" : "amount"), prompt, Messages.skillUpdated(type.name()));
+        // Cho người dùng chỉnh ngay giá trị số trước khi add
+        promptForActionParamThenAdd(action, (type == SkillAction.ActionType.SET_FIRE ? "seconds" : "amount"), prompt);
     }
 
     /** Thêm action không cần input (có giá trị mặc định tốt) */
@@ -357,12 +328,11 @@ public class SkillEditorGui extends AbstractGui {
         saveAndRefresh();
     }
 
-    /** Hỏi giá trị 1 param rồi lưu + refresh */
+    /** Hỏi giá trị 1 param rồi lưu + refresh (action đã tồn tại trong skill) */
     private void promptForActionParam(SkillAction action, String paramKey, String promptMessage, String successMsg) {
         plugin.getChatInputManager().requestInput(player, "<yellow>" + promptMessage, input -> {
             try {
                 String val = input.trim();
-                // Thử parse số nếu param là amount / y / seconds...
                 if (paramKey.equals("amount") || paramKey.equals("y") || paramKey.equals("seconds") || paramKey.equals("speed") || paramKey.equals("damage")) {
                     double num = Double.parseDouble(val);
                     action.setParam(paramKey, num);
@@ -371,7 +341,33 @@ public class SkillEditorGui extends AbstractGui {
                 }
                 player.sendMessage(TextUtil.success(successMsg));
             } catch (Exception e) {
-                // Giữ giá trị mặc định nếu parse fail
+                player.sendMessage(TextUtil.info("Added with default value (click the action again to edit)."));
+            }
+            saveAndRefresh();
+        });
+    }
+
+    /**
+     * Hỏi giá trị param, chỉ add action vào skill nếu input hợp lệ và không phải "cancel".
+     */
+    private void promptForActionParamThenAdd(SkillAction action, String paramKey, String promptMessage) {
+        plugin.getChatInputManager().requestInput(player, "<yellow>" + promptMessage + " (type 'cancel' to abort)", input -> {
+            if (input.equalsIgnoreCase("cancel") || input.equalsIgnoreCase("huy")) {
+                player.sendMessage(TextUtil.info("Cancelled."));
+                return;
+            }
+            try {
+                String val = input.trim();
+                if (paramKey.equals("amount") || paramKey.equals("y") || paramKey.equals("seconds") || paramKey.equals("speed") || paramKey.equals("damage")) {
+                    double num = Double.parseDouble(val);
+                    action.setParam(paramKey, num);
+                } else {
+                    action.setParam(paramKey, val);
+                }
+                skill.addAction(action);
+                player.sendMessage(TextUtil.success(Messages.skillAdded(action.getType().getDisplay())));
+            } catch (Exception e) {
+                skill.addAction(action);
                 player.sendMessage(TextUtil.info("Added with default value (click the action again to edit)."));
             }
             saveAndRefresh();

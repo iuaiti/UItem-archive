@@ -4,8 +4,6 @@ import com.uitem.UItemPlugin;
 import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -20,20 +18,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-/**
- * Base class cho tất cả GUI trong UItem.
- * Cung cấp:
- * - Tạo inventory
- * - Map slot → click handler
- * - Helper methods tạo button
- * - Border fill
- */
 public abstract class AbstractGui implements InventoryHolder {
 
     protected final UItemPlugin plugin;
     protected final Player player;
     protected Inventory inventory;
     protected final Map<Integer, Consumer<InventoryClickEvent>> clickHandlers;
+
+    private Runnable backAction;
 
     public AbstractGui(UItemPlugin plugin, Player player, int size, String title) {
         this.plugin = plugin;
@@ -48,17 +40,30 @@ public abstract class AbstractGui implements InventoryHolder {
         return inventory;
     }
 
-    /**
-     * Mở GUI cho player. Gọi setup() rồi mở inventory.
-     */
     public void open() {
         setup();
         player.openInventory(inventory);
     }
 
     /**
-     * Refresh GUI (clear và setup lại).
+     * Open this GUI as a child of the given parent.
+     * The back button will reopen the parent GUI.
      */
+    public void openAsChildOf(AbstractGui parent) {
+        if (parent != null) {
+            this.backAction = () -> parent.reopen();
+        }
+        open();
+    }
+
+    /**
+     * Open this GUI as root (no parent, close on back).
+     */
+    public void openAsRoot() {
+        this.backAction = null;
+        open();
+    }
+
     public void refresh() {
         clickHandlers.clear();
         inventory.clear();
@@ -66,13 +71,18 @@ public abstract class AbstractGui implements InventoryHolder {
     }
 
     /**
-     * Method abstract — mỗi GUI phải implement để setup nội dung.
+     * Clear, setup lại, và mở lại inventory.
+     * Dùng cho goBack() để parent GUI được hiển thị đúng.
      */
+    public void reopen() {
+        clickHandlers.clear();
+        inventory.clear();
+        setup();
+        player.openInventory(inventory);
+    }
+
     protected abstract void setup();
 
-    /**
-     * Xử lý click event. Gọi từ GuiListener.
-     */
     public void handleClick(InventoryClickEvent event) {
         event.setCancelled(true);
         int slot = event.getRawSlot();
@@ -82,11 +92,23 @@ public abstract class AbstractGui implements InventoryHolder {
         }
     }
 
-    // === Helper methods ===
+    public void handleBottomInventoryClick(InventoryClickEvent event) {
+        event.setCancelled(false);
+    }
 
-    /**
-     * Đặt item vào slot với click handler.
-     */
+    protected void setBackAction(Runnable backAction) {
+        this.backAction = backAction;
+    }
+
+    public void goBack() {
+        player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+        if (backAction != null) {
+            backAction.run();
+        } else {
+            player.closeInventory();
+        }
+    }
+
     protected void setItem(int slot, ItemStack item, Consumer<InventoryClickEvent> handler) {
         inventory.setItem(slot, item);
         if (handler != null) {
@@ -94,16 +116,10 @@ public abstract class AbstractGui implements InventoryHolder {
         }
     }
 
-    /**
-     * Đặt item vào slot không có handler.
-     */
     protected void setItem(int slot, ItemStack item) {
         inventory.setItem(slot, item);
     }
 
-    /**
-     * Fill border với glass pane. (nicer dark theme)
-     */
     protected void fillBorder(int rows) {
         ItemStack border = createItem(Material.GRAY_STAINED_GLASS_PANE, " ");
         int size = rows * 9;
@@ -116,9 +132,6 @@ public abstract class AbstractGui implements InventoryHolder {
         }
     }
 
-    /**
-     * Tạo ItemStack đơn giản.
-     */
     protected ItemStack createItem(Material material, String name) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
@@ -129,9 +142,6 @@ public abstract class AbstractGui implements InventoryHolder {
         return item;
     }
 
-    /**
-     * Tạo ItemStack với lore.
-     */
     protected ItemStack createItem(Material material, String name, List<String> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
@@ -145,23 +155,14 @@ public abstract class AbstractGui implements InventoryHolder {
         return item;
     }
 
-    /**
-     * Tạo button quay lại.
-     */
     protected ItemStack createBackButton() {
         return createItem(Material.ARROW, Messages.guiBack(), List.of(Messages.guiBackDesc()));
     }
 
-    /**
-     * Tạo button trang trước.
-     */
     protected ItemStack createPreviousButton() {
         return createItem(Material.ARROW, "<yellow>◄ Previous page");
     }
 
-    /**
-     * Tạo button trang sau.
-     */
     protected ItemStack createNextButton() {
         return createItem(Material.ARROW, "<yellow>Next page ►");
     }

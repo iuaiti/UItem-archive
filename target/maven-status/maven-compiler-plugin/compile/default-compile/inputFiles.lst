@@ -21,10 +21,13 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/EnchantmentGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/FlagGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/GuiListener.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/GuiStack.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ItemEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ItemListGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/LoreEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/MaterialPickerGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PotionPresetComboGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PotionPresetGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/RarityEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/RarityListGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/RecipeDetailGui.java
@@ -45,6 +48,8 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/resourcepack/ResourcePackServer.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/search/SearchManager.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/CooldownManager.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/skill/PotionAuraManager.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/skill/PotionEffectHelper.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/Skill.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillAction.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillCondition.java
@@ -52,5 +57,6 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillTrigger.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/storage/StorageManager.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/util/Messages.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/util/PotionEffectRegistry.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/util/SchedulerUtil.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/util/TextUtil.java

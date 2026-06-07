@@ -193,6 +193,6 @@ public class MaterialPickerGui extends AbstractGui {
         setItem(52, page < totalPages - 1 ? createNextButton() : createItem(Material.GRAY_STAINED_GLASS_PANE, " "),
                 page < totalPages - 1 ? ev -> { page++; refresh(); } : null);
 
-        setItem(45, createBackButton(), ev -> new ItemEditorGui(plugin, player, data).open());
+        setItem(45, createBackButton(), ev -> goBack());
     }
 }

@@ -254,8 +254,7 @@ public class RecipeManager {
     // ═════════════════════════════════════════════════════════════════════════
 
     public void saveRecipes() {
-        // Prefer individual files now (recipes/<id>.yml). Full doSave kept for legacy.
-        // doSave();
+        doSave();
     }
 
     public void saveRecipeIndividual(String resultItemId, UItemRecipe recipe) {

@@ -218,6 +218,10 @@ public class RecipeEditorGui implements InventoryHolder {
         }
 
         if (slot == GIVE_CURRENT_SLOT) {
+            if (!player.hasPermission("uitem.give")) {
+                player.sendMessage(com.uitem.util.TextUtil.error(com.uitem.util.Messages.noPermission()));
+                return;
+            }
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             ItemStack one = plugin.getItemManager().buildItemStack(data);
             one.setAmount(1);

@@ -48,8 +48,8 @@ public class SkillListGui extends AbstractGui {
             Skill sk = current.get(i);
             ItemStack icon = buildSkillIcon(sk);
             setItem(slots[i], icon, ev -> {
-                if (ev.isRightClick()) {
-                    // Xóa
+                if (ev.isShiftClick() && ev.isRightClick()) {
+                    // Shift + Right Click = Xóa
                     if (idx < data.getSkills().size()) {
                         data.getSkills().remove(idx);
                         player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.6f, 1.0f);
@@ -58,9 +58,11 @@ public class SkillListGui extends AbstractGui {
                         refresh();
                     }
                 } else {
-                    // Edit
-                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
-                    new SkillEditorGui(plugin, player, data, sk).open();
+                    // Left Click = Edit
+                    if (idx < data.getSkills().size()) {
+                        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+                        new SkillEditorGui(plugin, player, data, data.getSkills().get(idx)).openAsChildOf(this);
+                    }
                 }
             });
         }
@@ -111,10 +113,7 @@ public class SkillListGui extends AbstractGui {
         });
 
         // Back
-        setItem(53, createBackButton(), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new ItemEditorGui(plugin, player, data).open();
-        });
+        setItem(53, createBackButton(), ev -> goBack());
     }
 
     private ItemStack buildSkillIcon(Skill sk) {
@@ -136,7 +135,7 @@ public class SkillListGui extends AbstractGui {
         lore.add("<gray>Actions: <white>" + sk.getActions().size());
         lore.add("");
         lore.add(Messages.skillListClickEdit());
-        lore.add(Messages.skillListClickDelete());
+        lore.add("<red>Shift + Right-click để xóa");
         return createItem(mat, "<light_purple>" + sk.getId() + " <dark_gray>→ <white>" + sk.getTrigger().name(), lore);
     }
 
@@ -162,7 +161,6 @@ public class SkillListGui extends AbstractGui {
         sk.setTrigger(SkillTrigger.HIT);
         sk.setCooldown(0);
         sk.setChance(35);
-        sk.addCondition(com.uitem.skill.SkillCondition.chance(35));
         sk.addAction(com.uitem.skill.SkillAction.heal(2.5));
         sk.addAction(com.uitem.skill.SkillAction.actionBar("<red>+2.5 HP"));
         data.getSkills().add(sk);

@@ -427,12 +427,14 @@ public class CraftingGui implements InventoryHolder {
                 }
             }
 
-            // Cập nhật lại slot player — đây là fix cốt lõi tránh item biến mất
+            // Cập nhật lại slot player — setAmount(0) unreliable, dùng setItem trực tiếp
             if (remaining != clicked.getAmount()) {
+                int clickedSlot = event.getSlot();
                 if (remaining <= 0) {
-                    event.getCurrentItem().setAmount(0);
+                    player.getInventory().setItem(clickedSlot, null);
                 } else {
-                    event.getCurrentItem().setAmount(remaining);
+                    clicked.setAmount(remaining);
+                    player.getInventory().setItem(clickedSlot, clicked);
                 }
                 SchedulerUtil.runSync(plugin, () -> {
                     updateResult();

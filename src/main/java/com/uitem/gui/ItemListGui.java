@@ -42,6 +42,15 @@ public class ItemListGui extends AbstractGui {
     }
 
     @Override
+    public void open() {
+        if (!player.hasPermission("uitem.editor")) {
+            player.sendMessage(TextUtil.error(com.uitem.util.Messages.noPermission()));
+            return;
+        }
+        super.open();
+    }
+
+    @Override
     protected void setup() {
         // Fill border
         fillBorder(6);
@@ -120,7 +129,7 @@ public class ItemListGui extends AbstractGui {
                     if (event.getClick() == ClickType.LEFT) {
                         // Mở editor
                         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                        new ItemEditorGui(plugin, player, data).open();
+                        new ItemEditorGui(plugin, player, data).openAsChildOf(this);
                     } else if (event.getClick() == ClickType.RIGHT) {
                         // Xóa item - confirm
                         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 0.5f);

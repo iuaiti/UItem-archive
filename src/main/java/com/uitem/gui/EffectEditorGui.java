@@ -235,10 +235,7 @@ public class EffectEditorGui extends AbstractGui {
         });
 
         // Nút Quay lại ở dưới
-        setItem(53, createBackButton(), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new ItemEditorGui(plugin, player, data).open();
-        });
+        setItem(53, createBackButton(), ev -> goBack());
     }
 
     private String safe(String s) {

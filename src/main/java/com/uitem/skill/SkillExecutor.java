@@ -51,7 +51,6 @@ public final class SkillExecutor {
         if (skills == null || skills.isEmpty()) return false;
 
         boolean anyExecuted = false;
-        boolean shouldCancel = false;
 
         for (Skill skill : skills) {
             if (skill.getTrigger() != trigger) continue;
@@ -60,20 +59,13 @@ public final class SkillExecutor {
             if (!checkConditions(player, skill, target)) continue;
             if (!cooldowns.isReady(player, itemId, skill.getId(), skill.getCooldown())) continue;
 
-            // Execute actions
             boolean ok = executeSkillActions(player, itemId, skill, target);
             if (ok) {
                 cooldowns.markUsed(player, itemId, skill.getId());
                 anyExecuted = true;
-                if (skill.isCancelEvent() && trigger.isActive()) {
-                    shouldCancel = true;
-                }
             }
         }
 
-        if (shouldCancel) {
-            // Caller sẽ quyết định cancel event dựa trên return
-        }
         return anyExecuted;
     }
 
@@ -98,7 +90,7 @@ public final class SkillExecutor {
             return switch (cond.getType()) {
                 case ALWAYS -> true;
                 case CHANCE -> ThreadLocalRandom.current().nextDouble(100) <= cond.getDouble("value", 100);
-                case PERMISSION -> {
+                case PERMISSION, HAS_PERMISSION -> {
                     String perm = cond.getString("permission", "");
                     yield perm.isEmpty() || player.hasPermission(perm);
                 }
@@ -201,7 +193,9 @@ public final class SkillExecutor {
                 try {
                     Particle particle = Particle.valueOf(p.toUpperCase(Locale.ROOT));
                     world.spawnParticle(particle, loc.clone().add(0, 1, 0), count, off, off, off, 0.01);
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    plugin.getLogger().warning("[Skill] SPAWN_PARTICLE: invalid particle '" + p + "'");
+                }
                 return true;
             }
 
@@ -215,7 +209,9 @@ public final class SkillExecutor {
 
             case HEAL -> {
                 double amt = action.getDoubleParam("amount", 4.0);
-                double newHp = Math.min(player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue(), player.getHealth() + amt);
+                var maxHealthAttr = player.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+                double maxHp = maxHealthAttr != null ? maxHealthAttr.getValue() : 20.0;
+                double newHp = Math.min(maxHp, player.getHealth() + amt);
                 player.setHealth(newHp);
                 return true;
             }
@@ -227,7 +223,7 @@ public final class SkillExecutor {
             }
 
             case SET_FIRE -> {
-                int sec = action.getIntParam("seconds", 4);
+                int sec = Math.min(action.getIntParam("seconds", 4), 10000);
                 player.setFireTicks(sec * 20);
                 return true;
             }
@@ -236,9 +232,17 @@ public final class SkillExecutor {
                 double x = action.getDoubleParam("x", 0);
                 double y = action.getDoubleParam("y", 1.2);
                 double z = action.getDoubleParam("z", 0);
-                Vector v = new Vector(x, y, z);
+                Vector v;
                 if (action.getBooleanParam("relative", true)) {
-                    v = player.getLocation().getDirection().multiply(x).setY(y);
+                    Vector dir = player.getLocation().getDirection();
+                    v = dir.clone().multiply(x > 0 ? x : 1);
+                    v.setY(v.getY() + y);
+                    if (z != 0) {
+                        Vector lateral = new Vector(-dir.getZ(), 0, dir.getX()).normalize().multiply(z);
+                        v.add(lateral);
+                    }
+                } else {
+                    v = new Vector(x, y, z);
                 }
                 player.setVelocity(v);
                 return true;
@@ -351,13 +355,18 @@ public final class SkillExecutor {
             }
 
             case GIVE_ITEM -> {
-                // Simple: give vanilla material (advanced: support uitem later via API)
                 String mat = action.getStringParam("material", "DIAMOND");
                 int amt = action.getIntParam("amount", 1);
                 try {
                     Material m = Material.valueOf(mat.toUpperCase(Locale.ROOT));
-                    player.getInventory().addItem(new ItemStack(m, amt));
-                } catch (Exception ignored) {}
+                    ItemStack toGive = new ItemStack(m, amt);
+                    var leftovers = player.getInventory().addItem(toGive);
+                    for (ItemStack leftover : leftovers.values()) {
+                        player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("[Skill] GIVE_ITEM: invalid material '" + mat + "'");
+                }
                 return true;
             }
 
@@ -401,7 +410,7 @@ public final class SkillExecutor {
     public void tickPeriodicSkills(Player player, String itemId, List<Skill> skills, SkillTrigger triggerType) {
         if (skills == null) return;
         for (Skill skill : skills) {
-            if (skill.getTrigger() != triggerType) continue;
+            if (skill == null || skill.getTrigger() != triggerType) continue;
             if (!cooldowns.isReady(player, itemId, skill.getId(), skill.getCooldown())) continue;
             // For periodic we use cooldown field as "minimum interval"
             if (!checkChance(skill)) continue;

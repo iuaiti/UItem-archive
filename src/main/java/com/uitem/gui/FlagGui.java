@@ -81,10 +81,7 @@ public class FlagGui extends AbstractGui {
         }
 
         // Quay lại
-        setItem(31, createBackButton(), event -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new ItemEditorGui(plugin, player, data).open();
-        });
+        setItem(31, createBackButton(), event -> goBack());
     }
 
     private String getFlagDescription(ItemFlag flag) {

@@ -216,7 +216,7 @@ public class UItemManager {
                     AttributeModifier.Operation operation = AttributeModifier.Operation.valueOf(attrData.getOperation());
                     EquipmentSlotGroup slotGroup = parseEquipmentSlotGroup(attrData.getSlot());
 
-                    NamespacedKey attrKey = new NamespacedKey(plugin, data.getId() + "_" + attrData.getAttribute().toLowerCase());
+                    NamespacedKey attrKey = new NamespacedKey(plugin, data.getId() + "_" + attrData.getAttribute().toLowerCase() + "_" + attrData.getOperation() + "_" + attrData.getSlot());
                     AttributeModifier modifier = new AttributeModifier(
                             attrKey,
                             attrData.getAmount(),

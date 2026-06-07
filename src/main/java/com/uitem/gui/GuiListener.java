@@ -12,14 +12,18 @@ public class GuiListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
-        if (event.getClickedInventory() == null) {
-            return;
-        }
+        if (event.getClickedInventory() == null) return;
 
         InventoryHolder holder = event.getView().getTopInventory().getHolder();
         if (holder instanceof AbstractGui gui) {
-            event.setCancelled(true);
-            gui.handleClick(event);
+            if (event.getClickedInventory() == event.getView().getBottomInventory()) {
+                // Player clicked their own inventory → cho phép pick item
+                gui.handleBottomInventoryClick(event);
+            } else {
+                // Player clicked top GUI → cancel + handler
+                event.setCancelled(true);
+                gui.handleClick(event);
+            }
         } else if (holder instanceof CraftingGui gui) {
             gui.handleClick(event);
         } else if (holder instanceof RecipeEditorGui gui) {
@@ -31,7 +35,12 @@ public class GuiListener implements Listener {
     public void onInventoryDrag(InventoryDragEvent event) {
         InventoryHolder holder = event.getView().getTopInventory().getHolder();
         if (holder instanceof AbstractGui) {
-            event.setCancelled(true);
+            // Allow drag only in bottom inventory
+            boolean allBottom = event.getRawSlots().stream()
+                    .allMatch(slot -> slot >= ((AbstractGui) holder).getInventory().getSize());
+            if (!allBottom) {
+                event.setCancelled(true);
+            }
         } else if (holder instanceof CraftingGui gui) {
             gui.handleDrag(event);
         } else if (holder instanceof RecipeEditorGui gui) {
@@ -46,9 +55,6 @@ public class GuiListener implements Listener {
             gui.onClose();
             CraftingGui.removeCraftingPlayer((org.bukkit.entity.Player) event.getPlayer());
         } else if (holder instanceof RecipeEditorGui gui) {
-            // Bug fix: Return craft slot items to player when RecipeEditorGui is closed
-            // to prevent item loss. Previously, items placed in the recipe editor's
-            // crafting slots were permanently lost when the GUI was closed.
             gui.onClose((org.bukkit.entity.Player) event.getPlayer());
         }
     }

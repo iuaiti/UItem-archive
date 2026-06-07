@@ -8,6 +8,7 @@ import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -22,11 +23,30 @@ import java.util.List;
 public class ItemEditorGui extends AbstractGui {
 
     private final UItemData data;
+    private boolean materialPickMode = false;
 
     public ItemEditorGui(UItemPlugin plugin, Player player, UItemData data) {
         super(plugin, player, 54,
                 "<gradient:#ff6b6b:#ffd93d>Chỉnh sửa: </gradient><white>" + data.getId());
         this.data = data;
+    }
+
+    @Override
+    public void handleBottomInventoryClick(InventoryClickEvent event) {
+        if (materialPickMode) {
+            event.setCancelled(true);
+            ItemStack clicked = event.getCurrentItem();
+            if (clicked != null && clicked.getType() != Material.AIR) {
+                Material mat = clicked.getType();
+                data.setMaterial(mat);
+                player.sendMessage(TextUtil.success("<green>Đã đặt vật liệu thành: <white>" + mat.name()));
+                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.0f);
+                materialPickMode = false;
+                saveAndRefresh();
+            }
+        } else {
+            event.setCancelled(false);
+        }
     }
 
     @Override
@@ -37,18 +57,45 @@ public class ItemEditorGui extends AbstractGui {
         ItemStack preview = plugin.getItemManager().buildItemStack(data);
         setItem(4, preview);
 
-        // === Material (slot 10) - Open Material Picker ===
-        setItem(10, createItem(Material.CRAFTING_TABLE,
+        // === Material (slot 10) - Open Material Picker / Pick from Inventory ===
+        Material currentMat = data.getMaterial() != null ? data.getMaterial() : Material.STONE;
+        setItem(10, createItem(currentMat,
                 "<gold><bold>Vật Liệu</bold>",
                 List.of(
-                        "<gray>Hiện tại: <white>" + (data.getMaterial() != null ? data.getMaterial().name() : "STONE"),
+                        "<gray>Hiện tại: <white>" + currentMat.name(),
                         "",
                         "<yellow>Click để mở danh sách vật liệu",
-                        "<gray>Xem tất cả block, item, công cụ, giáp..."
-                )), event -> {
+                        "<green>Shift+Click để pick từ inventory",
+                        "<gray>Pick trực tiếp item từ túi đồ của bạn"
+                )        ), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new MaterialPickerGui(plugin, player, data, null).open();
+            if (event.isShiftClick()) {
+                materialPickMode = !materialPickMode;
+                if (materialPickMode) {
+                    player.sendMessage(TextUtil.info("<green>Click vào item trong inventory để chọn làm vật liệu. Click lại slot để thoát."));
+                    refresh();
+                } else {
+                    refresh();
+                }
+            } else {
+                new MaterialPickerGui(plugin, player, data, null).openAsChildOf(this);
+            }
         });
+
+        // Pick mode indicator (hiển thị khi đang chọn material từ inventory)
+        if (materialPickMode) {
+            setItem(48, createItem(Material.LIME_STAINED_GLASS_PANE,
+                    "<green><bold>📦 PICK MODE: Click item trong inventory</bold>",
+                    List.of(
+                            "<gray>Click vào bất kỳ item nào trong túi đồ",
+                            "<gray>để đặt làm vật liệu cho item này",
+                            "",
+                            "<red>Right-click để thoát"
+                    )), ev -> {
+                materialPickMode = false;
+                refresh();
+            });
+        }
 
         // === Display Name (slot 11) ===
         setItem(11, createItem(Material.NAME_TAG,
@@ -78,9 +125,9 @@ public class ItemEditorGui extends AbstractGui {
                         "",
                         "<yellow>Click để chỉnh lore",
                         "<gray>Mở GUI Chỉnh Lore"
-                )), event -> {
+                )        ), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new LoreEditorGui(plugin, player, data).open();
+            new LoreEditorGui(plugin, player, data).openAsChildOf(this);
         });
 
         // === Enchantments (slot 13) ===
@@ -94,7 +141,7 @@ public class ItemEditorGui extends AbstractGui {
                         "<yellow>Click để chỉnh phù phép"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new EnchantmentGui(plugin, player, data).open();
+            new EnchantmentGui(plugin, player, data).openAsChildOf(this);
         });
 
         // === Flags (slot 14) ===
@@ -108,7 +155,7 @@ public class ItemEditorGui extends AbstractGui {
                         "<yellow>Click để chỉnh cờ"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new FlagGui(plugin, player, data).open();
+            new FlagGui(plugin, player, data).openAsChildOf(this);
         });
 
         // === Custom Model Data (slot 15) ===
@@ -334,7 +381,7 @@ public class ItemEditorGui extends AbstractGui {
                         "<gray>Dễ copy-paste và chỉnh sửa"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new RarityListGui(plugin, player).open();
+            new RarityListGui(plugin, player).openAsChildOf(this);
         });
 
         // === ExecutableItems ID (slot 22) - only show if ExecutableItems is present ===
@@ -419,7 +466,7 @@ public class ItemEditorGui extends AbstractGui {
                         "<gray>Hỗ trợ: Right/Left Click, Hit, Equip, Periodic, v.v."
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new SkillListGui(plugin, player, data).open();
+            new SkillListGui(plugin, player, data).openAsChildOf(this);
         });
 
         // === Recipe (slot 25) - Open Recipe Editor ===
@@ -438,9 +485,9 @@ public class ItemEditorGui extends AbstractGui {
             new RecipeEditorGui(plugin, player, data).open();
         });
 
-        // === Hiệu Ứng (phản đòn / sát thương thêm khi hit/damage/equip/fullset/die) slot 26 ===
+        // === Hiệu Ứng (phản đòn / sát thương thêm khi hit/damage/equip/fullset/die) slot 27 ===
         int effCount = (data.getEffects() != null) ? data.getEffects().size() : 0;
-        setItem(26, createItem(
+        setItem(27, createItem(
                 effCount > 0 ? Material.BOOK : Material.PAPER,
                 "<light_purple><bold>Hiệu Ứng Đã Gắn</bold>",
                 List.of(
@@ -453,14 +500,12 @@ public class ItemEditorGui extends AbstractGui {
                         "<gray>FULL_SET kích hoạt khi mặc đủ 4 món giáp"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new EffectEditorGui(plugin, player, data).open();
+            new EffectEditorGui(plugin, player, data).openAsChildOf(this);
         });
-
+ 
         // === Back button (slot 46) ===
-        setItem(46, createBackButton(), event -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new ItemListGui(plugin, player).open();
-        });
+        setItem(46, createBackButton(), event -> goBack());
+
 
         // === SAVE button (slot 49) ===
         setItem(49, createItem(Material.EMERALD,

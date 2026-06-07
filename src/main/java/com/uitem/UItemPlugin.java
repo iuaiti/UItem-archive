@@ -186,6 +186,11 @@ public final class UItemPlugin extends JavaPlugin {
         // Clear static crafting GUI tracking set
         com.uitem.gui.CraftingGui.removeCraftingPlayer(null);
 
+        if (resourcePackJoinListener != null) {
+            HandlerList.unregisterAll(resourcePackJoinListener);
+            resourcePackJoinListener = null;
+        }
+
         if (packServer != null) {
             packServer.stop();
         }

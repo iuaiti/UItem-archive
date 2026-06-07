@@ -142,10 +142,7 @@ public class EnchantmentGui extends AbstractGui {
         }
 
         // Quay lại
-        setItem(49, createBackButton(), event -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new ItemEditorGui(plugin, player, data).open();
-        });
+        setItem(49, createBackButton(), event -> goBack());
     }
 
     private String toRoman(int number) {

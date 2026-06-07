@@ -42,6 +42,9 @@ public class UItemSkillListener implements Listener {
     // Track item đang cầm để WHILE_HOLDING
     private final Map<UUID, String> lastHeldUItem = new HashMap<>();
 
+    // Reentrancy guard: ngăn DAMAGE action gọi target.damage() → EntityDamageByEntityEvent → vòng lặp vô hạn
+    private boolean inDamageProcessing = false;
+
     // Periodic ticker (chạy mỗi 5 tick ~0.25s, đủ mượt cho hầu hết aura/regen)
     private BukkitTask periodicTask;
 
@@ -164,32 +167,40 @@ public class UItemSkillListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent event) {
-        // HIT: damager dùng UItem
-        if (event.getDamager() instanceof Player damager) {
-            ItemStack weapon = damager.getInventory().getItemInMainHand();
-            UItemData data = getUItemData(weapon);
-            if (data != null && data.getSkills() != null) {
-                LivingEntity victim = (event.getEntity() instanceof LivingEntity le) ? le : null;
-                executor.executeSkills(damager, data.getId(), data.getSkills(), SkillTrigger.HIT, victim);
-            }
-        }
-
-        // TAKE_DAMAGE: victim đang cầm hoặc mặc UItem có skill
-        if (event.getEntity() instanceof Player victim) {
-            // held
-            ItemStack held = victim.getInventory().getItemInMainHand();
-            UItemData heldData = getUItemData(held);
-            if (heldData != null && heldData.getSkills() != null) {
-                executor.executeSkills(victim, heldData.getId(), heldData.getSkills(), SkillTrigger.TAKE_DAMAGE, null);
-            }
-            // armor
-            for (ItemStack armor : victim.getInventory().getArmorContents()) {
-                if (armor == null || armor.getType().isAir()) continue;
-                UItemData ad = getUItemData(armor);
-                if (ad != null && ad.getSkills() != null) {
-                    executor.executeSkills(victim, ad.getId(), ad.getSkills(), SkillTrigger.TAKE_DAMAGE, null);
+        // Reentrancy guard: DAMAGE action gọi target.damage() sinh ra EntityDamageByEntityEvent mới,
+        // nếu không guard sẽ gây đệ quy vô hạn (HIT → DAMAGE → HIT → DAMAGE → ...)
+        if (inDamageProcessing) return;
+        inDamageProcessing = true;
+        try {
+            // HIT: damager dùng UItem
+            if (event.getDamager() instanceof Player damager) {
+                ItemStack weapon = damager.getInventory().getItemInMainHand();
+                UItemData data = getUItemData(weapon);
+                if (data != null && data.getSkills() != null) {
+                    LivingEntity victim = (event.getEntity() instanceof LivingEntity le) ? le : null;
+                    executor.executeSkills(damager, data.getId(), data.getSkills(), SkillTrigger.HIT, victim);
                 }
             }
+
+            // TAKE_DAMAGE: victim đang cầm hoặc mặc UItem có skill
+            if (event.getEntity() instanceof Player victim) {
+                // held
+                ItemStack held = victim.getInventory().getItemInMainHand();
+                UItemData heldData = getUItemData(held);
+                if (heldData != null && heldData.getSkills() != null) {
+                    executor.executeSkills(victim, heldData.getId(), heldData.getSkills(), SkillTrigger.TAKE_DAMAGE, null);
+                }
+                // armor
+                for (ItemStack armor : victim.getInventory().getArmorContents()) {
+                    if (armor == null || armor.getType().isAir()) continue;
+                    UItemData ad = getUItemData(armor);
+                    if (ad != null && ad.getSkills() != null) {
+                        executor.executeSkills(victim, ad.getId(), ad.getSkills(), SkillTrigger.TAKE_DAMAGE, null);
+                    }
+                }
+            }
+        } finally {
+            inDamageProcessing = false;
         }
     }
 

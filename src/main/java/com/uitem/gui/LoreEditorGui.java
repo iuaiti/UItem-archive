@@ -163,9 +163,6 @@ public class LoreEditorGui extends AbstractGui {
         }
 
         // Quay lại
-        setItem(51, createBackButton(), event -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new ItemEditorGui(plugin, player, data).open();
-        });
+        setItem(51, createBackButton(), event -> goBack());
     }
 }
