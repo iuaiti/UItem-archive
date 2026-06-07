@@ -42,7 +42,7 @@ public class SkillEditorGui extends AbstractGui {
     );
 
     private static final List<List<SkillAction.ActionType>> ACTION_PAGES = List.of(
-            List.of(
+            List.of( // Page 1: Communication + Combat
                     SkillAction.ActionType.MESSAGE,
                     SkillAction.ActionType.ACTION_BAR,
                     SkillAction.ActionType.TITLE,
@@ -51,10 +51,10 @@ public class SkillEditorGui extends AbstractGui {
                     SkillAction.ActionType.GIVE_POTION,
                     SkillAction.ActionType.HEAL,
                     SkillAction.ActionType.DAMAGE,
-                    SkillAction.ActionType.SHOOT_PROJECTILE,
-                    SkillAction.ActionType.CONSOLE_COMMAND
+                    SkillAction.ActionType.SHOOT_PROJECTILE
             ),
-            List.of(
+            List.of( // Page 2: Commands + Movement
+                    SkillAction.ActionType.CONSOLE_COMMAND,
                     SkillAction.ActionType.PLAYER_COMMAND,
                     SkillAction.ActionType.LAUNCH,
                     SkillAction.ActionType.TELEPORT,
@@ -62,18 +62,20 @@ public class SkillEditorGui extends AbstractGui {
                     SkillAction.ActionType.SET_FIRE,
                     SkillAction.ActionType.FEED,
                     SkillAction.ActionType.CONSUME_DURABILITY,
-                    SkillAction.ActionType.CONSUME_ITEM,
-                    SkillAction.ActionType.GIVE_ITEM,
-                    SkillAction.ActionType.REMOVE_POTION
+                    SkillAction.ActionType.CONSUME_ITEM
             ),
-            List.of(
+            List.of( // Page 3: Items + Effects
+                    SkillAction.ActionType.GIVE_ITEM,
+                    SkillAction.ActionType.REMOVE_POTION,
                     SkillAction.ActionType.BLOCK_BREAK,
                     SkillAction.ActionType.EXPLOSION,
                     SkillAction.ActionType.AREA_DAMAGE,
                     SkillAction.ActionType.POTION_AREA,
                     SkillAction.ActionType.BLIND,
                     SkillAction.ActionType.GLOW,
-                    SkillAction.ActionType.CLEAR_EFFECTS,
+                    SkillAction.ActionType.CLEAR_EFFECTS
+            ),
+            List.of( // Page 4: Misc
                     SkillAction.ActionType.LEVITATE,
                     SkillAction.ActionType.SPAWN_MOB,
                     SkillAction.ActionType.FREEZE
@@ -266,20 +268,18 @@ public class SkillEditorGui extends AbstractGui {
             new PotionPresetComboGui(plugin, player, itemData, skill).openAsChildOf(this);
         });
 
-        // === Action type buttons (paged, slots 44-53) ===
+        // === Action type buttons (paged, slots 44-52, slot 53 = navigation) ===
         List<SkillAction.ActionType> pageActions = ACTION_PAGES.get(actionPage);
-        if (pageActions.size() <= 9) {
-            int actionSlot = 44;
-            for (SkillAction.ActionType at : pageActions) {
-                Material mat = ACTION_MATERIALS.getOrDefault(at, Material.PAPER);
-                addActionTypeButton(actionSlot++, mat, at,
-                        () -> addActionByType(at));
-            }
-            for (int i = actionSlot; i < 53; i++) {
-                setItem(i, createItem(Material.GRAY_STAINED_GLASS_PANE, " "));
-            }
+        int actionSlot = 44;
+        for (SkillAction.ActionType at : pageActions) {
+            if (actionSlot >= 53) break;
+            Material mat = ACTION_MATERIALS.getOrDefault(at, Material.PAPER);
+            addActionTypeButton(actionSlot++, mat, at, () -> addActionByType(at));
         }
-        // Page navigation
+        for (int i = actionSlot; i < 53; i++) {
+            setItem(i, createItem(Material.GRAY_STAINED_GLASS_PANE, " "));
+        }
+        // Page navigation at slot 53
         int totalPages = ACTION_PAGES.size();
         if (actionPage < totalPages - 1) {
             setItem(53, createItem(Material.ARROW, "<yellow>Trang " + (actionPage + 2) + " ►",
