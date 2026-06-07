@@ -85,8 +85,8 @@ public class ChatInputManager implements Listener {
         // Lấy text thuần
         String input = PlainTextComponentSerializer.plainText().serialize(event.message());
 
-        // Chạy lại trên scheduler của chính player để an toàn với Folia.
-        SchedulerUtil.runForEntity(plugin, player, () -> {
+        // Chạy lại trên global scheduler để an toàn khi mở lại GUI.
+        SchedulerUtil.runSync(plugin, () -> {
             if (!player.isOnline()) {
                 return;
             }
