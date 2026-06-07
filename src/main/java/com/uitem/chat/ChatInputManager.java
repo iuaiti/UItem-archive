@@ -39,7 +39,19 @@ public class ChatInputManager implements Listener {
      * @param callback Callback nhận text đã nhập (chạy trên main thread)
      */
     public void requestInput(Player player, String prompt, Consumer<String> callback) {
-        pendingInputs.put(player.getUniqueId(), new ChatInputRequest(callback));
+        requestInput(player, prompt, callback, null);
+    }
+
+    /**
+     * Yêu cầu player nhập text qua chat, với callback khi hủy.
+     *
+     * @param player   Player cần nhập
+     * @param prompt   Tin nhắn hướng dẫn
+     * @param callback Callback nhận text đã nhập (chạy trên main thread)
+     * @param onCancel Chạy khi người dùng gõ 'cancel' (thường là reopen GUI)
+     */
+    public void requestInput(Player player, String prompt, Consumer<String> callback, Runnable onCancel) {
+        pendingInputs.put(player.getUniqueId(), new ChatInputRequest(callback, onCancel));
 
         player.closeInventory();
         player.sendMessage(TextUtil.prefixed(prompt));
@@ -80,6 +92,9 @@ public class ChatInputManager implements Listener {
             }
             if (input.equalsIgnoreCase("cancel")) {
                 player.sendMessage(TextUtil.info("Cancelled."));
+                if (request.onCancel() != null) {
+                    request.onCancel().run();
+                }
                 return;
             }
             request.callback().accept(input);
@@ -96,6 +111,9 @@ public class ChatInputManager implements Listener {
         }
     }
 
-    private record ChatInputRequest(Consumer<String> callback) {
+    private record ChatInputRequest(Consumer<String> callback, Runnable onCancel) {
+        ChatInputRequest(Consumer<String> callback) {
+            this(callback, null);
+        }
     }
 }

@@ -53,7 +53,19 @@ public class SkillAction {
 
         // Other
         GIVE_ITEM("Give item (vanilla hoặc uitem)"),
-        NOTHING("Không làm gì (placeholder)");
+        NOTHING("Không làm gì (placeholder)"),
+
+        // ==== NEW ACTIONS (10 types) ====
+        BLOCK_BREAK("Phá block tại vị trí"),
+        EXPLOSION("Tạo vụ nổ"),
+        AREA_DAMAGE("Gây sát thương vùng"),
+        POTION_AREA("Potion effect vùng"),
+        BLIND("Làm mù mục tiêu"),
+        GLOW("Làm mục tiêu phát sáng"),
+        CLEAR_EFFECTS("Xóa toàn bộ hiệu ứng"),
+        LEVITATE("Bay lên (Levitating)"),
+        SPAWN_MOB("Sinh ra mob"),
+        FREEZE("Đóng băng mục tiêu");
         
         private final String display;
 
@@ -207,6 +219,71 @@ public class SkillAction {
     public static SkillAction consumeDurability(int amount) {
         SkillAction a = new SkillAction(ActionType.CONSUME_DURABILITY);
         a.setParam("amount", amount);
+        return a;
+    }
+
+    public static SkillAction blockBreak() {
+        SkillAction a = new SkillAction(ActionType.BLOCK_BREAK);
+        a.setParam("range", 5);
+        return a;
+    }
+
+    public static SkillAction explosion(float power, boolean fire) {
+        SkillAction a = new SkillAction(ActionType.EXPLOSION);
+        a.setParam("power", power);
+        a.setParam("fire", fire);
+        return a;
+    }
+
+    public static SkillAction areaDamage(double amount, double radius) {
+        SkillAction a = new SkillAction(ActionType.AREA_DAMAGE);
+        a.setParam("amount", amount);
+        a.setParam("radius", radius);
+        return a;
+    }
+
+    public static SkillAction potionArea(String effect, int duration, int amplifier, double radius) {
+        SkillAction a = new SkillAction(ActionType.POTION_AREA);
+        a.setParam("effect", effect);
+        a.setParam("duration", duration);
+        a.setParam("amplifier", amplifier);
+        a.setParam("radius", radius);
+        return a;
+    }
+
+    public static SkillAction blind(int duration) {
+        SkillAction a = new SkillAction(ActionType.BLIND);
+        a.setParam("duration", duration);
+        return a;
+    }
+
+    public static SkillAction glow(int duration) {
+        SkillAction a = new SkillAction(ActionType.GLOW);
+        a.setParam("duration", duration);
+        return a;
+    }
+
+    public static SkillAction clearEffects() {
+        return new SkillAction(ActionType.CLEAR_EFFECTS);
+    }
+
+    public static SkillAction levitate(int duration, int amplifier) {
+        SkillAction a = new SkillAction(ActionType.LEVITATE);
+        a.setParam("duration", duration);
+        a.setParam("amplifier", amplifier);
+        return a;
+    }
+
+    public static SkillAction spawnMob(String entityType, int count) {
+        SkillAction a = new SkillAction(ActionType.SPAWN_MOB);
+        a.setParam("entity", entityType);
+        a.setParam("count", count);
+        return a;
+    }
+
+    public static SkillAction freeze(int duration) {
+        SkillAction a = new SkillAction(ActionType.FREEZE);
+        a.setParam("duration", duration);
         return a;
     }
 

@@ -55,6 +55,7 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/PotionEffectHelper.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/Skill.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillAction.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillActionBar.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillCondition.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillExecutor.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillTrigger.java

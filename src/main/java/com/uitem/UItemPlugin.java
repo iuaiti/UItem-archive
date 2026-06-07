@@ -50,6 +50,7 @@ public final class UItemPlugin extends JavaPlugin {
     private com.uitem.skill.CooldownManager skillCooldownManager;
     private com.uitem.skill.SkillExecutor skillExecutor;
     private com.uitem.listener.UItemSkillListener skillListener;
+    private com.uitem.skill.SkillActionBar skillActionBar;
 
     @Override
     public void onEnable() {
@@ -99,6 +100,8 @@ public final class UItemPlugin extends JavaPlugin {
         this.skillCooldownManager = new com.uitem.skill.CooldownManager(this);
         this.skillExecutor = new com.uitem.skill.SkillExecutor(this, this.skillCooldownManager);
         this.skillListener = new com.uitem.listener.UItemSkillListener(this, this.skillExecutor);
+        this.skillActionBar = new com.uitem.skill.SkillActionBar(this, this.skillCooldownManager);
+        this.skillActionBar.start();
 
         RarityConfig.load(this);
 
@@ -202,6 +205,9 @@ public final class UItemPlugin extends JavaPlugin {
         }
         if (skillListener != null) {
             skillListener.shutdown();
+        }
+        if (skillActionBar != null) {
+            skillActionBar.shutdown();
         }
         UItemAPI.shutdown();
         getLogger().info("╔══════════════════════════════════════════════╗");

@@ -5,6 +5,7 @@ import com.uitem.util.SchedulerUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -367,6 +368,127 @@ public final class SkillExecutor {
                 } catch (Exception e) {
                     plugin.getLogger().warning("[Skill] GIVE_ITEM: invalid material '" + mat + "'");
                 }
+                return true;
+            }
+
+            // ==================== NEW ACTIONS ====================
+
+            case BLOCK_BREAK -> {
+                int range = action.getIntParam("range", 5);
+                Block targetBlock = player.getTargetBlockExact(range);
+                if (targetBlock != null && !targetBlock.getType().isAir()) {
+                    targetBlock.breakNaturally();
+                    world.playSound(targetBlock.getLocation(), Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, 0.5f, 1.0f);
+                }
+                return true;
+            }
+
+            case EXPLOSION -> {
+                float power = (float) action.getDoubleParam("power", 3.0);
+                boolean fire = action.getBooleanParam("fire", false);
+                Location explosionLoc = (target != null && target.isValid()) ? target.getLocation() : loc;
+                world.createExplosion(explosionLoc, power, fire, true);
+                return true;
+            }
+
+            case AREA_DAMAGE -> {
+                double dmg = action.getDoubleParam("amount", 5.0);
+                double radius = action.getDoubleParam("radius", 5.0);
+                Location center = (target != null && target.isValid()) ? target.getLocation() : loc;
+                for (Entity e : world.getNearbyEntities(center, radius, radius, radius)) {
+                    if (e instanceof LivingEntity le && !le.equals(player)) {
+                        le.damage(dmg, player);
+                    }
+                }
+                return true;
+            }
+
+            case POTION_AREA -> {
+                String effName = action.getStringParam("effect", "SPEED").toUpperCase(Locale.ROOT);
+                int duration = action.getIntParam("duration", 5);
+                int amp = action.getIntParam("amplifier", 0);
+                double radius = action.getDoubleParam("radius", 5.0);
+                PotionEffectType pType = Registry.EFFECT.get(NamespacedKey.minecraft(effName.toLowerCase(Locale.ROOT)));
+                if (pType != null) {
+                    Location center = (target != null && target.isValid()) ? target.getLocation() : loc;
+                    for (Entity e : world.getNearbyEntities(center, radius, radius, radius)) {
+                        if (e instanceof LivingEntity le) {
+                            le.addPotionEffect(new PotionEffect(pType, duration * 20, amp, false, true, true));
+                        }
+                    }
+                }
+                return true;
+            }
+
+            case BLIND -> {
+                int dur = Math.min(action.getIntParam("duration", 5), 60);
+                if (target != null && target.isValid()) {
+                    PotionEffectType blindness = Registry.EFFECT.get(NamespacedKey.minecraft("blindness"));
+                    if (blindness != null) {
+                        target.addPotionEffect(new PotionEffect(blindness, dur * 20, 0, false, true, true));
+                    }
+                }
+                return true;
+            }
+
+            case GLOW -> {
+                int dur = Math.min(action.getIntParam("duration", 10), 60);
+                if (target != null && target.isValid()) {
+                    PotionEffectType glow = Registry.EFFECT.get(NamespacedKey.minecraft("glowing"));
+                    if (glow != null) {
+                        target.addPotionEffect(new PotionEffect(glow, dur * 20, 0, false, true, true));
+                    }
+                }
+                return true;
+            }
+
+            case CLEAR_EFFECTS -> {
+                LivingEntity clearTarget = (target != null && target.isValid()) ? target : player;
+                for (PotionEffect pe : new ArrayList<>(clearTarget.getActivePotionEffects())) {
+                    clearTarget.removePotionEffect(pe.getType());
+                }
+                return true;
+            }
+
+            case LEVITATE -> {
+                int dur = Math.min(action.getIntParam("duration", 5), 30);
+                int amp = action.getIntParam("amplifier", 0);
+                PotionEffectType lev = Registry.EFFECT.get(NamespacedKey.minecraft("levitation"));
+                if (lev != null) {
+                    player.addPotionEffect(new PotionEffect(lev, dur * 20, amp, false, true, true));
+                }
+                return true;
+            }
+
+            case SPAWN_MOB -> {
+                String entityTypeName = action.getStringParam("entity", "ZOMBIE").toUpperCase(Locale.ROOT);
+                int count = Math.min(action.getIntParam("count", 1), 10);
+                Location spawnLoc = player.getLocation().add(0, 1, 0);
+                for (int i = 0; i < count; i++) {
+                    try {
+                        EntityType et = EntityType.valueOf(entityTypeName);
+                        Location offset = spawnLoc.clone().add(
+                                ThreadLocalRandom.current().nextDouble(-2, 2),
+                                0,
+                                ThreadLocalRandom.current().nextDouble(-2, 2)
+                        );
+                        Entity e = world.spawnEntity(offset, et);
+                        if (e instanceof Mob mob) {
+                            mob.setTarget((LivingEntity) world.getNearbyEntities(offset, 10, 10, 10).stream()
+                                    .filter(ex -> ex instanceof Player && !ex.equals(player))
+                                    .findFirst().orElse(null));
+                        }
+                    } catch (Exception ex) {
+                        plugin.getLogger().warning("[Skill] SPAWN_MOB: invalid entity '" + entityTypeName + "'");
+                    }
+                }
+                return true;
+            }
+
+            case FREEZE -> {
+                int dur = Math.min(action.getIntParam("duration", 5), 30);
+                LivingEntity freezeTarget = (target != null && target.isValid()) ? target : player;
+                freezeTarget.setFreezeTicks(dur * 20);
                 return true;
             }
 
