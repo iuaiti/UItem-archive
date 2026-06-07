@@ -139,13 +139,42 @@ public class ItemListGui extends AbstractGui {
             }
         }
 
-        // Create new item button
+        // Create new item from Template button
         setItem(49, createItem(Material.EMERALD,
-                "<green><bold>+ Tạo Item Mới</bold>",
+                "<green><bold>+ Tạo Item Mới (Template)</bold>",
                 List.of(
-                        "<gray>Click để tạo item tùy chỉnh mới",
+                        "<gray>Tạo item từ template có sẵn",
+                        "<gray>Sword, Armor, Tool, Wand...",
                         "",
-                        "<yellow>Bạn sẽ được yêu cầu nhập ID"
+                        "<yellow>Click để tạo"
+                )), event -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+            plugin.getChatInputManager().requestInput(player,
+                    "<yellow>Nhập ID cho item mới <gray>(chỉ chữ cái, số, gạch dưới):",
+                    input -> {
+                        String id = input.toLowerCase().replaceAll("[^a-z0-9_]", "_");
+                        if (id.isEmpty()) {
+                            player.sendMessage(TextUtil.error("ID không hợp lệ!"));
+                            new ItemListGui(plugin, player, page).open();
+                            return;
+                        }
+                        if (manager.hasItem(id)) {
+                            player.sendMessage(TextUtil.error("Item '" + id + "' already exists!"));
+                            new ItemListGui(plugin, player, page).open();
+                            return;
+                        }
+                        // Open template selector
+                        new ItemTemplateGui(plugin, player, id).open();
+                    });
+        });
+
+        // Create blank item button
+        setItem(50, createItem(Material.PAPER,
+                "<aqua><bold>+ Tạo Item Trống</bold>",
+                List.of(
+                        "<gray>Tạo item trống, tự cấu hình",
+                        "",
+                        "<yellow>Click để tạo"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             plugin.getChatInputManager().requestInput(player,
@@ -163,9 +192,7 @@ public class ItemListGui extends AbstractGui {
                             return;
                         }
                         UItemData newData = new UItemData(id);
-                        // Use API to fire UItemCreateEvent
-                        boolean created = com.uitem.api.UItemAPI.get()
-                                .registerItem(newData, player);
+                        boolean created = com.uitem.api.UItemAPI.get().registerItem(newData, player);
                         if (!created) {
                             player.sendMessage(com.uitem.util.TextUtil.error(
                                     "Cannot create item '" + id + "' (blocked by another plugin)."));
@@ -177,6 +204,21 @@ public class ItemListGui extends AbstractGui {
                         new ItemEditorGui(plugin, player, newData).open();
                     });
         });
+
+        // Bulk Give button
+        if (player.hasPermission("uitem.give")) {
+            setItem(51, createItem(Material.CHEST,
+                    "<gold><bold>📦 Give Nhiều Item</bold>",
+                    List.of(
+                            "<gray>Give nhiều item cùng lúc",
+                            "<gray>Cho bản thân hoặc người chơi khác",
+                            "",
+                            "<yellow>Click để mở"
+                    )), event -> {
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                new BulkGiveGui(plugin, player).openAsChildOf(this);
+            });
+        }
 
         // Nút trang trước
         if (page > 0) {

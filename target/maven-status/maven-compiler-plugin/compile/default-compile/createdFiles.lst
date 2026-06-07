@@ -1,4 +1,5 @@
 com/uitem/gui/RarityListGui.class
+com/uitem/gui/AttributePresetGui$AttrPreset.class
 com/uitem/command/UItemCommand$GiveTarget.class
 com/uitem/util/Messages$1.class
 com/uitem/skill/PotionEffectHelper.class
@@ -29,6 +30,7 @@ com/uitem/skill/SkillExecutor$1.class
 com/uitem/skill/PotionEffectHelper$PotionEffectCombo.class
 com/uitem/gui/LoreEditorGui.class
 com/uitem/listener/UItemSkillListener.class
+com/uitem/gui/BulkGiveGui.class
 com/uitem/chat/ChatInputManager.class
 com/uitem/api/events/UItemDeleteEvent.class
 com/uitem/UItemData$ItemEffect.class
@@ -42,6 +44,7 @@ com/uitem/skill/Skill.class
 com/uitem/api/events/UItemPickupEvent.class
 com/uitem/gui/RecipeDetailGui.class
 com/uitem/UItemData.class
+com/uitem/gui/AttributePresetGui.class
 com/uitem/skill/PotionEffectHelper$PotionPreset.class
 com/uitem/gui/RecipeListGui.class
 com/uitem/skill/PotionAuraManager$AuraPresets.class
@@ -62,6 +65,7 @@ com/uitem/util/PotionEffectRegistry$PotionInfo.class
 com/uitem/gui/SkillListGui$1.class
 com/uitem/api/events/UItemGiveEvent.class
 com/uitem/gui/CraftingGui.class
+com/uitem/gui/ItemTemplateGui.class
 com/uitem/gui/SkillEditorGui.class
 com/uitem/gui/PotionPresetComboGui.class
 com/uitem/skill/SkillCondition.class

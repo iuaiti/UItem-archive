@@ -126,14 +126,32 @@ public class SkillEditorGui extends AbstractGui {
                 Messages.skillEditorActionsHeader(skill.getActions().size()),
                 List.of(Messages.skillEditorActionsHint())));
 
-        // Action list items (row 3-4, slots 32-35 + 36)
+        // Action list items (row 3, slots 32-33 only to avoid overlap with potion presets at 34-35)
         List<SkillAction> acts = skill.getActions();
-        int[] actSlots = {32, 33, 34, 35, 36};
+        int[] actSlots = {32, 33};
         for (int i = 0; i < Math.min(acts.size(), actSlots.length); i++) {
             final int idx = i;
             SkillAction a = acts.get(i);
             ItemStack icon = buildActionIcon(a);
             setItem(actSlots[i], icon, ev -> {
+                if (idx >= skill.getActions().size()) return;
+                if (ev.isRightClick()) {
+                    skill.getActions().remove(idx);
+                    player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
+                    saveAndRefresh();
+                } else {
+                    editActionMainValue(a);
+                }
+            });
+        }
+        // Extra actions overflow (row 4, slots 36-43)
+        int[] actSlotsExtra = {36, 37, 38, 39, 40, 41, 42, 43};
+        for (int i = 0; i < Math.min(acts.size() - actSlots.length, actSlotsExtra.length); i++) {
+            final int idx = i + actSlots.length;
+            if (idx >= acts.size()) break;
+            SkillAction a = acts.get(idx);
+            ItemStack icon = buildActionIcon(a);
+            setItem(actSlotsExtra[i], icon, ev -> {
                 if (idx >= skill.getActions().size()) return;
                 if (ev.isRightClick()) {
                     skill.getActions().remove(idx);
@@ -162,26 +180,7 @@ public class SkillEditorGui extends AbstractGui {
             saveAndRefresh();
         });
 
-        // === Action type buttons (rows 4-5, không overlap với core config) ===
-        addActionTypeButton(37, Material.PAPER, "MESSAGE", Messages.skillActionDisplay(SkillAction.ActionType.MESSAGE), () -> addActionWithPrompt(SkillAction.ActionType.MESSAGE));
-        addActionTypeButton(38, Material.PAPER, "ACTION_BAR", Messages.skillActionDisplay(SkillAction.ActionType.ACTION_BAR), () -> addActionWithPrompt(SkillAction.ActionType.ACTION_BAR));
-        addActionTypeButton(39, Material.PAPER, "TITLE", Messages.skillActionDisplay(SkillAction.ActionType.TITLE), () -> addActionWithPrompt(SkillAction.ActionType.TITLE));
-        addActionTypeButton(40, Material.NOTE_BLOCK, "PLAY_SOUND", Messages.skillActionDisplay(SkillAction.ActionType.PLAY_SOUND), () -> addActionWithPrompt(SkillAction.ActionType.PLAY_SOUND));
-        addActionTypeButton(41, Material.BLAZE_POWDER, "SPAWN_PARTICLE", Messages.skillActionDisplay(SkillAction.ActionType.SPAWN_PARTICLE), () -> addActionWithPrompt(SkillAction.ActionType.SPAWN_PARTICLE));
-        addActionTypeButton(42, Material.POTION, "GIVE_POTION", Messages.skillActionDisplay(SkillAction.ActionType.GIVE_POTION), () -> addActionWithPrompt(SkillAction.ActionType.GIVE_POTION));
-        addActionTypeButton(43, Material.MILK_BUCKET, "REMOVE_POTION", Messages.skillActionDisplay(SkillAction.ActionType.REMOVE_POTION), () -> addDirectAction(SkillAction.ActionType.REMOVE_POTION));
-        addActionTypeButton(44, Material.GOLDEN_APPLE, "HEAL", Messages.skillActionDisplay(SkillAction.ActionType.HEAL), () -> addNumericAction(SkillAction.ActionType.HEAL, "Enter heal amount (e.g. 3.5):", 3.0));
-        addActionTypeButton(45, Material.IRON_SWORD, "DAMAGE", Messages.skillActionDisplay(SkillAction.ActionType.DAMAGE), () -> addNumericAction(SkillAction.ActionType.DAMAGE, "Enter damage amount (e.g. 5):", 4.0));
-
-        addActionTypeButton(46, Material.FIRE_CHARGE, "SET_FIRE", Messages.skillActionDisplay(SkillAction.ActionType.SET_FIRE), () -> addNumericAction(SkillAction.ActionType.SET_FIRE, "Enter seconds on fire:", 4));
-        addActionTypeButton(47, Material.ELYTRA, "LAUNCH", Messages.skillActionDisplay(SkillAction.ActionType.LAUNCH), () -> addActionWithPrompt(SkillAction.ActionType.LAUNCH));
-        addActionTypeButton(48, Material.ENDER_PEARL, "TELEPORT", Messages.skillActionDisplay(SkillAction.ActionType.TELEPORT), () -> addActionWithPrompt(SkillAction.ActionType.TELEPORT));
-        addActionTypeButton(49, Material.FIRE_CHARGE, "STRIKE_LIGHTNING", Messages.skillActionDisplay(SkillAction.ActionType.STRIKE_LIGHTNING), () -> addDirectAction(SkillAction.ActionType.STRIKE_LIGHTNING));
-        addActionTypeButton(50, Material.BOW, "SHOOT_PROJECTILE", Messages.skillActionDisplay(SkillAction.ActionType.SHOOT_PROJECTILE), () -> addActionWithPrompt(SkillAction.ActionType.SHOOT_PROJECTILE));
-        addActionTypeButton(51, Material.COMMAND_BLOCK, "CONSOLE_COMMAND", Messages.skillActionDisplay(SkillAction.ActionType.CONSOLE_COMMAND), () -> addActionWithPrompt(SkillAction.ActionType.CONSOLE_COMMAND));
-        addActionTypeButton(52, Material.COMMAND_BLOCK, "PLAYER_COMMAND", Messages.skillActionDisplay(SkillAction.ActionType.PLAYER_COMMAND), () -> addActionWithPrompt(SkillAction.ActionType.PLAYER_COMMAND));
-
-        // Potion presets
+        // Potion presets (row 3, slots 34-35 - safe from action list)
         setItem(34, createItem(Material.REDSTONE, "<light_purple>⚡ Potion Presets",
                 List.of("<gray>Click để xem danh sách potion")), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
@@ -193,8 +192,20 @@ public class SkillEditorGui extends AbstractGui {
             new PotionPresetComboGui(plugin, player, itemData, skill).openAsChildOf(this);
         });
 
-        // Back
-        setItem(53, createBackButton(), ev -> goBack());
+        // === Action type buttons (rows 5-6, slots 44-53) ===
+        addActionTypeButton(44, Material.PAPER, "MESSAGE", Messages.skillActionDisplay(SkillAction.ActionType.MESSAGE), () -> addActionWithPrompt(SkillAction.ActionType.MESSAGE));
+        addActionTypeButton(45, Material.PAPER, "ACTION_BAR", Messages.skillActionDisplay(SkillAction.ActionType.ACTION_BAR), () -> addActionWithPrompt(SkillAction.ActionType.ACTION_BAR));
+        addActionTypeButton(46, Material.PAPER, "TITLE", Messages.skillActionDisplay(SkillAction.ActionType.TITLE), () -> addActionWithPrompt(SkillAction.ActionType.TITLE));
+        addActionTypeButton(47, Material.NOTE_BLOCK, "PLAY_SOUND", Messages.skillActionDisplay(SkillAction.ActionType.PLAY_SOUND), () -> addActionWithPrompt(SkillAction.ActionType.PLAY_SOUND));
+        addActionTypeButton(48, Material.BLAZE_POWDER, "SPAWN_PARTICLE", Messages.skillActionDisplay(SkillAction.ActionType.SPAWN_PARTICLE), () -> addActionWithPrompt(SkillAction.ActionType.SPAWN_PARTICLE));
+        addActionTypeButton(49, Material.POTION, "GIVE_POTION", Messages.skillActionDisplay(SkillAction.ActionType.GIVE_POTION), () -> addActionWithPrompt(SkillAction.ActionType.GIVE_POTION));
+        addActionTypeButton(50, Material.GOLDEN_APPLE, "HEAL", Messages.skillActionDisplay(SkillAction.ActionType.HEAL), () -> addNumericAction(SkillAction.ActionType.HEAL, "Enter heal amount (e.g. 3.5):", 3.0));
+        addActionTypeButton(51, Material.IRON_SWORD, "DAMAGE", Messages.skillActionDisplay(SkillAction.ActionType.DAMAGE), () -> addNumericAction(SkillAction.ActionType.DAMAGE, "Enter damage amount (e.g. 5):", 4.0));
+        addActionTypeButton(52, Material.BOW, "SHOOT_PROJECTILE", Messages.skillActionDisplay(SkillAction.ActionType.SHOOT_PROJECTILE), () -> addActionWithPrompt(SkillAction.ActionType.SHOOT_PROJECTILE));
+        addActionTypeButton(53, Material.COMMAND_BLOCK, "CONSOLE_COMMAND", Messages.skillActionDisplay(SkillAction.ActionType.CONSOLE_COMMAND), () -> addActionWithPrompt(SkillAction.ActionType.CONSOLE_COMMAND));
+
+        // Back (slot 27 is safe - passive triggers end at slot 26 for 8 triggers)
+        setItem(27, createBackButton(), ev -> goBack());
     }
 
     private ItemStack buildActionIcon(SkillAction a) {

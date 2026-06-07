@@ -72,7 +72,7 @@ public class EffectEditorGui extends AbstractGui {
                     data.getEffects().remove(idx);
                     player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
                     plugin.getItemManager().registerItem(data);
-                    plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+                    plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
                     refresh();
                 }
             });
@@ -89,7 +89,7 @@ public class EffectEditorGui extends AbstractGui {
                 data.getEffects().clear();
                 player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 0.4f, 1.2f);
                 plugin.getItemManager().registerItem(data);
-                plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+                plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
                 refresh();
             }
         });
@@ -119,7 +119,6 @@ public class EffectEditorGui extends AbstractGui {
         }
 
         // Affects: Bản thân / Mục tiêu - luôn hiển thị trong builder (chỉ có hiệu lực với trigger HIT)
-        // Đặt ngay sau triggers để dễ truy cập
         boolean toTarget = pending.isApplyToTarget();
         setItem(33, createItem(!toTarget ? Material.EMERALD : Material.GRAY_STAINED_GLASS_PANE,
                 (!toTarget ? "<green><bold>BẢN THÂN (người cầm/mặc)</bold>" : "<gray>BẢN THÂN (người cầm/mặc)"),
@@ -134,9 +133,24 @@ public class EffectEditorGui extends AbstractGui {
                     refresh();
                 });
 
-        // (nút target được đặt sau khối value để tránh bị ghi đè)
+        // Nút Mục tiêu (slot 34 - chỉ set một lần ở đây)
+        setItem(34, createItem(toTarget ? Material.REDSTONE : Material.GRAY_STAINED_GLASS_PANE,
+                (toTarget ? "<red><bold>MỤC TIÊU (nạn nhân)</bold>" : "<gray>MỤC TIÊU (nạn nhân)"),
+                List.of(
+                        "<gray>Chỉ hữu ích với trigger HIT:",
+                        "<red>Mục tiêu = mob/người chơi bị đánh",
+                        "<yellow>Click để áp dụng cho kẻ bị đánh"
+                )),
+                ev -> {
+                    pending.setApplyToTarget(true);
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
+                    refresh();
+                });
 
-        // Nút Type (sau phần affects self/target ở 33/34)
+        // Nhãn nhỏ cho cặp
+        setItem(35, createItem(Material.PAPER, "<gray>Áp dụng cho", List.of()));
+
+        // Nút Type (sau phần affects self/target ở 33/34/35)
         int typeStart = 36;
         for (int ty = 0; ty < TYPES.size(); ty++) {
             final String typ = TYPES.get(ty);
@@ -182,24 +196,6 @@ public class EffectEditorGui extends AbstractGui {
             });
         });
 
-        // Nút Mục tiêu cạnh Bản thân (slot 34)
-        boolean toTargetLate = pending.isApplyToTarget();
-        setItem(34, createItem(toTargetLate ? Material.REDSTONE : Material.GRAY_STAINED_GLASS_PANE,
-                (toTargetLate ? "<red><bold>MỤC TIÊU (nạn nhân)</bold>" : "<gray>MỤC TIÊU (nạn nhân)"),
-                List.of(
-                        "<gray>Chỉ hữu ích với trigger HIT:",
-                        "<red>Mục tiêu = mob/người chơi bị đánh",
-                        "<yellow>Click để áp dụng cho kẻ bị đánh"
-                )),
-                ev -> {
-                    pending.setApplyToTarget(true);
-                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
-                    refresh();
-                });
-
-        // Nhãn nhỏ cho cặp
-        setItem(35, createItem(Material.PAPER, "<gray>Áp dụng cho", List.of()));
-
         // Nút THÊM
         String targetInfo = "";
         if ("HIT".equalsIgnoreCase(pending.getTrigger())) {
@@ -222,7 +218,7 @@ public class EffectEditorGui extends AbstractGui {
             player.sendMessage(TextUtil.success("Đã thêm hiệu ứng: " + pending.getTrigger() + " / " + pending.getType() + (pending.isApplyToTarget() ? " (mục tiêu)" : "")));
 
             plugin.getItemManager().registerItem(data);
-            plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+            plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
 
             // fresh pending for next
             pending = new UItemData.ItemEffect();

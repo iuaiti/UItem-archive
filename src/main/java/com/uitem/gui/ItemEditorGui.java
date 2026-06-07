@@ -270,47 +270,19 @@ public class ItemEditorGui extends AbstractGui {
             saveAndRefresh();
         });
 
-        // === Attributes (slot 20) ===
+        // === Attributes (slot 20) - now opens AttributePresetGui ===
         setItem(20, createItem(Material.IRON_SWORD,
                 "<gold><bold>Thuộc Tính (Attributes)</bold>",
                 List.of(
                         "<gray>Thuộc tính: <white>" + data.getAttributes().size(),
                         "",
-                        "<yellow>Click để thêm thuộc tính",
-                        "<gray>Định dạng: attribute amount operation slot",
-                        "<gray>Ví dụ: generic_attack_damage 15 ADD_NUMBER HAND"
+                        attributeSummary(),
+                        "",
+                        "<yellow>Click để mở GUI chọn thuộc tính",
+                        "<gray>Chọn preset hoặc nhập tùy chỉnh"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Nhập thuộc tính <gray>(định dạng: attribute amount operation slot)\n" +
-                            "<gray>Ví dụ: generic_attack_damage 15 ADD_NUMBER HAND\n" +
-                            "<gray>Gõ 'clear' để xóa hết thuộc tính:",
-                    input -> {
-                        if (input.equalsIgnoreCase("clear")) {
-                            data.getAttributes().clear();
-                            saveAndReopen();
-                            player.sendMessage(TextUtil.success(Messages.guiAttributesCleared()));
-                            return;
-                        }
-                        String[] parts = input.trim().split("\\s+");
-                        if (parts.length < 4) {
-                            player.sendMessage(TextUtil.error("Định dạng: attribute amount operation slot"));
-                            new ItemEditorGui(plugin, player, data).open();
-                            return;
-                        }
-                        try {
-                            String attr = parts[0];
-                            double amount = Double.parseDouble(parts[1]);
-                            String operation = parts[2].toUpperCase();
-                            String slot = parts[3].toUpperCase();
-                            data.getAttributes().add(new UItemData.AttributeData(attr, amount, operation, slot));
-                            saveAndReopen();
-                            player.sendMessage(TextUtil.success(Messages.guiAttributesAdded(attr)));
-                        } catch (Exception e) {
-                            player.sendMessage(TextUtil.error("Lỗi: " + e.getMessage()));
-                            new ItemEditorGui(plugin, player, data).open();
-                        }
-                    });
+            new AttributePresetGui(plugin, player, data).openAsChildOf(this);
         });
 
         // === Rarity (slot 21) ===
@@ -503,6 +475,57 @@ public class ItemEditorGui extends AbstractGui {
             new EffectEditorGui(plugin, player, data).openAsChildOf(this);
         });
  
+        // === Quick Actions (slot 47) - Duplicate item ===
+        setItem(47, createItem(Material.PAPER,
+                "<aqua><bold>📋 Nhân Bản Item</bold>",
+                List.of(
+                        "<gray>Tạo bản sao của item này",
+                        "<gray>với ID mới",
+                        "",
+                        "<yellow>Click để nhân bản"
+                )), event -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            plugin.getChatInputManager().requestInput(player,
+                    "<yellow>Nhập ID cho bản sao <gray>(chỉ chữ cái, số, gạch dưới):",
+                    input -> {
+                        String newId = input.toLowerCase().replaceAll("[^a-z0-9_]", "_");
+                        if (newId.isEmpty()) {
+                            player.sendMessage(TextUtil.error("ID không hợp lệ!"));
+                            new ItemEditorGui(plugin, player, data).open();
+                            return;
+                        }
+                        if (plugin.getItemManager().hasItem(newId)) {
+                            player.sendMessage(TextUtil.error("Item '" + newId + "' đã tồn tại!"));
+                            new ItemEditorGui(plugin, player, data).open();
+                            return;
+                        }
+                        // Deep clone with new ID
+                        UItemData clone = data.clone();
+                        // Use reflection-free approach: create new with same fields
+                        UItemData newData = new UItemData(newId);
+                        newData.setMaterial(data.getMaterial());
+                        newData.setDisplayName(data.getDisplayName());
+                        newData.setLore(new java.util.ArrayList<>(data.getLore()));
+                        newData.setEnchantments(new java.util.LinkedHashMap<>(data.getEnchantments()));
+                        newData.setFlags(new java.util.LinkedHashSet<>(data.getFlags()));
+                        newData.setCustomModelData(data.getCustomModelData());
+                        newData.setUnbreakable(data.isUnbreakable());
+                        newData.setGlowing(data.isGlowing());
+                        newData.setMaxDurability(data.getMaxDurability());
+                        newData.setRarity(data.getRarity());
+                        newData.setModel(data.getModel());
+                        for (UItemData.AttributeData a : data.getAttributes()) newData.getAttributes().add(a.copy());
+                        for (UItemData.ItemEffect e : data.getEffects()) newData.getEffects().add(e.copy());
+                        for (com.uitem.skill.Skill s : data.getSkills()) newData.getSkills().add(s.copy());
+
+                        plugin.getItemManager().registerItem(newData);
+                        plugin.getResourcePackManager().syncCmdsToLiveItems();
+                        plugin.getStorageManager().saveItem(plugin.getItemManager(), newData);
+                        player.sendMessage(TextUtil.success("Đã nhân bản '" + data.getId() + "' → '" + newId + "'!"));
+                        new ItemEditorGui(plugin, player, newData).open();
+                    });
+        });
+
         // === Back button (slot 46) ===
         setItem(46, createBackButton(), event -> goBack());
 
@@ -549,6 +572,22 @@ public class ItemEditorGui extends AbstractGui {
         plugin.getResourcePackManager().syncCmdsToLiveItems();
         plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
         refresh();
+    }
+
+    private String attributeSummary() {
+        if (data.getAttributes().isEmpty()) return "<gray>Không có thuộc tính";
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        for (UItemData.AttributeData attr : data.getAttributes()) {
+            if (count >= 2) {
+                sb.append("<gray> (+").append(data.getAttributes().size() - 2).append(" more)");
+                break;
+            }
+            if (count > 0) sb.append("<gray>, ");
+            sb.append("<white>").append(attr.getAttribute().replace("generic_", "")).append(" +").append(attr.getAmount());
+            count++;
+        }
+        return sb.toString();
     }
 
     private String enchantmentSummary() {

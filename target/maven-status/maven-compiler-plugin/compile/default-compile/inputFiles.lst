@@ -15,6 +15,8 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/command/CraftingCommand.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/command/UItemCommand.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/AbstractGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/AttributePresetGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/BulkGiveGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ConfirmDeleteGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/CraftingGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/EffectEditorGui.java
@@ -24,6 +26,7 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/GuiStack.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ItemEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ItemListGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ItemTemplateGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/LoreEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/MaterialPickerGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PotionPresetComboGui.java

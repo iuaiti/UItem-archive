@@ -27,6 +27,7 @@ permissions:
       uitem.craft: true
       uitem.search: true
       uitem.id: true
+      uitem.bulkgive: true
   uitem.give:
     description: Allow giving custom items
     default: op
@@ -45,6 +46,9 @@ permissions:
   uitem.id:
     description: View internal item IDs (in recipe lists, details and previews)
     default: false
+  uitem.bulkgive:
+    description: Allow using the bulk give GUI to give multiple items at once
+    default: op
 
 # =============================================================
 # UItem Public API
