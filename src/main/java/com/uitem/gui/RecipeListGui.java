@@ -37,7 +37,7 @@ public class RecipeListGui extends AbstractGui {
 
     @Override
     public void open() {
-        if (!player.hasPermission("uitem.editor")) {
+        if (!player.hasPermission("uitem.craft")) {
             player.sendMessage(TextUtil.error(com.uitem.util.Messages.noPermission()));
             return;
         }
@@ -110,7 +110,7 @@ public class RecipeListGui extends AbstractGui {
                 page < totalPages - 1 ? ev -> { player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                     new RecipeListGui(plugin, player, page + 1).open(); } : null);
         setItem(45, createBackButton(), ev -> {
-            if (!player.hasPermission("uitem.editor")) {
+            if (!player.hasPermission("uitem.craft")) {
                 player.sendMessage(TextUtil.error(Messages.noPermission()));
                 return;
             }

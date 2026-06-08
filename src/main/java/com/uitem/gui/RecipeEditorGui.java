@@ -146,11 +146,6 @@ public class RecipeEditorGui implements InventoryHolder {
                     )));
         }
 
-        int backSlot = 36;
-        inventory.setItem(backSlot, createInfoItem(Material.ARROW,
-                "<yellow>← Quay Lại",
-                List.of("<gray>Click để quay lại")));
-
     }
 
     public void handleClick(InventoryClickEvent event) {
@@ -229,15 +224,6 @@ public class RecipeEditorGui implements InventoryHolder {
             leftovers.values().forEach(l -> player.getWorld().dropItemNaturally(player.getLocation(), l));
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 0.5f, 1.2f);
             player.sendMessage(TextUtil.success("Gave you 1x '" + data.getId() + "'. Drag into the crafting grid to use as ingredient for another item!"));
-            return;
-        }
-        if (slot == 36) {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            if (backAction != null) {
-                backAction.run();
-            } else {
-                new ItemEditorGui(plugin, player, data).open();
-            }
             return;
         }
     }
@@ -443,24 +429,12 @@ public class RecipeEditorGui implements InventoryHolder {
         return inventory;
     }
 
-    private Runnable backAction;
-
     public void open() {
         if (!player.hasPermission("uitem.editor")) {
             player.sendMessage(com.uitem.util.TextUtil.error(com.uitem.util.Messages.noPermission()));
             return;
         }
         player.openInventory(inventory);
-    }
-
-    /**
-     * Open as child of an AbstractGui parent so Back returns to it.
-     */
-    public void openAsChildOfEditor(AbstractGui parent) {
-        if (parent != null) {
-            this.backAction = () -> parent.reopen();
-        }
-        open();
     }
 
     /**

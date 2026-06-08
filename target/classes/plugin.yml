@@ -40,6 +40,8 @@ permissions:
   uitem.craft:
     description: Allow opening UItem crafting table and recipe list
     default: op
+    children:
+      uitem.crafting: true
   uitem.search:
     description: Allow using the item search GUI
     default: op
