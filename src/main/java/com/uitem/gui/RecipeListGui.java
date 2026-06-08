@@ -36,6 +36,15 @@ public class RecipeListGui extends AbstractGui {
     }
 
     @Override
+    public void open() {
+        if (!player.hasPermission("uitem.editor")) {
+            player.sendMessage(TextUtil.error(com.uitem.util.Messages.noPermission()));
+            return;
+        }
+        super.open();
+    }
+
+    @Override
     protected void setup() {
         fillBorder(6);
 

@@ -30,6 +30,15 @@ public class RarityListGui extends AbstractGui {
     }
 
     @Override
+    public void open() {
+        if (!player.hasPermission("uitem.editor")) {
+            player.sendMessage(TextUtil.error(com.uitem.util.Messages.noPermission()));
+            return;
+        }
+        super.open();
+    }
+
+    @Override
     protected void setup() {
         fillBorder(6);
 
@@ -58,7 +67,7 @@ public class RarityListGui extends AbstractGui {
                     refresh();
                 } else {
                     // Edit
-                    new RarityEditorGui(plugin, player, key, entry, this).open();
+                    new RarityEditorGui(plugin, player, key, entry, this).openAsChildOf(this);
                 }
             });
         }
@@ -81,7 +90,7 @@ public class RarityListGui extends AbstractGui {
                 }
                 RarityConfig.setRarity(name, "<white>", "", List.of());
                 RarityConfig.saveRarities();
-                new RarityEditorGui(plugin, player, name, RarityConfig.get(name), this).open();
+                new RarityEditorGui(plugin, player, name, RarityConfig.get(name), this).openAsChildOf(this);
             });
         });
 

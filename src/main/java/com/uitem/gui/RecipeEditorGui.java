@@ -233,7 +233,11 @@ public class RecipeEditorGui implements InventoryHolder {
         }
         if (slot == 36) {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new ItemEditorGui(plugin, player, data).open();
+            if (backAction != null) {
+                backAction.run();
+            } else {
+                new ItemEditorGui(plugin, player, data).open();
+            }
             return;
         }
     }
@@ -439,8 +443,24 @@ public class RecipeEditorGui implements InventoryHolder {
         return inventory;
     }
 
+    private Runnable backAction;
+
     public void open() {
+        if (!player.hasPermission("uitem.editor")) {
+            player.sendMessage(com.uitem.util.TextUtil.error(com.uitem.util.Messages.noPermission()));
+            return;
+        }
         player.openInventory(inventory);
+    }
+
+    /**
+     * Open as child of an AbstractGui parent so Back returns to it.
+     */
+    public void openAsChildOfEditor(AbstractGui parent) {
+        if (parent != null) {
+            this.backAction = () -> parent.reopen();
+        }
+        open();
     }
 
     /**

@@ -117,7 +117,8 @@ public class PotionPresetComboGui extends AbstractGui {
         player.sendMessage(TextUtil.success(msg));
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.6f, 1.2f);
 
-        new SkillEditorGui(plugin, player, itemData, skill).open();
+        // Quay lại SkillEditorGui (giữ chuỗi parent)
+        goBack();
     }
 
     private String toRoman(int num) {

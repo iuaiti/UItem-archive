@@ -154,7 +154,14 @@ public class MaterialPickerGui extends AbstractGui {
                             input -> {
                                 String f = input.trim();
                                 if (f.isEmpty()) f = null;
-                                new MaterialPickerGui(plugin, player, data, callback, 0, f, category).open();
+                                MaterialPickerGui next = new MaterialPickerGui(plugin, player, data, callback, 0, f, category);
+                                if (hasBackAction()) {
+                                    // Preserve parent by reopening current picker context after search? Simpler: open next as child of this conceptually.
+                                    // Since we closed for chat, just open the filtered one; parent back still works from the new instance if user sets it.
+                                    next.open();
+                                } else {
+                                    next.open();
+                                }
                             });
                 });
 

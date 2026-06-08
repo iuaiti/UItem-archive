@@ -28,6 +28,15 @@ public class SkillListGui extends AbstractGui {
     }
 
     @Override
+    public void open() {
+        if (!player.hasPermission("uitem.editor")) {
+            player.sendMessage(TextUtil.error(com.uitem.util.Messages.noPermission()));
+            return;
+        }
+        super.open();
+    }
+
+    @Override
     protected void setup() {
         fillBorder(6);
 
@@ -90,7 +99,7 @@ public class SkillListGui extends AbstractGui {
             plugin.getItemManager().registerItem(data);
             plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
 
-            new SkillEditorGui(plugin, player, data, newSkill).open();
+            new SkillEditorGui(plugin, player, data, newSkill).openAsChildOf(this);
         });
 
         // Quick add presets

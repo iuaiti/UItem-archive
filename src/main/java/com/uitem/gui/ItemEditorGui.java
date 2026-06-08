@@ -32,6 +32,15 @@ public class ItemEditorGui extends AbstractGui {
     }
 
     @Override
+    public void open() {
+        if (!player.hasPermission("uitem.editor")) {
+            player.sendMessage(TextUtil.error(com.uitem.util.Messages.noPermission()));
+            return;
+        }
+        super.open();
+    }
+
+    @Override
     public void handleBottomInventoryClick(InventoryClickEvent event) {
         if (materialPickMode) {
             event.setCancelled(true);
@@ -454,7 +463,7 @@ public class ItemEditorGui extends AbstractGui {
                         "<gray>Support output x1-x64 per craft"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new RecipeEditorGui(plugin, player, data).open();
+            new RecipeEditorGui(plugin, player, data).openAsChildOfEditor(this);
         });
 
         // === Hiệu Ứng (phản đòn / sát thương thêm khi hit/damage/equip/fullset/die) slot 27 ===
@@ -555,7 +564,7 @@ public class ItemEditorGui extends AbstractGui {
                         "<red>⚠ Click to delete"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 0.5f);
-            new ConfirmDeleteGui(plugin, player, data, 0).open();
+            new ConfirmDeleteGui(plugin, player, data, 0).openAsChildOf(this);
         });
     }
 

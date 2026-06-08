@@ -25,6 +25,15 @@ public class ConfirmDeleteGui extends AbstractGui {
     }
 
     @Override
+    public void open() {
+        if (!player.hasPermission("uitem.editor")) {
+            player.sendMessage(TextUtil.error(com.uitem.util.Messages.noPermission()));
+            return;
+        }
+        super.open();
+    }
+
+    @Override
     protected void setup() {
         // Fill tất cả với glass pane đen
         for (int i = 0; i < 27; i++) {
@@ -48,23 +57,31 @@ public class ConfirmDeleteGui extends AbstractGui {
             if (!deleted) {
                 player.sendMessage(com.uitem.util.TextUtil.error(
                         Messages.cannotDeleteBlocked(data.getId())));
-                new ItemListGui(plugin, player, returnPage).open();
+                goBackOrList();
                 return;
             }
             player.sendMessage(com.uitem.util.TextUtil.success(
                     Messages.deletedItem(data.getId())));
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
-            new ItemListGui(plugin, player, returnPage).open();
+            goBackOrList();
         });
 
-        // Cancel button (red)
+        // Cancel button (red) — quay lại GUI trước đó
         setItem(15, createItem(Material.RED_WOOL,
                 Messages.confirmDeleteNo(),
                 List.of(
                         Messages.confirmDeleteBack()
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new ItemListGui(plugin, player, returnPage).open();
+            goBack();
         });
+    }
+
+    private void goBackOrList() {
+        if (hasBackAction()) {
+            goBack();
+        } else {
+            new ItemListGui(plugin, player, returnPage).open();
+        }
     }
 }

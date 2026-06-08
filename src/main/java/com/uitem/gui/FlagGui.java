@@ -25,6 +25,15 @@ public class FlagGui extends AbstractGui {
     }
 
     @Override
+    public void open() {
+        if (!player.hasPermission("uitem.editor")) {
+            player.sendMessage(TextUtil.error(com.uitem.util.Messages.noPermission()));
+            return;
+        }
+        super.open();
+    }
+
+    @Override
     protected void setup() {
         // Fill border
         for (int i = 0; i < 36; i++) {

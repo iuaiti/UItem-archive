@@ -29,6 +29,15 @@ public class RarityEditorGui extends AbstractGui {
     }
 
     @Override
+    public void open() {
+        if (!player.hasPermission("uitem.editor")) {
+            player.sendMessage(TextUtil.error(com.uitem.util.Messages.noPermission()));
+            return;
+        }
+        super.open();
+    }
+
+    @Override
     protected void setup() {
         fillBorder(6);
 
@@ -112,8 +121,10 @@ public class RarityEditorGui extends AbstractGui {
         // Back
         setItem(53, createBackButton(), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            if (parentList != null) {
-                parentList.open();
+            if (hasBackAction()) {
+                goBack();
+            } else if (parentList != null) {
+                parentList.reopen();
             } else {
                 new RarityListGui(plugin, player).open();
             }

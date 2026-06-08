@@ -133,7 +133,7 @@ public class ItemListGui extends AbstractGui {
                     } else if (event.getClick() == ClickType.RIGHT) {
                         // Xóa item - confirm
                         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 0.5f);
-                        new ConfirmDeleteGui(plugin, player, data, this.page).open();
+                        new ConfirmDeleteGui(plugin, player, data, this.page).openAsChildOf(this);
                     }
                 });
             }
