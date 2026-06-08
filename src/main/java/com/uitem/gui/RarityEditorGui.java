@@ -63,7 +63,11 @@ public class RarityEditorGui extends AbstractGui {
                     input -> {
                         RarityConfig.setRarity(rarityName, input.trim(), entry.prefix(), entry.lore());
                         RarityConfig.saveRarities();
-                        refresh();
+                        if (parentList != null) {
+                            parentList.reopen();
+                        } else {
+                            refresh();
+                        }
                     });
         });
 
@@ -81,7 +85,11 @@ public class RarityEditorGui extends AbstractGui {
                     input -> {
                         RarityConfig.setRarity(rarityName, entry.color(), input.trim(), entry.lore());
                         RarityConfig.saveRarities();
-                        refresh();
+                        if (parentList != null) {
+                            parentList.reopen();
+                        } else {
+                            refresh();
+                        }
                     });
         });
 
@@ -106,7 +114,11 @@ public class RarityEditorGui extends AbstractGui {
                         }
                         RarityConfig.setRarity(rarityName, entry.color(), entry.prefix(), newLore);
                         RarityConfig.saveRarities();
-                        refresh();
+                        if (parentList != null) {
+                            parentList.reopen();
+                        } else {
+                            refresh();
+                        }
                     });
         });
 
@@ -139,6 +151,10 @@ public class RarityEditorGui extends AbstractGui {
         RarityConfig.setRarity(rarityName, color, prefix, lore);
         RarityConfig.saveRarities();
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.5f);
-        refresh();
+        if (parentList != null) {
+            parentList.reopen();
+        } else {
+            refresh();
+        }
     }
 }

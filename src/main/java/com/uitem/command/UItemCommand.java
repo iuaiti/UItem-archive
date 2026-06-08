@@ -183,6 +183,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
 
         plugin.reloadConfig();
         com.uitem.util.Messages.reload();
+        com.uitem.rarity.RarityConfig.reloadFromFile(); // reload rarity config
         plugin.getStorageManager().saveAllNow(plugin.getItemManager());
         plugin.getStorageManager().loadAll(plugin.getItemManager());
         plugin.getRecipeManager().loadRecipes();   // reload recipes từ disk

@@ -463,7 +463,7 @@ public class ItemEditorGui extends AbstractGui {
                         "<gray>Support output x1-x64 per craft"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new RecipeEditorGui(plugin, player, data).open();
+            new RecipeEditorGui(plugin, player, data).openAsChildOfEditor(this);
         });
 
         // === Hiệu Ứng (phản đòn / sát thương thêm khi hit/damage/equip/fullset/die) slot 27 ===

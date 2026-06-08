@@ -109,13 +109,5 @@ public class RecipeListGui extends AbstractGui {
         setItem(52, page < totalPages - 1 ? createNextButton() : createItem(Material.GRAY_STAINED_GLASS_PANE, " "),
                 page < totalPages - 1 ? ev -> { player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                     new RecipeListGui(plugin, player, page + 1).open(); } : null);
-        setItem(45, createBackButton(), ev -> {
-            if (!player.hasPermission("uitem.craft")) {
-                player.sendMessage(TextUtil.error(Messages.noPermission()));
-                return;
-            }
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new ItemListGui(plugin, player).open();
-        });
     }
 }
