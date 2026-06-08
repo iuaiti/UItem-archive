@@ -17,6 +17,7 @@ public enum SkillTrigger {
     SHIFT_LEFT_CLICK(true),
     DROP(true),
     SWAP_HAND(true),
+    THROW(true),
 
     // ==================== COMBAT PASSIVE ====================
     HIT(false),
@@ -62,6 +63,7 @@ public enum SkillTrigger {
                 case "SHIFT_LEFT", "SLEFT", "SHIFTLEFT" -> SHIFT_LEFT_CLICK;
                 case "Q", "DROP_ITEM" -> DROP;
                 case "F", "SWAP" -> SWAP_HAND;
+                case "THROW", "TOSS", "DROP_ITEMS" -> THROW;
                 case "ON_HIT", "ATTACK", "DAMAGE_DEALT" -> HIT;
                 case "ON_DAMAGE", "HURT", "DAMAGED" -> TAKE_DAMAGE;
                 case "ON_EQUIP", "EQUIPPED", "WEAR" -> EQUIP;

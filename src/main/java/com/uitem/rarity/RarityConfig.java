@@ -16,7 +16,7 @@ public class RarityConfig {
 
     public static void load(UItemPlugin pluginInstance) {
         plugin = pluginInstance;
-        rarities.clear();
+        // Không clear để giữ dữ liệu nếu có lỗi khi load file
 
         // Dedicated rarity file (user requested separate file for easy copy-paste)
         rarityFile = new File(plugin.getDataFolder(), "rarity.yml");
@@ -62,6 +62,7 @@ public class RarityConfig {
             String prefix = rs.getString("prefix", "");
             List<String> lore = rs.getStringList("lore");
             rarities.put(name, new RarityEntry(name, color, prefix, lore));
+            plugin.getLogger().info("[UItem] Loaded rarity: " + name + " (color=" + color + ", prefix=" + prefix + ")");
         }
     }
 
@@ -150,11 +151,13 @@ public class RarityConfig {
         if (name == null || name.isBlank()) return;
         String key = name.toUpperCase(Locale.ROOT);
         rarities.put(key, new RarityEntry(key, color != null ? color : "<white>", prefix != null ? prefix : "", lore != null ? lore : List.of()));
+        saveRarities();
     }
 
     public static void removeRarity(String name) {
         if (name == null) return;
         rarities.remove(name.toUpperCase(Locale.ROOT));
+        saveRarities();
     }
 
     public static void reloadFromFile() {

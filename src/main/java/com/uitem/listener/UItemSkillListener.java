@@ -142,8 +142,12 @@ public class UItemSkillListener implements Listener {
         UItemData data = getUItemData(item);
         if (data == null || data.getSkills() == null) return;
 
-        boolean executed = executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.DROP, null);
-        if (executed && shouldCancelAny(data, SkillTrigger.DROP)) {
+        // Check if this is a throw (has velocity) vs normal drop
+        boolean isThrow = event.getItemDrop().getVelocity().lengthSquared() > 0.1;
+        SkillTrigger trigger = isThrow ? SkillTrigger.THROW : SkillTrigger.DROP;
+
+        boolean executed = executor.executeSkills(player, data.getId(), data.getSkills(), trigger, null);
+        if (executed && shouldCancelAny(data, trigger)) {
             event.setCancelled(true);
         }
     }

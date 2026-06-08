@@ -94,8 +94,6 @@ public class StorageManager {
         minAllowedWriteId.set(requestCounter.incrementAndGet());
         pendingRef.set(null);
 
-        manager.clearAll();
-
         if (itemsDir.exists() && itemsDir.isDirectory()) {
             loadFromDirectory(manager);
         } else {
@@ -210,15 +208,8 @@ public class StorageManager {
 
             LoadResult r = parseItem(id, itemsSection, label);
             if (r.data() != null) {
-                // Kiểm tra trùng ID giữa các file
-                if (manager.hasItem(id)) {
-                    logError("[%s] Duplicate item id '%s' — already registered from another file. Skipped.",
-                            label, id);
-                    skipped++;
-                } else {
-                    manager.registerItem(r.data());
-                    loaded++;
-                }
+                manager.registerItem(r.data());
+                loaded++;
             } else {
                 skipped++;
             }

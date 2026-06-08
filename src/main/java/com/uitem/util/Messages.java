@@ -356,6 +356,7 @@ public final class Messages {
             case "SHIFT_LEFT_CLICK" -> get("trigger-sleft", "Shift + Left Click", "Shift + Click Trai");
             case "DROP" -> get("trigger-drop", "Drop (Q)", "Tha Item (Q)");
             case "SWAP_HAND" -> get("trigger-swap", "Swap Hand (F)", "Doi Tay (F)");
+            case "THROW" -> get("trigger-throw", "Throw", "Nem");
             case "HIT" -> get("trigger-hit", "On Hit", "Danh Trung");
             case "TAKE_DAMAGE" -> get("trigger-damage", "On Damaged", "Bi Danh");
             case "KILL" -> get("trigger-kill", "On Kill", "Giet");
@@ -376,6 +377,7 @@ public final class Messages {
             case "SHIFT_LEFT_CLICK" -> get("trigger-desc-sleft", "Activate on shift + left click", "Kich hoat khi shift + click trai");
             case "DROP" -> get("trigger-desc-drop", "Activate when dropping the item (Q)", "Kich hoat khi tha item (Q)");
             case "SWAP_HAND" -> get("trigger-desc-swap", "Activate when swapping hands (F)", "Kich hoat khi doi tay (F)");
+            case "THROW" -> get("trigger-desc-throw", "Activate when throwing the item", "Kich hoat khi nem item");
             case "HIT" -> get("trigger-desc-hit", "Activate when hitting a target", "Kich hoat khi danh trung muc tieu");
             case "TAKE_DAMAGE" -> get("trigger-desc-damage", "Activate when taking damage", "Kich hoat khi bi danh");
             case "KILL" -> get("trigger-desc-kill", "Activate when killing with this item", "Kich hoat khi giet bang item nay");
