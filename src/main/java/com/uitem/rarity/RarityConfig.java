@@ -21,7 +21,7 @@ public class RarityConfig {
         // Dedicated rarity file (user requested separate file for easy copy-paste)
         rarityFile = new File(plugin.getDataFolder(), "rarity.yml");
         if (!rarityFile.exists()) {
-            // Try legacy from config.yml
+            // Try legacy from config.yml first
             ConfigurationSection section = plugin.getConfig().getConfigurationSection("rarity");
             if (section != null && !section.getKeys(false).isEmpty()) {
                 loadFromSection(section);
@@ -29,9 +29,9 @@ public class RarityConfig {
                 plugin.getLogger().info("[UItem] Migrated rarity config from config.yml to rarity.yml");
                 return;
             }
-            createDefaults();
-            saveRarities();
-            return;
+            // No legacy, copy default from resources
+            plugin.saveResource("rarity.yml", false);
+            plugin.getLogger().info("[UItem] Created default rarity.yml");
         }
 
         YamlConfiguration cfg = YamlConfiguration.loadConfiguration(rarityFile);
