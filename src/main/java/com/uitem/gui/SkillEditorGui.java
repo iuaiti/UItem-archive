@@ -32,7 +32,8 @@ public class SkillEditorGui extends AbstractGui {
     private static final List<SkillTrigger> ACTIVE_TRIGGERS = List.of(
             SkillTrigger.RIGHT_CLICK, SkillTrigger.LEFT_CLICK,
             SkillTrigger.SHIFT_RIGHT_CLICK, SkillTrigger.SHIFT_LEFT_CLICK,
-            SkillTrigger.DROP, SkillTrigger.SWAP_HAND
+            SkillTrigger.DROP, SkillTrigger.SWAP_HAND,
+            SkillTrigger.THROW, SkillTrigger.SHOOT   // THROW = drop with velocity; SHOOT = bow/crossbow/trident launch (new)
     );
 
     private static final List<SkillTrigger> PASSIVE_TRIGGERS = List.of(

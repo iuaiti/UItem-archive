@@ -18,6 +18,9 @@ public enum SkillTrigger {
     DROP(true),
     SWAP_HAND(true),
     THROW(true),
+    // Shooting / launching projectile with a weapon (bow, crossbow, trident, etc.)
+    // Use this for skills that should activate when firing the custom bow/trident item.
+    SHOOT(true),
 
     // ==================== COMBAT PASSIVE ====================
     HIT(false),
@@ -64,6 +67,7 @@ public enum SkillTrigger {
                 case "Q", "DROP_ITEM" -> DROP;
                 case "F", "SWAP" -> SWAP_HAND;
                 case "THROW", "TOSS", "DROP_ITEMS" -> THROW;
+                case "SHOOT", "LAUNCH", "BOW", "BOW_SHOOT", "TRIDENT", "TRIDENT_THROW", "FIRE", "PROJECTILE" -> SHOOT;
                 case "ON_HIT", "ATTACK", "DAMAGE_DEALT" -> HIT;
                 case "ON_DAMAGE", "HURT", "DAMAGED" -> TAKE_DAMAGE;
                 case "ON_EQUIP", "EQUIPPED", "WEAR" -> EQUIP;

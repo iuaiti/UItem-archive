@@ -15,11 +15,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
+import org.bukkit.entity.Trident;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -148,6 +152,60 @@ public class UItemSkillListener implements Listener {
 
         boolean executed = executor.executeSkills(player, data.getId(), data.getSkills(), trigger, null);
         if (executed && shouldCancelAny(data, trigger)) {
+            event.setCancelled(true);
+        }
+    }
+
+    // =========================================================
+    // SHOOT trigger: bow/crossbow/trident (user request: ném đinh ba / bắn cung)
+    // =========================================================
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBowShoot(EntityShootBowEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        ItemStack bow = event.getBow();
+        if (bow == null || bow.getType().isAir()) return;
+
+        UItemData data = getUItemData(bow);
+        if (data == null || data.getSkills() == null || data.getSkills().isEmpty()) return;
+
+        boolean executed = executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.SHOOT, null);
+        if (executed && shouldCancelAny(data, SkillTrigger.SHOOT)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onTridentOrProjectileThrow(ProjectileLaunchEvent event) {
+        if (!(event.getEntity().getShooter() instanceof Player player)) return;
+
+        // For trident throws (and potentially other projectile weapons), look at held items.
+        // Prefer main hand, then off hand. We trigger SHOOT on the UItem weapon used to launch.
+        ItemStack weapon = player.getInventory().getItemInMainHand();
+        UItemData data = getUItemData(weapon);
+
+        if (data == null) {
+            // Fallback to offhand (rare for trident/bow but possible)
+            weapon = player.getInventory().getItemInOffHand();
+            data = getUItemData(weapon);
+        }
+
+        // If the projectile is a trident, also try to match a TRIDENT in hand even if not (yet) resolved as UItem above
+        if (data == null && event.getEntity() instanceof Trident) {
+            if (weapon != null && weapon.getType() == Material.TRIDENT) {
+                data = getUItemData(weapon);
+            } else {
+                ItemStack off = player.getInventory().getItemInOffHand();
+                if (off != null && off.getType() == Material.TRIDENT) {
+                    data = getUItemData(off);
+                }
+            }
+        }
+
+        if (data == null || data.getSkills() == null || data.getSkills().isEmpty()) return;
+
+        boolean executed = executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.SHOOT, null);
+        if (executed && shouldCancelAny(data, SkillTrigger.SHOOT)) {
             event.setCancelled(true);
         }
     }

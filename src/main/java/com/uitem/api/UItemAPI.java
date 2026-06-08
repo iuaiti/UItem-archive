@@ -261,6 +261,9 @@ public final class UItemAPI {
         }
 
         plugin.getItemManager().removeItem(id);
+        // Also delete the corresponding split file(s) so the item does not reappear after reload
+        // when using items/*.yml split config (addresses "edits + delete lost on reload")
+        plugin.getStorageManager().deleteItemFile(id);
         plugin.getStorageManager().saveAll(plugin.getItemManager());
         return true;
     }

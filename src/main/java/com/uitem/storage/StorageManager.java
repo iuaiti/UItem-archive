@@ -90,6 +90,10 @@ public class StorageManager {
      * Đọc lại từ disk mỗi lần — không dùng cache.
      */
     public void loadAll(UItemManager manager) {
+        // Make on-disk files (including split items/*.yml) the source of truth.
+        // This fixes "GUI edits disappear after /uitem reload" — previous in-memory only items or stale deleted items are cleared.
+        manager.clearAll();
+
         // Huỷ pending-save cũ để tránh ghi đè lên dữ liệu sắp load
         minAllowedWriteId.set(requestCounter.incrementAndGet());
         pendingRef.set(null);
@@ -521,6 +525,51 @@ public class StorageManager {
         saveItemIndividual(data);
         // Also keep in-memory
         manager.registerItem(data);
+    }
+
+    /**
+     * Delete the on-disk file(s) for an item id.
+     * Supports the default save location (items/&lt;id&gt;.yml) and any split files under items/ (including subdirs).
+     * Called on removeItem so that deleted items do not re-appear after /reload when using split files.
+     */
+    public void deleteItemFile(String id) {
+        if (id == null || id.isBlank()) return;
+        // Primary location used by saveItemIndividual
+        File primary = new File(itemsDir, id + ".yml");
+        if (primary.exists() && primary.delete()) {
+            plugin.getLogger().info("[UItem] Deleted item file for '" + id + "': " + primary.getName());
+        }
+        // Also clean any copies that may exist in subfolders (user-organized split files)
+        deleteItemFilesRecursive(itemsDir, id);
+    }
+
+    private void deleteItemFilesRecursive(File dir, String targetId) {
+        File[] children = dir.listFiles();
+        if (children == null) return;
+        for (File f : children) {
+            if (f.isDirectory()) {
+                deleteItemFilesRecursive(f, targetId);
+            } else if (f.isFile() && f.getName().endsWith(".yml")) {
+                // Peek to see if this file defines the target item id (flat or under "items:")
+                try {
+                    YamlConfiguration peek = new YamlConfiguration();
+                    peek.load(f);
+                    ConfigurationSection root = peek.isConfigurationSection(ITEMS_SECTION)
+                            ? peek.getConfigurationSection(ITEMS_SECTION)
+                            : peek;
+                    if (root != null && root.isConfigurationSection(targetId)) {
+                        ConfigurationSection itemSec = root.getConfigurationSection(targetId);
+                        if (itemSec != null && itemSec.contains("material")) {
+                            if (f.delete()) {
+                                plugin.getLogger().info("[UItem] Deleted split item file for '" + targetId + "': " + relativeToDataFolder(f));
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // ignore bad yml during delete scan
+                }
+            }
+        }
     }
 
     /**
