@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
@@ -29,6 +30,35 @@ public final class SkillExecutor {
     private final UItemPlugin plugin;
     private final CooldownManager cooldowns;
     private final MiniMessage mm = MiniMessage.miniMessage();
+
+    // Safe blacklist for BLOCK_BREAK area skills (3x3 pick, hoe, etc.)
+    // Prevents griefing storage, spawners, bedrock, and reduces anti-xray side-effects.
+    // These blocks are never destroyed by the skill even if they fall inside the radius area.
+    private static final java.util.Set<Material> BLOCK_BREAK_PROTECTED = java.util.Set.of(
+            Material.BEDROCK,
+            Material.BARRIER,
+            Material.STRUCTURE_VOID,
+            Material.SPAWNER,
+            Material.CHEST,
+            Material.TRAPPED_CHEST,
+            Material.ENDER_CHEST,
+            Material.HOPPER,
+            Material.DISPENSER,
+            Material.DROPPER,
+            Material.BARREL,
+            Material.BEACON,
+            Material.END_PORTAL_FRAME,
+            Material.DRAGON_EGG,
+            Material.FURNACE,
+            Material.BLAST_FURNACE,
+            Material.SMOKER,
+            Material.COMMAND_BLOCK,
+            Material.REPEATING_COMMAND_BLOCK,
+            Material.CHAIN_COMMAND_BLOCK,
+            Material.STRUCTURE_BLOCK,
+            Material.JIGSAW,
+            Material.LIGHT
+    );
 
     public SkillExecutor(UItemPlugin plugin, CooldownManager cooldowns) {
         this.plugin = plugin;
@@ -375,11 +405,66 @@ public final class SkillExecutor {
 
             case BLOCK_BREAK -> {
                 int range = action.getIntParam("range", 5);
+                int radius = action.getIntParam("radius", 0);
                 Block targetBlock = player.getTargetBlockExact(range);
-                if (targetBlock != null && !targetBlock.getType().isAir()) {
-                    targetBlock.breakNaturally();
-                    world.playSound(targetBlock.getLocation(), Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, 0.5f, 1.0f);
+
+                // Safety: abort early for air or protected blocks (storage, spawner, bedrock...)
+                // This is the recommended approach for high-quality 3x3 tools instead of "fill ... destroy".
+                if (targetBlock == null
+                        || targetBlock.getType().isAir()
+                        || targetBlock.isLiquid()
+                        || isBlockBreakProtected(targetBlock.getType())) {
+                    return true;
                 }
+
+                ItemStack tool = player.getInventory().getItemInMainHand();
+
+                if (radius <= 0) {
+                    // Single block (original behavior)
+                    targetBlock.breakNaturally(tool);
+                } else {
+                    // Area mode: only the surface plane (3x3, 5x5...) perpendicular to the mined face.
+                    // Never a 3x3x3 cube. Per-block breakNaturally(tool) so Fortune/Silk Touch work,
+                    // and anti-xray sees only the necessary individual block updates.
+                    BlockFace face = null;
+                    try {
+                        var ray = player.rayTraceBlocks(range);
+                        if (ray != null) face = ray.getHitBlockFace();
+                    } catch (Exception ignored) {}
+                    if (face == null) face = BlockFace.SELF;
+
+                    int ax1 = 0, ay1 = 0, az1 = 0, ax2 = 0, ay2 = 0, az2 = 0;
+                    switch (face) {
+                        case NORTH, SOUTH -> { ax1 = 1; ay1 = 0; az1 = 0; ax2 = 0; ay2 = 1; az2 = 0; } // vertical wall: expand X + Y
+                        case EAST, WEST   -> { ax1 = 0; ay1 = 0; az1 = 1; ax2 = 0; ay2 = 1; az2 = 0; } // vertical wall: expand Z + Y
+                        case UP, DOWN     -> { ax1 = 1; ay1 = 0; az1 = 0; ax2 = 0; ay2 = 0; az2 = 1; } // floor/ceiling: expand X + Z
+                        default           -> { ax1 = 1; ay1 = 0; az1 = 0; ax2 = 0; ay2 = 1; az2 = 0; }
+                    }
+
+                    // Collect first (positions are stable even if physics like sand happens)
+                    java.util.List<Block> toBreak = new java.util.ArrayList<>();
+                    for (int i = -radius; i <= radius; i++) {
+                        for (int j = -radius; j <= radius; j++) {
+                            Block b = targetBlock.getRelative(
+                                    i * ax1 + j * ax2,
+                                    i * ay1 + j * ay2,
+                                    i * az1 + j * az2
+                            );
+                            if (b != null
+                                    && !b.getType().isAir()
+                                    && !b.isLiquid()
+                                    && !isBlockBreakProtected(b.getType())) {
+                                toBreak.add(b);
+                            }
+                        }
+                    }
+
+                    for (Block b : toBreak) {
+                        b.breakNaturally(tool);
+                    }
+                }
+
+                world.playSound(targetBlock.getLocation(), Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, 0.5f, 1.0f);
                 return true;
             }
 
@@ -543,5 +628,25 @@ public final class SkillExecutor {
                 cooldowns.markUsed(player, itemId, skill.getId());
             }
         }
+    }
+
+    // =========================================================
+    // BLOCK_BREAK helpers (3x3 / area mining support)
+    // =========================================================
+
+    /**
+     * Returns true if this material should never be destroyed by the BLOCK_BREAK skill action.
+     * This protects player storage, mob spawners, bedrock, admins blocks, and limits
+     * anti-xray information leakage that can happen with mass block updates.
+     *
+     * Shulker boxes (all colors) are detected by name to avoid a huge list.
+     */
+    private boolean isBlockBreakProtected(Material material) {
+        if (material == null) return true;
+        if (BLOCK_BREAK_PROTECTED.contains(material)) return true;
+        String name = material.name();
+        // All shulker box variants (SHULKER_BOX + 16 colored)
+        if (name.endsWith("_SHULKER_BOX") || name.equals("SHULKER_BOX")) return true;
+        return false;
     }
 }

@@ -225,6 +225,7 @@ public class SkillAction {
     public static SkillAction blockBreak() {
         SkillAction a = new SkillAction(ActionType.BLOCK_BREAK);
         a.setParam("range", 5);
+        a.setParam("radius", 0);
         return a;
     }
 

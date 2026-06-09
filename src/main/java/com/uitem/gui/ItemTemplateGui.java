@@ -350,6 +350,23 @@ public class ItemTemplateGui extends AbstractGui {
         d.getFlags().add("HIDE_ENCHANTS");
         d.setUnbreakable(true);
         d.setRarity("LEGENDARY");
+
+        // Demo skill for trident: on throw (SHOOT trigger for trident/bow/crossbow)
+        com.uitem.skill.Skill throwSkill = new com.uitem.skill.Skill("ocean_throw");
+        throwSkill.setDisplayName("<blue>🌊 Ocean Throw");
+        throwSkill.setTrigger(com.uitem.skill.SkillTrigger.SHOOT);
+        throwSkill.setCooldown(0.4);
+        throwSkill.setCancelEvent(false);
+        com.uitem.skill.SkillAction soundAction = com.uitem.skill.SkillAction.playSound("ITEM_TRIDENT_THROW", 0.8f, 1.1f);
+        com.uitem.skill.SkillAction particleAction = new com.uitem.skill.SkillAction(com.uitem.skill.SkillAction.ActionType.SPAWN_PARTICLE);
+        particleAction.setParam("particle", "CLOUD");
+        particleAction.setParam("count", 12);
+        particleAction.setParam("offset", 0.4);
+        com.uitem.skill.SkillAction barAction = com.uitem.skill.SkillAction.actionBar("<blue>🔱 Đinh ba đã lao đi!");
+        throwSkill.addAction(soundAction);
+        throwSkill.addAction(particleAction);
+        throwSkill.addAction(barAction);
+        d.getSkills().add(throwSkill);
         return d;
     }
 

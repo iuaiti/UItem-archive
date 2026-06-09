@@ -340,7 +340,11 @@ public class SkillEditorGui extends AbstractGui {
             case CONSUME_ITEM -> lore.add("<gray>Tiêu hao 1 item");
             case GIVE_ITEM -> lore.add("<gray>Vật phẩm: <white>" + a.getStringParam("material", "DIAMOND") + " x" + a.getIntParam("amount", 1));
             case REMOVE_POTION -> lore.add("<gray>Xóa effect: <white>" + a.getStringParam("effect", "all"));
-            case BLOCK_BREAK -> lore.add("<gray>Tầm: <white>" + a.getIntParam("range", 5));
+            case BLOCK_BREAK -> {
+                int r = a.getIntParam("range", 5);
+                int rad = a.getIntParam("radius", 0);
+                lore.add("<gray>Tầm: <white>" + r + (rad > 0 ? "  <yellow>Radius: " + rad + " (3x3+)" : ""));
+            }
             case EXPLOSION -> lore.add("<gray>Power: <white>" + a.getDoubleParam("power", 3) + " Fire: " + a.getBooleanParam("fire", false));
             case AREA_DAMAGE -> lore.add("<gray>DMG: <white>" + a.getDoubleParam("amount", 5) + " Radius: " + a.getDoubleParam("radius", 5));
             case POTION_AREA -> lore.add("<gray>Effect: <white>" + a.getStringParam("effect", "?") + " TK: " + a.getDoubleParam("radius", 5));
@@ -433,7 +437,10 @@ public class SkillEditorGui extends AbstractGui {
                 action.setParam("z", 0);
                 action.setParam("relative", true);
             }
-            case BLOCK_BREAK -> action.setParam("range", 5);
+            case BLOCK_BREAK -> {
+                action.setParam("range", 5);
+                action.setParam("radius", 0);
+            }
             case EXPLOSION -> {
                 action.setParam("power", 3.0);
                 action.setParam("fire", false);
@@ -476,7 +483,7 @@ public class SkillEditorGui extends AbstractGui {
             case CONSOLE_COMMAND, PLAYER_COMMAND -> promptForActionParamThenAdd(action, "command", "Enter command (supports %player% %target%):");
             case LAUNCH -> promptForActionParamThenAdd(action, "y", "Enter launch Y power (e.g. 1.5):");
             case TELEPORT -> promptForActionParamThenAdd(action, "y", "Enter teleport Y offset:");
-            case BLOCK_BREAK -> promptForActionParamThenAdd(action, "range", "Enter block break range (1-10):");
+            case BLOCK_BREAK -> promptForActionParamThenAdd(action, "range", "Enter block break range (1-10). Radius=0 for single block; set later via edit or YAML:");
             case EXPLOSION -> promptForActionParamThenAdd(action, "power", "Enter explosion power (0.1-10):");
             case AREA_DAMAGE -> promptForActionParamThenAdd(action, "amount", "Enter area damage amount:");
             case POTION_AREA -> promptForActionParamThenAdd(action, "effect", "Enter area potion effect (e.g. POISON, WITHER):");
@@ -585,7 +592,22 @@ public class SkillEditorGui extends AbstractGui {
             case LAUNCH -> promptForActionParam(action, "y", "Enter new Y power:", Messages.skillUpdated("launch"));
             case TELEPORT -> promptForActionParam(action, "y", "Enter new Y offset:", Messages.skillUpdated("teleport"));
             case CONSUME_DURABILITY -> promptForActionParam(action, "amount", "Enter durability cost:", Messages.skillUpdated("durability"));
-            case BLOCK_BREAK -> promptForActionParam(action, "range", "Enter new range (1-10):", Messages.skillUpdated("range"));
+            case BLOCK_BREAK -> {
+                // Chain: edit range, then immediately edit radius for convenience (3x3 support)
+                plugin.getChatInputManager().requestInput(player, "<yellow>Enter new range (1-10):", input -> {
+                    try {
+                        action.setParam("range", Integer.parseInt(input.trim()));
+                    } catch (Exception ignored) {}
+                    // Now prompt radius right after
+                    plugin.getChatInputManager().requestInput(player, "<yellow>Enter radius for area (0=single, 1=3x3, 2=5x5...):", rinput -> {
+                        try {
+                            action.setParam("radius", Integer.parseInt(rinput.trim()));
+                        } catch (Exception ignored) {}
+                        player.sendMessage(TextUtil.success(Messages.skillUpdated("range+radius")));
+                        saveAndReopen();
+                    }, this::reopen);
+                }, this::reopen);
+            }
             case EXPLOSION -> promptForActionParam(action, "power", "Enter new explosion power:", Messages.skillUpdated("power"));
             case POTION_AREA -> promptForActionParam(action, "effect", "Enter new effect:", Messages.skillUpdated("effect"));
             case BLIND, GLOW, LEVITATE, FREEZE -> promptForActionParam(action, "duration", "Enter new duration (seconds):", Messages.skillUpdated("duration"));
