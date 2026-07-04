@@ -6,7 +6,7 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 
 /**
- * Utility class cho text và component.
+ * Utility class for text and components.
  */
 public final class TextUtil {
 
@@ -16,53 +16,53 @@ public final class TextUtil {
     }
 
     /**
-     * Parse MiniMessage string thành Component.
+     * Parse MiniMessage string into Component.
      */
     public static Component parse(String miniMessageStr) {
         if (miniMessageStr == null || miniMessageStr.isEmpty()) {
             return Component.empty();
         }
         return MINI_MESSAGE.deserialize(miniMessageStr)
-                .decoration(TextDecoration.ITALIC, false); // Tắt italic mặc định của lore
+                .decoration(TextDecoration.ITALIC, false); // Disable default italic for lore
     }
 
     /**
-     * Tạo Component đơn giản với màu.
+     * Create a simple Component with color.
      */
     public static Component colored(String text, NamedTextColor color) {
         return Component.text(text, color).decoration(TextDecoration.ITALIC, false);
     }
 
     /**
-     * Prefix cho tin nhắn plugin.
+     * Prefix for plugin messages.
      */
     public static Component prefix() {
         return MINI_MESSAGE.deserialize("<gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <dark_gray>│ ");
     }
 
     /**
-     * Tin nhắn với prefix.
+     * Message with prefix.
      */
     public static Component prefixed(String message) {
         return prefix().append(MINI_MESSAGE.deserialize(message));
     }
 
     /**
-     * Tin nhắn lỗi.
+     * Error message.
      */
     public static Component error(String message) {
         return prefix().append(Component.text(message, NamedTextColor.RED));
     }
 
     /**
-     * Tin nhắn thành công.
+     * Success message.
      */
     public static Component success(String message) {
         return prefix().append(Component.text(message, NamedTextColor.GREEN));
     }
 
     /**
-     * Tin nhắn thông tin.
+     * Info message.
      */
     public static Component info(String message) {
         return prefix().append(Component.text(message, NamedTextColor.GRAY));

@@ -7,7 +7,7 @@ import org.bukkit.plugin.Plugin;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Scheduler wrapper hỗ trợ Paper + Folia bằng API scheduler hiện đại.
+ * Scheduler wrapper that supports Paper + Folia via modern scheduler APIs.
  */
 public final class SchedulerUtil {
 

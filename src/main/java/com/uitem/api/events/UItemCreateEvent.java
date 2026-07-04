@@ -7,15 +7,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Fired khi một custom item mới được tạo trong UItem.
+ * Fired when a new custom item is created in UItem.
  *
- * <p>Cancel event này để ngăn item được đăng ký vào hệ thống.
+ * <p>Cancel this event to prevent the item from being registered into the system.
  *
  * <pre>{@code
  * @EventHandler
  * public void onCreate(UItemCreateEvent event) {
  *     if (event.getItemData().getId().startsWith("test_")) {
- *         event.setCancelled(true); // chặn tạo item bắt đầu bằng "test_"
+ *         event.setCancelled(true); // block items starting with "test_"
  *     }
  * }
  * }</pre>
@@ -28,8 +28,8 @@ public class UItemCreateEvent extends UItemCancellableEvent {
     private final CommandSender creator;
 
     /**
-     * @param itemData Dữ liệu item mới sắp được tạo
-     * @param creator  Người tạo item (null nếu tạo qua internal API)
+     * @param itemData Data of the new item about to be created
+     * @param creator  Who is creating the item (null if created via internal API)
      */
     public UItemCreateEvent(@NotNull UItemData itemData, @Nullable CommandSender creator) {
         super(itemData);
@@ -37,8 +37,8 @@ public class UItemCreateEvent extends UItemCancellableEvent {
     }
 
     /**
-     * Ai trigger việc tạo item này.
-     * null nếu được tạo bởi plugin hoặc qua {@code UItemAPI} mà không có sender.
+     * Who triggered the creation of this item.
+     * null if created by the plugin or via {@code UItemAPI} without a sender.
      */
     @Nullable
     public CommandSender getCreator() {

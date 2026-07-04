@@ -13,14 +13,14 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.List;
 
 /**
- * GUI chọn ItemFlags cho item.
+ * GUI to pick ItemFlags for an item.
  */
 public class FlagGui extends AbstractGui {
 
     private final UItemData data;
 
     public FlagGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 36, "<blue><bold>Cờ Item (Flags)</bold> <dark_gray>- <white>" + data.getId());
+        super(plugin, player, 36, "<blue><bold>Item Flags</bold> <dark_gray>- <white>" + data.getId());
         this.data = data;
     }
 
@@ -46,7 +46,7 @@ public class FlagGui extends AbstractGui {
 
         ItemFlag[] flags = ItemFlag.values();
 
-        // Bắt đầu từ slot 10 (hàng 1, cột 1)
+        // Start from slot 10 (row 1, col 1)
         int[] slots = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
 
         for (int i = 0; i < Math.min(flags.length, slots.length); i++) {
@@ -67,7 +67,7 @@ public class FlagGui extends AbstractGui {
                         TextUtil.parse(""),
                         TextUtil.parse("<gray>" + getFlagDescription(flag)),
                         TextUtil.parse(""),
-                        TextUtil.parse("<yellow>Click để bật/tắt")
+                        TextUtil.parse("<yellow>Click to toggle")
                 ));
                 if (isEnabled) {
                     meta.setEnchantmentGlintOverride(true);
@@ -89,21 +89,21 @@ public class FlagGui extends AbstractGui {
             });
         }
 
-        // Quay lại
+        // Back
         setItem(31, createBackButton(), event -> goBack());
     }
 
     private String getFlagDescription(ItemFlag flag) {
         return switch (flag) {
-            case HIDE_ENCHANTS -> "Ẩn phù phép";
-            case HIDE_ATTRIBUTES -> "Ẩn thuộc tính (sát thương, tốc độ...)";
-            case HIDE_UNBREAKABLE -> "Ẩn dòng Unbreakable";
-            case HIDE_DESTROYS -> "Ẩn danh sách block có thể phá";
-            case HIDE_PLACED_ON -> "Ẩn danh sách block có thể đặt lên";
-            case HIDE_ADDITIONAL_TOOLTIP -> "Ẩn tooltip bổ sung (potion, banner...)";
-            case HIDE_DYE -> "Ẩn màu nhuộm giáp da";
-            case HIDE_ARMOR_TRIM -> "Ẩn armor trim";
-            default -> "Không có mô tả";
+            case HIDE_ENCHANTS -> "Hide enchantments";
+            case HIDE_ATTRIBUTES -> "Hide attributes (damage, speed...)";
+            case HIDE_UNBREAKABLE -> "Hide the Unbreakable line";
+            case HIDE_DESTROYS -> "Hide the list of blocks that can be destroyed";
+            case HIDE_PLACED_ON -> "Hide the list of blocks it can be placed on";
+            case HIDE_ADDITIONAL_TOOLTIP -> "Hide additional tooltip (potion, banner...)";
+            case HIDE_DYE -> "Hide leather armor dye color";
+            case HIDE_ARMOR_TRIM -> "Hide armor trim";
+            default -> "No description";
         };
     }
 }

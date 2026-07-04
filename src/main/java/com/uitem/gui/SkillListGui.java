@@ -15,8 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Danh sách skill/passive của item.
- * Cho phép thêm, xóa, chỉnh sửa skill.
+ * List of an item's skills/passives.
+ * Allows adding, deleting, and editing skills.
  */
 public class SkillListGui extends AbstractGui {
 
@@ -58,7 +58,7 @@ public class SkillListGui extends AbstractGui {
             ItemStack icon = buildSkillIcon(sk);
             setItem(slots[i], icon, ev -> {
                 if (ev.isShiftClick() && ev.isRightClick()) {
-                    // Shift + Right Click = Xóa
+                    // Shift + Right Click = Delete
                     if (idx < data.getSkills().size()) {
                         data.getSkills().remove(idx);
                         player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.6f, 1.0f);
@@ -88,7 +88,7 @@ public class SkillListGui extends AbstractGui {
                         "<yellow>Click to create"
                 )), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            // Tạo skill trống với ID ngẫu nhiên
+            // Create an empty skill with a random ID
             String newId = "skill_" + (data.getSkills().size() + 1);
             Skill newSkill = new Skill(newId);
             newSkill.setTrigger(SkillTrigger.RIGHT_CLICK);
@@ -144,7 +144,7 @@ public class SkillListGui extends AbstractGui {
         lore.add("<gray>Actions: <white>" + sk.getActions().size());
         lore.add("");
         lore.add(Messages.skillListClickEdit());
-        lore.add("<red>Shift + Right-click để xóa");
+        lore.add("<red>Shift + Right-click to delete");
         return createItem(mat, "<light_purple>" + sk.getId() + " <dark_gray>→ <white>" + sk.getTrigger().name(), lore);
     }
 

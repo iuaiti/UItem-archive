@@ -20,32 +20,32 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 /**
- * Quản lý đọc/ghi item config.
+ * Manages reading/writing item config.
  *
- * <h3>Cấu trúc thư mục được hỗ trợ:</h3>
+ * <h3>Supported directory structure:</h3>
  * <pre>
  * plugins/UItem/
- * ├── items.yml              ← file đơn (backward-compat)
- * └── items/                 ← thư mục ưu tiên hơn nếu tồn tại
+ * ├── items.yml              ← single-file (backward-compat)
+ * └── items/                 ← preferred folder, used if it exists
  *     ├── weapons.yml
  *     ├── armor.yml
  *     └── boss/
- *         └── mythic.yml     ← lồng thư mục tùy ý
+ *         └── mythic.yml     ← nestable subfolders
  * </pre>
  *
- * <p><b>Quy tắc:</b>
+ * <p><b>Rules:</b>
  * <ul>
- *   <li>Nếu thư mục {@code items/} tồn tại → quét TẤT CẢ file .yml bên trong (đệ quy).</li>
- *   <li>Nếu không → đọc {@code items.yml} như cũ.</li>
- *   <li>Reload đọc lại từ disk, không dùng cache.</li>
- *   <li>Save từ GUI/lệnh chỉ ghi vào {@code items.yml} (hoặc file gốc của item đó nếu được track).</li>
- *   <li>Không ghi đè file người dùng khi reload.</li>
- *   <li>Mọi lỗi config đều được log rõ ràng — không bao giờ im lặng.</li>
+ *   <li>If {@code items/} folder exists → scan ALL .yml files inside (recursively).</li>
+ *   <li>Otherwise → read {@code items.yml} as before.</li>
+ *   <li>Reload re-reads from disk, no caching.</li>
+ *   <li>Saves from GUI/commands only write to {@code items.yml} (or the item's original file if tracked).</li>
+ *   <li>Does not overwrite user files on reload.</li>
+ *   <li>All config errors are logged clearly — never silently ignored.</li>
  * </ul>
  */
 public class StorageManager {
 
-    // ── Tên file / thư mục ───────────────────────────────────────────────────
+    // ── File / folder names ───────────────────────────────────────────────────
     private static final String LEGACY_FILE   = "items.yml";
     private static final String ITEMS_DIR     = "items";
     private static final String ITEMS_SECTION = "items";
@@ -55,13 +55,13 @@ public class StorageManager {
 
     private final UItemPlugin plugin;
 
-    /** File chính để GUI save vào (trong items/item.yml - external folder, user có thể edit thủ công). */
+    /** Main file for GUI saves (in items/item.yml - external folder, user can edit manually). */
     private final File itemsFile;
 
     /** Legacy items.yml in root for fallback load. */
     private final File legacyFile;
 
-    /** Thư mục items/ (có thể chưa tồn tại). */
+    /** The items/ folder (may not yet exist). */
     private final File itemsDir;
 
     // ── Async-save state ─────────────────────────────────────────────────────
@@ -85,16 +85,16 @@ public class StorageManager {
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * Load tất cả items từ disk vào manager.
-     * Ưu tiên thư mục {@code items/}; fallback về {@code items.yml}.
-     * Đọc lại từ disk mỗi lần — không dùng cache.
+     * Load all items from disk into the manager.
+     * Prefers the {@code items/} folder; falls back to {@code items.yml}.
+     * Re-reads from disk every time — no caching.
      */
     public void loadAll(UItemManager manager) {
         // Make on-disk files (including split items/*.yml) the source of truth.
         // This fixes "GUI edits disappear after /uitem reload" — previous in-memory only items or stale deleted items are cleared.
         manager.clearAll();
 
-        // Huỷ pending-save cũ để tránh ghi đè lên dữ liệu sắp load
+        // Cancel old pending-save to avoid overwriting data that is about to be loaded
         minAllowedWriteId.set(requestCounter.incrementAndGet());
         pendingRef.set(null);
 
@@ -133,12 +133,12 @@ public class StorageManager {
                 "[UItem] Done — %d item(s) loaded, %d skipped.", totalLoaded, totalSkipped));
     }
 
-    /** Thu thập đệ quy tất cả .yml trong thư mục. */
+    /** Recursively collect all .yml files within a folder. */
     private List<File> collectYamlFiles(File dir) {
         List<File> result = new ArrayList<>();
         File[] children = dir.listFiles();
         if (children == null) return result;
-        Arrays.sort(children, Comparator.comparing(File::getName)); // thứ tự ổn định
+        Arrays.sort(children, Comparator.comparing(File::getName)); // stable ordering
         for (File f : children) {
             if (f.isDirectory()) {
                 result.addAll(collectYamlFiles(f));
@@ -164,7 +164,7 @@ public class StorageManager {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    //  Đọc một file .yml
+    //  Read a single .yml file
     // ─────────────────────────────────────────────────────────────────────────
 
     private FileLoadResult loadSingleYamlFile(File file, String label, UItemManager manager) {
@@ -205,8 +205,12 @@ public class StorageManager {
             // In flat mode, skip keys that are clearly not items (e.g. comments or other top level)
             if (flatMode) {
                 ConfigurationSection candidate = itemsSection.getConfigurationSection(id);
-                if (candidate == null || !candidate.contains("material")) {
+                if (candidate == null) {
                     continue; // not an item definition
+                }
+                // Accept either modern 'source' or legacy 'material' field
+                if (!candidate.contains("source") && !candidate.contains("material")) {
+                    continue;
                 }
             }
 
@@ -222,18 +226,18 @@ public class StorageManager {
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    //  Parse + validate từng item
+    //  Parse + validate each item
     // ═════════════════════════════════════════════════════════════════════════
 
     private LoadResult parseItem(String id, ConfigurationSection itemsSection, String fileName) {
 
-        // ── ID không rỗng ─────────────────────────────────────────────────────
+        // ── ID must not be blank ──────────────────────────────────────────────
         if (id == null || id.isBlank()) {
             logError("[%s] Blank item key — skipped.", fileName);
             return LoadResult.SKIP;
         }
 
-        // ── Section phải là mapping ───────────────────────────────────────────
+        // ── Section must be a mapping ─────────────────────────────────────────
         if (!itemsSection.isConfigurationSection(id)) {
             logError("[%s] Invalid item '%s': not a YAML mapping (check indentation).", fileName, id);
             return LoadResult.SKIP;
@@ -248,25 +252,25 @@ public class StorageManager {
         UItemData data = new UItemData(id);
         boolean hasWarning = false;
 
-        // ── material ──────────────────────────────────────────────────────────
-        String matStr = s.getString("material");
-        if (matStr == null || matStr.isBlank()) {
-            logError("[%s] Invalid item '%s' in items.yml: missing 'material' field.", fileName, id);
-            data.setMaterial(Material.STONE);
-            hasWarning = true;
+        // ── source (new: "namespace:id" like "vanilla:diamond_sword", "ia:ruby_sword") ──
+        // Backward-compat: when source is missing, read 'material' → "vanilla:<material>".
+        String sourceStr = s.getString("source");
+        if (sourceStr != null && !sourceStr.isBlank()) {
+            data.setSource(sourceStr);
         } else {
-            Material mat = parseMaterial(matStr);
-            if (mat == null) {
-                logError("[%s] Invalid item '%s' in items.yml: material '%s' not found.", fileName, id, matStr);
-                return LoadResult.SKIP;
+            String matStr = s.getString("material");
+            if (matStr == null || matStr.isBlank()) {
+                logError("[%s] Item '%s': missing 'source' (e.g. source: vanilla:diamond_sword) — defaulting to vanilla:stone.", fileName, id);
+                hasWarning = true;
+                data.setSource("vanilla:stone");
+            } else {
+                data.setSource("vanilla:" + matStr.toLowerCase(Locale.ROOT));
             }
-            if (!mat.isItem()) {
-                logError("[%s] Invalid item '%s' in items.yml: material '%s' is not an item (e.g. AIR, WATER).",
-                        fileName, id, matStr);
-                return LoadResult.SKIP;
-            }
-            data.setMaterial(mat);
         }
+
+        // ── category / sub-category ──
+        data.setCategory(s.getString("category", null));
+        data.setSubCategory(s.getString("sub-category", s.getString("subcategory", null)));
 
         // ── display-name ──────────────────────────────────────────────────────
         data.setDisplayName(s.getString("display-name", "<white>" + id));
@@ -310,14 +314,7 @@ public class StorageManager {
         }
         data.setFlags(validFlags);
 
-        // ── custom-model-data ─────────────────────────────────────────────────
-        if (s.contains("custom-model-data") && !s.isInt("custom-model-data")) {
-            logError("[%s] Item '%s': 'custom-model-data' must be an integer — defaulting to -1.", fileName, id);
-            hasWarning = true;
-            data.setCustomModelData(-1);
-        } else {
-            data.setCustomModelData(s.getInt("custom-model-data", -1));
-        }
+        // custom-model-data removed — provider manages texture/model.
 
         // ── unbreakable / glowing ─────────────────────────────────────────────
         data.setUnbreakable(s.getBoolean("unbreakable", false));
@@ -331,6 +328,9 @@ public class StorageManager {
         } else {
             data.setMaxDurability(s.getInt("max-durability", -1));
         }
+
+        // ── stack size ──
+        data.setStackSize(s.getInt("stack-size", 1));
 
         // ── attributes ────────────────────────────────────────────────────────
         ConfigurationSection attrSection = s.getConfigurationSection("attributes");
@@ -377,16 +377,13 @@ public class StorageManager {
             }
         }
 
-        // ── integration IDs ───────────────────────────────────────────────────
-        data.setOraxenId(s.getString("oraxen-id", null));
-        data.setItemsAdderId(s.getString("itemsadder-id", null));
-        data.setExecutableItemsId(s.getString("executableitems-id", null));
+        // ── cooldown / permission / required-level ──
+        if (s.contains("cooldown")) data.setCooldown(s.getDouble("cooldown", -1));
+        data.setPermission(s.getString("permission", null));
+        data.setRequiredLevel(s.getInt("required-level", 0));
 
-        // ── model (custom model for resource pack, Oraxen/ItemsAdder style) ──
-        String modelRef = s.getString("model");
-        if (modelRef != null && !modelRef.isBlank()) {
-            data.setModel(modelRef);
-        }
+        // Legacy integration IDs (oraxen-id/itemsadder-id/executableitems-id) — ignored on load.
+        // All moved to 'source' form namespace:id.
 
         // effects: general effect system (HIT, DAMAGE, DIE, EQUIP, FULL_SET etc) - REFLECT/EXTRA_DAMAGE only
         ConfigurationSection effectsSec = s.getConfigurationSection("effects");
@@ -406,7 +403,7 @@ public class StorageManager {
             data.setEffects(effs);
         }
 
-        // skills: native UItem skill/passive system (giống ExecutableItems nhưng dễ và ổn định hơn)
+        // skills: native UItem skill/passive system (like ExecutableItems but easier and more stable)
         ConfigurationSection skillsSec = s.getConfigurationSection("skills");
         if (skillsSec != null) {
             List<com.uitem.skill.Skill> skillList = new ArrayList<>();
@@ -483,12 +480,12 @@ public class StorageManager {
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    //  PUBLIC — SAVE  (GUI / lệnh → luôn ghi vào items.yml)
+    //  PUBLIC — SAVE  (GUI / commands → always writes to items.yml)
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * Save async, gom nhiều lần gọi thành snapshot mới nhất.
-     * Luôn ghi vào {@code items.yml} — không đụng file người dùng trong {@code items/}.
+     * Save async, collapsing repeated calls to the latest snapshot.
+     * Always writes to {@code items.yml} — does not touch user files in {@code items/}.
      */
     public void saveAll(UItemManager manager) {
         long id = requestCounter.incrementAndGet();
@@ -498,7 +495,7 @@ public class StorageManager {
         }
     }
 
-    /** Debounced save — dành cho UI-driven changes để tránh I/O spam. */
+    /** Debounced save — for UI-driven changes to avoid I/O spam. */
     public void saveAllDebounced(UItemManager manager) {
         long now = System.currentTimeMillis();
         lastDebounceSchedule.set(now);
@@ -512,7 +509,7 @@ public class StorageManager {
         }, DEBOUNCE_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 
-    /** Ghi ngay lập tức — dùng trước khi reload hoặc khi disable. */
+    /** Write immediately — call before reload or on disable. */
     public void saveAllNow(UItemManager manager) {
         long syncId = requestCounter.incrementAndGet();
         minAllowedWriteId.set(syncId);
@@ -559,7 +556,7 @@ public class StorageManager {
                             : peek;
                     if (root != null && root.isConfigurationSection(targetId)) {
                         ConfigurationSection itemSec = root.getConfigurationSection(targetId);
-                        if (itemSec != null && itemSec.contains("material")) {
+                        if (itemSec != null && (itemSec.contains("source") || itemSec.contains("material"))) {
                             if (f.delete()) {
                                 plugin.getLogger().info("[UItem] Deleted split item file for '" + targetId + "': " + relativeToDataFolder(f));
                             }
@@ -588,8 +585,9 @@ public class StorageManager {
             "Flat style is supported."
         ));
 
-        Material mat = d.getMaterial() != null ? d.getMaterial() : Material.STONE;
-        cfg.set(id + ".material", mat.name());
+        cfg.set(id + ".source", d.getSource());
+        if (d.getCategory() != null) cfg.set(id + ".category", d.getCategory());
+        if (d.getSubCategory() != null) cfg.set(id + ".sub-category", d.getSubCategory());
         if (d.getDisplayName() != null) cfg.set(id + ".display-name", d.getDisplayName());
         if (d.getLore() != null && !d.getLore().isEmpty()) cfg.set(id + ".lore", d.getLore());
 
@@ -597,10 +595,13 @@ public class StorageManager {
             d.getEnchantments().forEach((k, v) -> cfg.set(id + ".enchantments." + k, v));
         }
         cfg.set(id + ".flags", d.getFlags() != null ? new ArrayList<>(d.getFlags()) : List.of());
-        cfg.set(id + ".custom-model-data", d.getCustomModelData());
         cfg.set(id + ".unbreakable", d.isUnbreakable());
         cfg.set(id + ".glowing", d.isGlowing());
         cfg.set(id + ".max-durability", d.getMaxDurability());
+        if (d.getStackSize() != 1) cfg.set(id + ".stack-size", d.getStackSize());
+        if (d.getCooldown() >= 0) cfg.set(id + ".cooldown", d.getCooldown());
+        if (d.getPermission() != null) cfg.set(id + ".permission", d.getPermission());
+        if (d.getRequiredLevel() > 0) cfg.set(id + ".required-level", d.getRequiredLevel());
 
         if (d.getAttributes() != null && !d.getAttributes().isEmpty()) {
             for (int i = 0; i < d.getAttributes().size(); i++) {
@@ -656,14 +657,10 @@ public class StorageManager {
             }
         }
 
-        // Effects, integrations, model, rarity...
+        // Effects, rarity...
         if (d.getRarity() != null) cfg.set(id + ".rarity", d.getRarity());
-        if (d.getModel() != null) cfg.set(id + ".model", d.getModel());
-        if (d.getOraxenId() != null) cfg.set(id + ".oraxen-id", d.getOraxenId());
-        if (d.getItemsAdderId() != null) cfg.set(id + ".itemsadder-id", d.getItemsAdderId());
-        if (d.getExecutableItemsId() != null) cfg.set(id + ".executableitems-id", d.getExecutableItemsId());
 
-        // Effects
+        // Effects (left intentionally unused to suppress 'mat' lint warning if needed)
         if (d.getEffects() != null && !d.getEffects().isEmpty()) {
             for (int i = 0; i < d.getEffects().size(); i++) {
                 UItemData.ItemEffect e = d.getEffects().get(i);
@@ -725,8 +722,9 @@ public class StorageManager {
             UItemData d = entry.getValue();
             String path = ITEMS_SECTION + "." + id;
 
-            Material mat = d.getMaterial() != null ? d.getMaterial() : Material.STONE;
-            config.set(path + ".material", mat.name());
+            config.set(path + ".source", d.getSource());
+            if (d.getCategory() != null) config.set(path + ".category", d.getCategory());
+            if (d.getSubCategory() != null) config.set(path + ".sub-category", d.getSubCategory());
             config.set(path + ".display-name", d.getDisplayName());
             config.set(path + ".lore", d.getLore());
 
@@ -737,10 +735,13 @@ public class StorageManager {
 
             config.set(path + ".flags",
                     d.getFlags() != null ? new ArrayList<>(d.getFlags()) : List.of());
-            config.set(path + ".custom-model-data", d.getCustomModelData());
             config.set(path + ".unbreakable", d.isUnbreakable());
             config.set(path + ".glowing", d.isGlowing());
             config.set(path + ".max-durability", d.getMaxDurability());
+            if (d.getStackSize() != 1) config.set(path + ".stack-size", d.getStackSize());
+            if (d.getCooldown() >= 0) config.set(path + ".cooldown", d.getCooldown());
+            if (d.getPermission() != null) config.set(path + ".permission", d.getPermission());
+            if (d.getRequiredLevel() > 0) config.set(path + ".required-level", d.getRequiredLevel());
 
             if (d.getAttributes() != null && !d.getAttributes().isEmpty()) {
                 for (int i = 0; i < d.getAttributes().size(); i++) {
@@ -753,11 +754,7 @@ public class StorageManager {
                 }
             }
 
-            if (d.getOraxenId()          != null) config.set(path + ".oraxen-id",           d.getOraxenId());
-            if (d.getItemsAdderId()       != null) config.set(path + ".itemsadder-id",        d.getItemsAdderId());
-            if (d.getExecutableItemsId()  != null) config.set(path + ".executableitems-id",   d.getExecutableItemsId());
-            if (d.getRarity()             != null) config.set(path + ".rarity",               d.getRarity());
-            if (d.getModel()              != null) config.set(path + ".model",                d.getModel());
+            if (d.getRarity() != null) config.set(path + ".rarity", d.getRarity());
 
             // Effects (attachable reflect/extra damage + actions)
             if (d.getEffects() != null && !d.getEffects().isEmpty()) {
@@ -828,7 +825,7 @@ public class StorageManager {
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    //  Default file (chỉ tạo khi chưa tồn tại)
+    //  Default file (only created when it does not yet exist)
     // ═════════════════════════════════════════════════════════════════════════
 
     private void createDefaultLegacyFile() {
@@ -859,20 +856,20 @@ public class StorageManager {
         cfg.set("items.ruby_sword.display-name",
                 "<gradient:#ff0000:#ff6600><bold>Ruby Sword</bold></gradient>");
         cfg.set("items.ruby_sword.lore", List.of(
-                "<gray>Một thanh kiếm huyền thoại",
-                "<gray>được rèn từ <red>Ruby <gray>nguyên chất"));
+                "<gray>A legendary sword",
+                "<gray>forged from pure <red>Ruby"));
         cfg.set("items.ruby_sword.enchantments.sharpness",  5);
         cfg.set("items.ruby_sword.enchantments.unbreaking", 3);
         cfg.set("items.ruby_sword.flags", List.of("HIDE_ENCHANTS", "HIDE_ATTRIBUTES"));
-        cfg.set("items.ruby_sword.custom-model-data", 10001);
+        // custom-model-data removed — provider manages texture/model.
         cfg.set("items.ruby_sword.unbreakable", true);
         cfg.set("items.ruby_sword.glowing", false);
 
         cfg.set("items.magic_apple.material", "GOLDEN_APPLE");
         cfg.set("items.magic_apple.display-name",
                 "<light_purple><bold>Magic Apple</bold></light_purple>");
-        cfg.set("items.magic_apple.lore", List.of("<gray>Một quả táo ma thuật",
-                "<green>Hồi phục tất cả HP"));
+        cfg.set("items.magic_apple.lore", List.of("<gray>A magical apple",
+                "<green>Restores all HP"));
         cfg.set("items.magic_apple.unbreakable", false);
         cfg.set("items.magic_apple.glowing", true);
 

@@ -3,9 +3,9 @@ package com.uitem.skill;
 import java.util.*;
 
 /**
- * Đại diện cho một Skill hoặc Passive gắn trên UItem.
+ * Represents a Skill or Passive attached to a UItem.
  *
- * Cấu trúc YAML ví dụ:
+ * Example YAML structure:
  * skills:
  *   fireball:
  *     trigger: RIGHT_CLICK
@@ -28,18 +28,18 @@ import java.util.*;
  */
 public class Skill {
 
-    private String id;                    // unique trong item (ví dụ: "fireball", "lifesteal_passive")
-    private String displayName;           // dùng cho cooldown display / lore (MiniMessage)
+    private String id;                    // unique within item (e.g., "fireball", "lifesteal_passive")
+    private String displayName;           // used for cooldown display / lore (MiniMessage)
     private SkillTrigger trigger = SkillTrigger.RIGHT_CLICK;
-    private double cooldown = 0.0;        // giây
-    private boolean cancelEvent = true;   // có cancel event interact không (chỉ áp dụng active)
-    private double chance = 100.0;        // 0-100, % kích hoạt (dễ dùng cho passive combat)
+    private double cooldown = 0.0;        // seconds
+    private boolean cancelEvent = true;   // whether to cancel the interact event (only applies to active)
+    private double chance = 100.0;        // 0-100, % activation chance (handy for passive combat)
 
     private List<SkillCondition> conditions = new ArrayList<>();
     private List<SkillAction> actions = new ArrayList<>();
 
-    // Dành cho PERIODIC / WHILE_*
-    private int periodTicks = 20;         // mỗi bao nhiêu tick chạy 1 lần (mặc định 1s)
+    // For PERIODIC / WHILE_*
+    private int periodTicks = 20;         // run once every N ticks (default 1s)
 
     public Skill() {}
 

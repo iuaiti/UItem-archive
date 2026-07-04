@@ -1,0 +1,362 @@
+# ╔══════════════════════════════════════════╗
+# ║         UItem - Language File (EN)        ║
+# ╚══════════════════════════════════════════╝
+# All in-game messages live here. Edit values freely; keep keys unchanged.
+# Supports MiniMessage formatting: <red>, <bold>, <gradient:#a:#b>, etc.
+# Placeholders like {player}, {id}, {amount} are replaced at runtime.
+#
+# To restore defaults: delete this file and run /uitem reload.
+
+# ==================== Generic ====================
+no-permission: "You don't have permission to use this command!"
+players-only: "This command can only be used by players!"
+player-not-found: "Player '{player}' is not online!"
+invalid-command: "Invalid command. Use /{label} help"
+
+# ==================== Give ====================
+give-usage: "Usage: /uitem give <id> [player] [amount]"
+item-not-found: "Item '{id}' does not exist!"
+gave-item: "Gave {player} x{amount} {item}"
+received-item: "You received x{amount} {item}"
+cannot-give: "Cannot give item (may have been blocked by another plugin)."
+console-need-player: "Console must specify a player: /uitem give <id> <player> [amount]"
+invalid-amount: "Invalid amount! Must be an integer from 1 to 64."
+
+# ==================== Reload ====================
+reloaded: "Reloaded UItem! Loaded {count} items."
+
+# ==================== Check ====================
+not-holding-item: "You are not holding any item!"
+valid-uitem: "\u2714 Item is a valid UItem!"
+not-uitem: "\u2717 Item is NOT a valid UItem!"
+missing-pdc: "Missing PDC tag. This item was not obtained through /uitem give."
+use-give-to-get: "Use /uitem give <id> <player> to get properly tagged items."
+
+# ==================== Editor ====================
+no-items-yet: "No custom items yet. Use /uitem editor to create one."
+
+# ==================== GUI: Item Editor ====================
+gui-edit-title: "<gradient:#ff6b6b:#ffd93d>Edit: </gradient><white>{id}"
+gui-editor-title: "<gradient:#ff6b6b:#ffd93d><bold>UItem Editor</bold></gradient>"
+gui-manage-items: "<gray>Manage all custom items"
+gui-create-new: "<green><bold>+ Create New Item</bold>"
+gui-create-hint: "<gray>Click to create a new custom item"
+gui-create-prompt: "<yellow>Enter ID for new item <gray>(letters, numbers, underscores only):"
+gui-create-hint2: "<yellow>You will be prompted to enter an ID"
+gui-search-btn: "<aqua><bold>Search Item</bold>"
+gui-search-hint1: "<gray>Enter keyword to filter list"
+gui-search-hint2: "<gray>Type 'clear' to clear filter"
+gui-search-prompt: "<yellow>Enter search keyword (<gray>or 'clear' to clear):"
+
+# ==================== GUI: Material Picker ====================
+gui-mat-title: "<gold><bold>Choose Material</bold>"
+gui-mat-search: "<gold><bold>Search</bold>"
+gui-mat-search-hint: "<gray>Click to search material by name"
+gui-mat-select: "<gray>Click to select this material"
+gui-mat-prompt: "<yellow>Enter material name to search (Enter to clear filter):"
+
+# ==================== Item Editor fields ====================
+gui-field-material: "<gold><bold>Material</bold>"
+gui-field-material-click: "<yellow>Click to open material list"
+gui-field-name: "<gold><bold>Display Name</bold>"
+gui-field-name-click: "<yellow>Click to change name"
+gui-field-name-support: "<gray>Supports MiniMessage format"
+gui-field-name-example: "<gray>Example: <red>Ruby <gold>Sword"
+gui-field-name-prompt: "<yellow>Enter display name <gray>(supports MiniMessage):"
+renamed-to: "Renamed to: {name}"
+gui-field-lore: "<gold><bold>Lore</bold>"
+gui-field-lore-click: "<yellow>Click to edit lore"
+gui-field-lore-open: "<gray>Open Lore Editor GUI"
+gui-field-ench: "<gold><bold>Enchantments</bold>"
+gui-field-ench-click: "<yellow>Click to edit enchantments"
+gui-field-flags: "<gold><bold>Item Flags</bold>"
+gui-field-flags-click: "<yellow>Click to edit flags"
+gui-field-cmd: "<gold><bold>Custom Model Data</bold>"
+gui-field-cmd-click: "<yellow>Click to change"
+gui-field-cmd-hint: "<gray>Enter number (-1 to disable)"
+gui-field-cmd-prompt: "<yellow>Enter Custom Model Data number <gray>(-1 to disable):"
+gui-field-unbreak: "<gold><bold>Unbreakable</bold>"
+gui-field-unbreak-on: "<green>ON"
+gui-field-unbreak-off: "<red>OFF"
+gui-field-unbreak-toggle: "<yellow>Click to toggle"
+gui-field-dur: "<gold><bold>Durability</bold>"
+gui-field-dur-click: "<yellow>Click to set max durability"
+gui-field-dur-hint1: "<gray>Enter -1 for default material durability"
+gui-field-dur-hint2: "<gray>Enter 0 for unbreakable-like (no damage bar)"
+gui-field-dur-hint3: "<gray>Or enter any number > 0"
+gui-field-dur-prompt: "<yellow>Enter max durability <gray>(-1 = default, 0 = no damage bar, >0 = custom):"
+durability-set: "Max durability = {status}"
+durability-default: "Default"
+durability-no-bar: "No bar"
+gui-field-glow: "<gold><bold>Glowing</bold>"
+gui-field-glow-toggle: "<yellow>Click to toggle"
+gui-field-glow-hint: "<gray>Add glowing effect to item"
+gui-field-attr: "<gold><bold>Attributes</bold>"
+
+# ==================== GUI: Attributes ====================
+gui-attributes-click: "<yellow>Click to add attribute"
+gui-attributes-format: "<gray>Format: attribute amount operation slot"
+gui-attributes-example: "<gray>Example: generic_attack_damage 15 ADD_NUMBER HAND"
+gui-attributes-prompt: "<yellow>Enter attribute <gray>(format: attribute amount operation slot)\\n<gray>Example: generic_attack_damage 15 ADD_NUMBER HAND\\n<gray>Type 'clear' to remove all attributes:"
+gui-attributes-cleared: "Removed all attributes!"
+gui-attributes-error: "Format: attribute amount operation slot"
+gui-attributes-added: "Added attribute {attr}!"
+
+# ==================== GUI: Rarity ====================
+gui-rarity-field: "<gold><bold>Rarity</bold>"
+gui-rarity-none: "None"
+gui-rarity-click: "<yellow>Click to choose rarity"
+gui-rarity-hints: "<gray>COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, ULTRA"
+gui-rarity-list-header: "<gold>Available rarities:<dark_gray> "
+gui-rarity-prompt: "<yellow>Enter rarity name (or 'none' to remove):"
+gui-rarity-removed: "Removed rarity!"
+gui-rarity-set: "Set rarity = {rarity}"
+gui-rarity-not-found: "Rarity '{rarity}' does not exist!"
+
+# ==================== GUI: ExecutableItems ====================
+gui-eiid-field: "<gold><bold>\u26a1 ExecutableItems</bold>"
+gui-eiid-current: "None"
+gui-eiid-click: "<yellow>Click to set ExecutableItems ID"
+gui-eiid-hint: "<gray>Skills/Passives will be handled by EI"
+gui-eiid-prompt: "<yellow>Enter ExecutableItems item ID <gray>(or 'none' to remove):"
+
+# ==================== GUI: Oraxen ====================
+gui-oraxen-field: "<aqua><bold>Oraxen ID</bold>"
+gui-oraxen-current: "None"
+gui-oraxen-click: "<yellow>Click to set Oraxen item ID"
+gui-oraxen-hint: "<gray>Use item from Oraxen as base"
+gui-oraxen-prompt: "<yellow>Enter Oraxen item ID <gray>(or 'none' to remove):"
+
+# ==================== GUI: ItemsAdder ====================
+gui-ia-field: "<green><bold>ItemsAdder ID</bold>"
+gui-ia-current: "None"
+gui-ia-click: "<yellow>Click to set ItemsAdder item ID"
+gui-ia-hint: "<gray>Use item from ItemsAdder as base"
+gui-ia-prompt: "<yellow>Enter ItemsAdder namespaced ID <gray>(or 'none' to remove):"
+
+# ==================== GUI: Recipe ====================
+gui-recipe-field: "<gold><bold>Crafting Recipe</bold>"
+gui-recipe-has: "<green>Has recipe"
+gui-recipe-none: "<red>No recipe"
+gui-recipe-click: "<yellow>Click to edit recipe"
+gui-recipe-hint: "<gray>Set shaped/shapeless crafting recipe"
+
+# ==================== GUI: Save / Delete Buttons ====================
+gui-save-button: "<green><bold>\U0001F4BE SAVE</bold>"
+gui-save-desc: "<gray>Save all changes to file"
+gui-save-click: "<yellow>Click to save"
+gui-delete-button: "<red><bold>\U0001F5D1 DELETE</bold>"
+gui-delete-desc: "<gray>Delete this item"
+gui-delete-warn: "<red>\u26a0 Click to delete"
+
+# ==================== Item CRUD Messages ====================
+saved-item: "Saved item '{id}'!"
+invalid-id: "Invalid ID!"
+item-already-exists: "Item '{id}' already exists!"
+cannot-create-blocked: "Cannot create item '{id}' (blocked by another plugin)."
+created-item: "Created item '{id}'!"
+cannot-delete-blocked: "Cannot delete item '{id}' (blocked by another plugin)."
+deleted-item: "Deleted item '{id}'!"
+
+# ==================== Confirm Delete GUI ====================
+confirm-delete-title: "<red><bold>Confirm Delete Item"
+confirm-delete-desc: "Delete item: "
+confirm-delete-warn: "<red>\u26a0 This action cannot be undone!"
+confirm-delete-yes: "<green><bold>CONFIRM DELETE"
+confirm-delete-no: "<red><bold>CANCEL"
+confirm-delete-back: "<gray>Back to item list"
+
+# ==================== Navigation ====================
+gui-back: "<yellow>\u2190 Back"
+gui-back-desc: "<gray>Click to go back"
+gui-previous: "<yellow>\u25c4 Previous page"
+gui-next: "<yellow>Next page \u25ba"
+
+# ==================== Lore Editor ====================
+lore-editor-title: "<gold><bold>Lore Editor</bold> <dark_gray>- <white>{id}"
+lore-editor-header: "<gold><bold>Lore Editor</bold>"
+lore-editor-desc: "<gray>Edit item description"
+lore-editor-left: "<yellow>Left click: <white>Edit line"
+lore-editor-right: "<yellow>Right click: <white>Delete line"
+lore-editor-shift: "<yellow>Shift+Click: <white>Insert blank line above"
+lore-editor-line: "Line {line}"
+lore-editor-content: "<gray>Content:"
+lore-editor-empty: "<dark_gray>(empty)"
+lore-editor-edit: "<yellow>Left click: <white>Edit"
+lore-editor-delete: "<red>Right click: <white>Delete"
+lore-editor-insert: "<aqua>Shift+Click: <white>Insert blank line"
+lore-editor-prompt: "<yellow>Enter new content for line {line} <gray>(supports MiniMessage):"
+lore-editor-add-btn: "<green><bold>+ Add new line</bold>"
+lore-editor-add-desc: "<gray>Add a new line at the end of lore"
+lore-editor-add-prompt: "<yellow>Enter new line content <gray>(supports MiniMessage):"
+lore-editor-clear-btn: "<red><bold>Clear all lore</bold>"
+lore-editor-clear-desc: "<gray>Delete all lore lines"
+
+# ==================== Enchantment Editor ====================
+ench-editor-title: "<light_purple><bold>Enchantments</bold> <dark_gray>- <white>{id}"
+ench-editor-header: "<light_purple><bold>Enchantment Editor</bold>"
+ench-editor-desc: "<gray>Edit enchantments for this item"
+ench-editor-left: "<yellow>Left click: <white>Increase level"
+ench-editor-right: "<yellow>Right click: <white>Decrease level"
+ench-editor-shift: "<yellow>Shift+Click: <white>Remove entirely"
+ench-editor-key: "Key: {key}"
+ench-editor-added: "\u2714 Added - Level {level}"
+ench-editor-not-added: "\u2718 Not added"
+
+# ==================== Flag Editor ====================
+flag-editor-title: "<blue><bold>Item Flags</bold> <dark_gray>- <white>{id}"
+flag-editor-on: "<green>\u2714 ON"
+flag-editor-off: "<red>\u2718 OFF"
+flag-editor-toggle: "<yellow>Click to toggle"
+
+# ==================== Recipe Editor ====================
+recipe-editor-title: "<gold>Recipe: <white>{id}"
+recipe-editor-guide: "<gold><bold>Guide</bold>"
+recipe-editor-guide1: "<gray>Place ingredients in the left slots"
+recipe-editor-guide2: "<gray>Result is this item"
+recipe-editor-guide3: "<green>Shaped: <gray>save with shape pattern"
+recipe-editor-guide4: "<aqua>Shapeless: <gray>save without shape pattern"
+recipe-editor-save-shaped: "<green><bold>Save Shaped</bold>"
+recipe-editor-save-shaped-desc: "<gray>Save shaped recipe (3x3)"
+recipe-editor-save-shapeless: "<aqua><bold>Save Shapeless</bold>"
+recipe-editor-save-shapeless-desc: "<gray>Save shapeless recipe"
+recipe-editor-delete: "<red><bold>Delete Recipe</bold>"
+recipe-editor-delete-desc: "<gray>Delete current recipe"
+recipe-editor-has-recipe: "<green><bold>Has recipe</bold>"
+recipe-editor-type-shaped: "Shaped"
+recipe-editor-type-shapeless: "Shapeless"
+recipe-editor-amount: "Amount: {amount}"
+recipe-editor-empty-slots: "Please place ingredients in the crafting slots!"
+recipe-editor-saved: "Saved recipe {type} for '{id}'!"
+recipe-editor-deleted: "Deleted recipe for '{id}'!"
+
+# ==================== Recipe List ====================
+recipe-list-title: "<gradient:#ff6b6b:#ffd93d>Recipe List</gradient>"
+recipe-list-header: "<gradient:#ff6b6b:#ffd93d><bold>Recipe List</bold></gradient>"
+recipe-list-click: "<gray>Click a recipe to view details"
+recipe-list-craft: "<green><bold>Craft</bold>"
+recipe-list-craft-desc: "<gray>Open crafting table"
+recipe-list-deleted-item: "<gray>Item deleted"
+
+# ==================== Recipe Detail ====================
+recipe-detail-title: "<gold>Recipe: <white>{id}"
+recipe-detail-not-found: "<red>Not found"
+
+# ==================== Crafting GUI ====================
+craft-amount-1: "<gray>Craft 1 item"
+craft-amount-8: "<gray>Craft 8 items"
+craft-amount-64: "<gray>Craft 64 items"
+craft-amount-max: "<gray>Craft as many as possible"
+craft-selected: "<green>\u2714 Selected"
+craft-click-to-select: "<yellow>Click to select"
+
+# ==================== Chat Input ====================
+chat-cancel: "cancel"
+chat-cancel-hint: "Type 'cancel' to cancel"
+invalid-number: "Invalid number!"
+material-set: "Material set to: {material}"
+
+# ==================== Search ====================
+search-no-permission: "You don't have permission to use search (uitem.search)."
+
+# ==================== Skill System ====================
+skill-list-title: "<light_purple><bold>Skills & Passives</bold> <dark_gray>- {id}"
+skill-list-header: "<light_purple><bold>Skills & Passives for {id}</bold>"
+skill-list-desc: "<gray>Native UItem skill system (no ExecutableItems needed)"
+skill-list-add: "<green><bold>+ ADD NEW SKILL</bold>"
+skill-list-add-desc: "<gray>Create active or passive skill"
+skill-preset-fireball: "<red><bold>Preset: Fireball</bold>"
+skill-preset-lifesteal: "<green><bold>Preset: Lifesteal</bold>"
+skill-preset-regen: "<aqua><bold>Preset: Regen Aura</bold>"
+skill-preset-fireball-desc: "<gray>Right Click \u2192 shoot Small Fireball"
+skill-preset-lifesteal-desc: "<gray>On Hit \u2192 heal with chance"
+skill-preset-regen-desc: "<gray>While Holding \u2192 periodic heal"
+skill-list-click-edit: "<yellow>Left click: Edit"
+skill-list-click-delete: "<red>Right click: Delete"
+
+skill-editor-title: "<light_purple><bold>Edit Skill:</bold> <white>{id}"
+skill-editor-active-triggers: "<gold><bold>Active Triggers</bold>"
+skill-editor-passive-triggers: "<gold><bold>Passive / Combat Triggers</bold>"
+skill-editor-cooldown: "<gold><bold>Cooldown: <white>{seconds}s</bold>"
+skill-editor-cooldown-hint: "<yellow>Click to enter cooldown in seconds"
+skill-editor-chance: "<gold><bold>Chance: <white>{percent}%</bold>"
+skill-editor-cancel: "<gold><bold>Cancel Event: <white>{state}</bold>"
+skill-editor-actions: "<gold><bold>Actions ({count})</bold>"
+skill-editor-actions-hint: "<gray>Left click: Edit value | Right click: Delete"
+skill-editor-add-action: "<green><bold>+ ADD ACTION</bold>"
+skill-editor-choose-action: "<green><bold>CHOOSE ACTION TYPE (Click to add)</bold>"
+skill-editor-no-actions: "<gray><italic>No actions yet</italic>"
+
+# Skill trigger display names
+trigger-right: "Right Click"
+trigger-left: "Left Click"
+trigger-sright: "Shift + Right Click"
+trigger-sleft: "Shift + Left Click"
+trigger-drop: "Drop (Q)"
+trigger-swap: "Swap Hand (F)"
+trigger-throw: "Throw"
+trigger-shoot: "Shoot / Throw (Bow, Crossbow, Trident)"
+trigger-hit: "On Hit"
+trigger-damage: "On Damaged"
+trigger-kill: "On Kill"
+trigger-equip: "On Equip"
+trigger-unequip: "On Unequip"
+trigger-periodic: "Periodic"
+trigger-holding: "While Holding"
+trigger-wearing: "While Wearing"
+
+# Skill trigger descriptions
+trigger-desc-right: "Activate on right click"
+trigger-desc-left: "Activate on left click"
+trigger-desc-sright: "Activate on shift + right click"
+trigger-desc-sleft: "Activate on shift + left click"
+trigger-desc-drop: "Activate when dropping the item (Q)"
+trigger-desc-swap: "Activate when swapping hands (F)"
+trigger-desc-throw: "Activate when throwing the item"
+trigger-desc-shoot: "Activate when shooting with bow/crossbow or throwing trident"
+trigger-desc-hit: "Activate when hitting a target"
+trigger-desc-damage: "Activate when taking damage"
+trigger-desc-kill: "Activate when killing with this item"
+trigger-desc-equip: "Activate when equipping or holding"
+trigger-desc-unequip: "Activate when unequipping"
+trigger-desc-periodic: "Repeats every period (for regen, aura...)"
+trigger-desc-holding: "Repeats while holding in hand"
+trigger-desc-wearing: "Repeats while wearing as armor"
+
+# Action types
+action-message: "Message"
+action-action_bar: "Action bar"
+action-title: "Title"
+action-play_sound: "Play sound"
+action-spawn_particle: "Particle"
+action-give_potion: "Give potion effect"
+action-remove_potion: "Remove potion effect"
+action-heal: "Heal"
+action-damage: "Damage"
+action-launch: "Launch player"
+action-teleport: "Teleport"
+action-strike_lightning: "Strike lightning"
+action-shoot_projectile: "Shoot projectile"
+action-player_command: "Player command"
+action-console_command: "Console command"
+action-consume_durability: "Consume durability"
+action-feed: "Feed"
+action-set_fire: "Set fire"
+
+# Skill feedback
+skill-added: "Added {type}"
+skill-updated: "Updated {type}"
+skill-preset-added: "Added preset: {name}"
+
+# ==================== Help ====================
+help-title: "  <gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <gray>\u2014 Ultimate Item Plugin"
+help-give: "  <gold>/uitem give <id> [player] [amount] <dark_gray>\u2014 <gray>Give item"
+help-editor: "  <gold>/uitem editor <dark_gray>\u2014 <gray>Open editor GUI"
+help-list: "  <gold>/uitem list <dark_gray>\u2014 <gray>List items"
+help-check: "  <gold>/uitem check <dark_gray>\u2014 <gray>Check if held item is a valid UItem"
+help-craft: "  <gold>/uitem craft <dark_gray>\u2014 <gray>Open UItem crafting table"
+help-crafting-cmd: "  <gold>/crafting <dark_gray>\u2014 <gray>List all crafting recipes"
+help-crafting-table: "  <gold>/crafting craft <dark_gray>\u2014 <gray>Open UItem crafting table"
+help-reload: "  <gold>/uitem reload <dark_gray>\u2014 <gray>Reload plugin"
+help-help: "  <gold>/uitem help <dark_gray>\u2014 <gray>Show help"
+help-ui: "  <gold>/ui <dark_gray>\u2014 <gray>Short alias for /uitem"

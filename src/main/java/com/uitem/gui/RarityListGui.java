@@ -43,11 +43,11 @@ public class RarityListGui extends AbstractGui {
         fillBorder(6);
 
         setItem(4, createItem(Material.NETHER_STAR,
-                "<gold><bold>Quản lý Rarity</bold>",
+                "<gold><bold>Rarity Manager</bold>",
                 List.of(
-                        "<gray>Rarities được lưu trong <white>rarity.yml</white>",
-                        "<yellow>Click để chỉnh sửa | Click phải để xóa",
-                        "<gray>Hỗ trợ copy-paste dễ dàng trong file"
+                        "<gray>Rarities are saved in <white>rarity.yml</white>",
+                        "<yellow>Click to edit | Right-click to delete",
+                        "<gray>Easy copy-paste in the file"
                 )));
 
         Map<String, RarityConfig.RarityEntry> all = RarityConfig.getAll();
@@ -81,10 +81,10 @@ public class RarityListGui extends AbstractGui {
         setItem(40, createItem(Material.EMERALD_BLOCK, "<green><bold>+ CREATE NEW RARITY</bold>",
                 List.of("<gray>Create new rarity (color, prefix, lore)")), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
-            plugin.getChatInputManager().requestInput(player, "<yellow>Nhập tên rarity mới (ví dụ: MYTHIC):", input -> {
+            plugin.getChatInputManager().requestInput(player, "<yellow>Enter new rarity name (example: MYTHIC):", input -> {
                 String name = input.trim().toUpperCase();
                 if (name.isEmpty() || RarityConfig.getAll().containsKey(name)) {
-                    player.sendMessage(TextUtil.error("Tên không hợp lệ hoặc đã tồn tại!"));
+                    player.sendMessage(TextUtil.error("Name invalid or already exists!"));
                     new RarityListGui(plugin, player, returnPage).open();
                     return;
                 }
@@ -108,7 +108,7 @@ public class RarityListGui extends AbstractGui {
     private ItemStack buildRarityIcon(String key, RarityConfig.RarityEntry entry) {
         List<String> lore = new ArrayList<>();
         lore.add("<gray>Color: <white>" + (entry.color() != null ? entry.color() : "<white>"));
-        lore.add("<gray>Prefix: " + (entry.prefix() != null && !entry.prefix().isEmpty() ? entry.prefix() : "<gray>(không có)"));
+        lore.add("<gray>Prefix: " + (entry.prefix() != null && !entry.prefix().isEmpty() ? entry.prefix() : "<gray>(none)"));
         if (entry.lore() != null && !entry.lore().isEmpty()) {
             lore.add("<gray>Lore:");
             for (String line : entry.lore()) {
@@ -116,8 +116,8 @@ public class RarityListGui extends AbstractGui {
             }
         }
         lore.add("");
-        lore.add("<yellow>Click trái: Chỉnh sửa");
-        lore.add("<red>Click phải: Xóa");
+        lore.add("<yellow>Left-click: Edit");
+        lore.add("<red>Right-click: Delete");
         return createItem(Material.NETHER_STAR, entry.prefix() + " <white>" + key, lore);
     }
 }

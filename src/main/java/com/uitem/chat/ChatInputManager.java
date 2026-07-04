@@ -17,9 +17,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
- * Quản lý việc capture chat input từ player.
- * Khi cần player nhập text (ví dụ: tên item, material...),
- * đăng ký callback và chặn tin nhắn chat tiếp theo của player đó.
+ * Manages capturing chat input from a player.
+ * When a player needs to enter text (e.g. an item name, material...),
+ * register a callback and intercept that player's next chat message.
  */
 public class ChatInputManager implements Listener {
 
@@ -32,23 +32,23 @@ public class ChatInputManager implements Listener {
     }
 
     /**
-     * Yêu cầu player nhập text qua chat.
+     * Request a player to enter text via chat.
      *
-     * @param player   Player cần nhập
-     * @param prompt   Tin nhắn hướng dẫn
-     * @param callback Callback nhận text đã nhập (chạy trên main thread)
+     * @param player   the player who must enter input
+     * @param prompt   the instruction message
+     * @param callback the callback receiving the entered text (runs on the main thread)
      */
     public void requestInput(Player player, String prompt, Consumer<String> callback) {
         requestInput(player, prompt, callback, null);
     }
 
     /**
-     * Yêu cầu player nhập text qua chat, với callback khi hủy.
+     * Request a player to enter text via chat, with a cancel callback.
      *
-     * @param player   Player cần nhập
-     * @param prompt   Tin nhắn hướng dẫn
-     * @param callback Callback nhận text đã nhập (chạy trên main thread)
-     * @param onCancel Chạy khi người dùng gõ 'cancel' (thường là reopen GUI)
+     * @param player   the player who must enter input
+     * @param prompt   the instruction message
+     * @param callback the callback receiving the entered text (runs on the main thread)
+     * @param onCancel runs when the user types 'cancel' (usually reopens the GUI)
      */
     public void requestInput(Player player, String prompt, Consumer<String> callback, Runnable onCancel) {
         pendingInputs.put(player.getUniqueId(), new ChatInputRequest(callback, onCancel));
@@ -59,14 +59,14 @@ public class ChatInputManager implements Listener {
     }
 
     /**
-     * Kiểm tra player có đang pending input không.
+     * Check whether a player has a pending input.
      */
     public boolean hasPendingInput(UUID uuid) {
         return pendingInputs.containsKey(uuid);
     }
 
     /**
-     * Hủy pending input.
+     * Cancel a pending input.
      */
     public void cancelInput(UUID uuid) {
         pendingInputs.remove(uuid);
@@ -79,13 +79,13 @@ public class ChatInputManager implements Listener {
 
         if (request == null) return;
 
-        // Chặn tin nhắn chat
+        // Block the chat message
         event.setCancelled(true);
 
-        // Lấy text thuần
+        // Get the plain text
         String input = PlainTextComponentSerializer.plainText().serialize(event.message());
 
-        // Chạy lại trên global scheduler để an toàn khi mở lại GUI.
+        // Run again on the global scheduler so it's safe to reopen the GUI.
         SchedulerUtil.runSync(plugin, () -> {
             if (!player.isOnline()) {
                 return;

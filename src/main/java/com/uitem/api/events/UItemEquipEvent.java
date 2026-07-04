@@ -9,18 +9,18 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Fired khi player mặc hoặc tháo một UItem khỏi slot trang bị (armor + offhand).
+ * Fired when a player equips or unequips a UItem from an equipment slot (armor + offhand).
  *
- * <p>Cancel để ngăn thay đổi trang bị.
+ * <p>Cancel to prevent the equipment change.
  *
  * <pre>{@code
  * @EventHandler
  * public void onEquip(UItemEquipEvent event) {
  *     if (!event.getItemData().getId().equals("cursed_armor")) return;
- *     if (!event.isEquipping()) return; // chỉ khi mặc vào
+ *     if (!event.isEquipping()) return; // only when equipping
  *
  *     event.setCancelled(true);
- *     event.getPlayer().sendMessage("⚠ Giáp này bị nguyền, không thể mặc!");
+ *     event.getPlayer().sendMessage("\u26a0 This armor is cursed and cannot be equipped!");
  * }
  * }</pre>
  */
@@ -41,11 +41,11 @@ public class UItemEquipEvent extends UItemCancellableEvent {
     private final ItemStack newItem;
 
     /**
-     * @param itemData  UItemData của item liên quan (item đang được mặc hoặc tháo)
+     * @param itemData  UItemData of the related item (being equipped or unequipped)
      * @param player    Player
-     * @param slot      Slot trang bị bị thay đổi
-     * @param oldItem   Item cũ ở slot đó (null hoặc AIR nếu slot trống)
-     * @param newItem   Item mới sẽ vào slot đó (AIR nếu tháo ra)
+     * @param slot      Equipment slot being changed
+     * @param oldItem   Previous item in that slot (null or AIR if empty)
+     * @param newItem   New item that will go into that slot (AIR if unequipping)
      */
     public UItemEquipEvent(
             @NotNull UItemData itemData,
@@ -60,33 +60,33 @@ public class UItemEquipEvent extends UItemCancellableEvent {
         this.newItem = newItem;
     }
 
-    /** Player đang thay đổi trang bị. */
+    /** Player changing equipment. */
     @NotNull
     public Player getPlayer() {
         return player;
     }
 
-    /** Slot đang bị thay đổi (HEAD, CHEST, LEGS, FEET, OFF_HAND). */
+    /** Slot being changed (HEAD, CHEST, LEGS, FEET, OFF_HAND). */
     @NotNull
     public EquipmentSlot getSlot() {
         return slot;
     }
 
-    /** Item cũ đang ở slot. Null hoặc AIR nếu trống. */
+    /** Previous item in the slot. Null or AIR if empty. */
     @Nullable
     public ItemStack getOldItem() {
         return oldItem;
     }
 
-    /** Item mới sẽ vào slot. AIR nếu đang tháo ra. */
+    /** New item that will go into the slot. AIR if unequipping. */
     @NotNull
     public ItemStack getNewItem() {
         return newItem;
     }
 
     /**
-     * true nếu player đang MẶC item vào (newItem là UItem),
-     * false nếu player đang THÁO item ra (oldItem là UItem).
+     * true if the player is EQUIPPING the item (newItem is a UItem),
+     * false if the player is UNEQUIPPING the item (oldItem is a UItem).
      */
     public boolean isEquipping() {
         return newItem.getType() != org.bukkit.Material.AIR;

@@ -7,17 +7,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Fired khi một custom item bị xóa khỏi UItem.
+ * Fired when a custom item is deleted from UItem.
  *
- * <p>Cancel event này để ngăn item bị xóa.
+ * <p>Cancel this event to prevent the item from being deleted.
  *
  * <pre>{@code
  * @EventHandler
  * public void onDelete(UItemDeleteEvent event) {
  *     if (event.getItemData().getId().equals("legendary_sword")) {
- *         event.setCancelled(true); // bảo vệ item không cho xóa
+ *         event.setCancelled(true); // protect the item from deletion
  *         if (event.getDeleter() != null) {
- *             event.getDeleter().sendMessage("Item này được bảo vệ!");
+ *             event.getDeleter().sendMessage("This item is protected!");
  *         }
  *     }
  * }
@@ -31,8 +31,8 @@ public class UItemDeleteEvent extends UItemCancellableEvent {
     private final CommandSender deleter;
 
     /**
-     * @param itemData Dữ liệu item sắp bị xóa
-     * @param deleter  Người xóa item (null nếu xóa qua internal API)
+     * @param itemData Data of the item about to be deleted
+     * @param deleter  Who is deleting the item (null if deleted via internal API)
      */
     public UItemDeleteEvent(@NotNull UItemData itemData, @Nullable CommandSender deleter) {
         super(itemData);
@@ -40,8 +40,8 @@ public class UItemDeleteEvent extends UItemCancellableEvent {
     }
 
     /**
-     * Ai trigger việc xóa item này.
-     * null nếu được xóa bởi plugin hoặc qua {@code UItemAPI}.
+     * Who triggered the deletion of this item.
+     * null if deleted by the plugin or via {@code UItemAPI}.
      */
     @Nullable
     public CommandSender getDeleter() {

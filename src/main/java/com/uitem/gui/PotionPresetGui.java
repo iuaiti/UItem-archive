@@ -15,7 +15,7 @@ import org.bukkit.potion.PotionEffectType;
 import java.util.*;
 
 /**
- * GUI để chọn nhanh potion effect và cấu hình duration/amplifier.
+ * GUI to quickly pick a potion effect and configure duration/amplifier.
  */
 public class PotionPresetGui extends AbstractGui {
 
@@ -25,7 +25,7 @@ public class PotionPresetGui extends AbstractGui {
     private static final int ITEMS_PER_PAGE = 16; // 4x4 grid (slot 10-26, skip borders)
 
     public PotionPresetGui(UItemPlugin plugin, Player player, UItemData itemData, Skill skill) {
-        super(plugin, player, 54, "<light_purple><bold>Chọn Potion Effect</bold>");
+        super(plugin, player, 54, "<light_purple><bold>Choose Potion Effect</bold>");
         this.itemData = itemData;
         this.skill = skill;
     }
@@ -41,10 +41,10 @@ public class PotionPresetGui extends AbstractGui {
         setItem(4, createItem(Material.POTION,
                 "<light_purple><bold>Potion Effects</bold>",
                 List.of(
-                        "<gray>Trang: <white>" + (currentPage + 1) + "/" + totalPages,
-                        "<gray>Tổng: <white>" + totalEffects + " effects",
+                        "<gray>Page: <white>" + (currentPage + 1) + "/" + totalPages,
+                        "<gray>Total: <white>" + totalEffects + " effects",
                         "",
-                        "<yellow>Click để thêm potion"
+                        "<yellow>Click to add a potion"
                 )));
 
         // Display potion effects in grid
@@ -101,13 +101,13 @@ public class PotionPresetGui extends AbstractGui {
                         "<gray>Effect: <white>" + info.key,
                         "<gray>Desc: <white>" + info.description,
                         "",
-                        "<yellow>Click để chọn"
+                        "<yellow>Click to choose"
                 ));
     }
 
     private void showPotionDurationPrompt(PotionEffectRegistry.PotionInfo info) {
         plugin.getChatInputManager().requestInput(player,
-                "<yellow>Nhập duration (giây, ví dụ: 10):",
+                "<yellow>Enter duration (seconds, example: 10):",
                 input -> {
                     try {
                         int duration = Integer.parseInt(input.trim());
@@ -121,7 +121,7 @@ public class PotionPresetGui extends AbstractGui {
 
     private void showPotionAmplifierPrompt(PotionEffectRegistry.PotionInfo info, int duration) {
         plugin.getChatInputManager().requestInput(player,
-                "<yellow>Nhập amplifier (0-5, ví dụ: 0 cho cấp 1):",
+                "<yellow>Enter amplifier (0-5, example: 0 for level 1):",
                 input -> {
                     try {
                         int amplifier = Math.max(0, Math.min(5, Integer.parseInt(input.trim())));
@@ -145,7 +145,7 @@ public class PotionPresetGui extends AbstractGui {
         player.sendMessage(TextUtil.success(msg));
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.6f, 1.2f);
 
-        // Quay lại SkillEditorGui (dùng goBack để giữ chuỗi parent)
+        // Back to SkillEditorGui (use goBack to keep the parent chain)
         goBack();
     }
 }

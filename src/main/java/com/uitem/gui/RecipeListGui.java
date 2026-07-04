@@ -17,7 +17,7 @@ import java.util.Map;
 public class RecipeListGui extends AbstractGui {
 
     private int page;
-    // 4 hàng × 7 cột (bỏ cột đầu và cuối là border) = 28 slot
+    // 4 rows × 7 columns (skip first and last column as border) = 28 slots
     private static final int PER_PAGE = 28;
     private static final int[] SLOTS = {
         10, 11, 12, 13, 14, 15, 16,
@@ -31,7 +31,7 @@ public class RecipeListGui extends AbstractGui {
     }
 
     public RecipeListGui(UItemPlugin plugin, Player player, int page) {
-        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d>Danh Sách Công Thức</gradient>");
+        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d>Recipe List</gradient>");
         this.page = page;
     }
 
@@ -49,7 +49,7 @@ public class RecipeListGui extends AbstractGui {
         fillBorder(6);
 
         setItem(4, createItem(Material.KNOWLEDGE_BOOK,
-                "<gradient:#ff6b6b:#ffd93d><bold>Danh Sách Công Thức</bold></gradient>",
+                "<gradient:#ff6b6b:#ffd93d><bold>Recipe List</bold></gradient>",
                 List.of("<gray>Click a recipe to view details")));
 
         List<Map.Entry<String, UItemRecipe>> list = new ArrayList<>(
@@ -80,7 +80,7 @@ public class RecipeListGui extends AbstractGui {
                     if (lore == null) lore = new ArrayList<>();
                     lore.add(TextUtil.parse(""));
                     lore.add(TextUtil.parse("<gold>" + type + " <dark_gray>| <gold>x" + recipe.getResultAmount()));
-                    lore.add(TextUtil.parse("<yellow>Click để xem công thức"));
+                    lore.add(TextUtil.parse("<yellow>Click to view the recipe"));
                     meta.lore(lore);
                     item.setItemMeta(meta);
                 }

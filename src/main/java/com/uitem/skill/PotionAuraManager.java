@@ -3,13 +3,13 @@ package com.uitem.skill;
 import java.util.*;
 
 /**
- * Helper class để quản lý potion "aura" - potions tự động áp dụng khi player cầm/mặc item.
- * Khác với skill action - đây là passive effect.
+ * Helper class to manage potion "auras" - potions automatically applied while a player holds/wears an item.
+ * Unlike skill actions, these are passive effects.
  */
 public class PotionAuraManager {
 
     /**
-     * Tạo skill WHILE_HOLDING với potion effect
+     * Create WHILE_HOLDING skill with potion effect
      */
     public static Skill createAuraPotionSkill(String skillId, String displayName, 
                                               String potionEffect, int amplifier, int intervalSeconds) {
@@ -27,7 +27,7 @@ public class PotionAuraManager {
     }
 
     /**
-     * Tạo skill WHILE_WEARING (armor) với potion effect
+     * Create WHILE_WEARING (armor) skill with potion effect
      */
     public static Skill createWearingPotionSkill(String skillId, String displayName,
                                                  String potionEffect, int amplifier, int intervalSeconds) {
@@ -44,7 +44,7 @@ public class PotionAuraManager {
     }
 
     /**
-     * Tạo multi-potion aura (cùng lúc có nhiều effects)
+     * Create multi-potion aura (multiple effects active at once)
      */
     public static Skill createMultiAuraSkill(String skillId, String displayName,
                                              List<PotionEffectHelper.PotionEffectCombo> effects,
@@ -64,7 +64,7 @@ public class PotionAuraManager {
     }
 
     /**
-     * Một số preset aura combos phổ biến
+     * Some common preset aura combos
      */
     public static class AuraPresets {
         public static Skill speedAura(String itemId) {

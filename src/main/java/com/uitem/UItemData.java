@@ -1,69 +1,74 @@
 package com.uitem;
 
-import org.bukkit.Material;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.EquipmentSlotGroup;
-import org.bukkit.inventory.ItemFlag;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * Data class đại diện cho một custom item trong UItem.
- * Chứa toàn bộ thông tin cần thiết để build một ItemStack.
+ * Data class representing a custom item in UItem.
+ * <p>
+ * Texture/model is NO LONGER managed here — {@link com.uitem.provider.ItemProvider}
+ * returns an ItemStack that already has its texture/model. UItemData only holds the
+ * LOGIC of the item: skills, rarity, attributes, cooldown, requirements, category, etc.
  */
 public class UItemData {
 
     private final String id;
-    private Material material;
-    private String displayName; // MiniMessage format
-    private List<String> lore; // Mỗi dòng là MiniMessage string
-    private Map<String, Integer> enchantments; // key = enchantment key (e.g., "sharpness"), value = level
-    private Set<String> flags; // ItemFlag names
-    private int customModelData; // -1 = không set
-    private boolean unbreakable;
-    private boolean glowing;
-    private int maxDurability; // -1 = use default material durability
-    private List<AttributeData> attributes;
 
-    // Oraxen/ItemsAdder/ExecutableItems integration
+    /** Source string in "namespace:id" form, e.g., "vanilla:diamond_sword", "ia:ruby_sword". */
+    private String source;
+
+    /** Top-level category: Weapon / Armor / Tool / Ranged / Magic / Consumable / Material / Misc. */
+    private String category;
+
+    /** Sub-category: Sword / Axe / Helmet / Pickaxe / Bow / ... (optional, may be null). */
+    private String subCategory;
+
+    private String displayName; // MiniMessage
+    private List<String> lore; // Each line is a MiniMessage string
     private String rarity;
 
-    private String oraxenId;
-    private String itemsAdderId;
-    private String executableItemsId;
+    private Map<String, Integer> enchantments; // key = enchantment key (e.g., "sharpness"), value = level
+    private Set<String> flags; // ItemFlag names
+
+    private boolean unbreakable;
+    private boolean glowing;
+    private int maxDurability; // -1 = use material default
+    private int stackSize = 1; // 1-64
+
+    private List<AttributeData> attributes;
+
+    // Permission required to use/hold the item (server-admin may set null = unlimited)
+    private String permission;
+    // Item-wide cooldown (seconds) — used for skill/use actions. -1 = none.
+    private double cooldown = -1;
+    // Minimum player level required to hold/use. 0 = no requirement.
+    private int requiredLevel = 0;
 
     // General attachable effects (reflect, extra damage on hit/damage/equip/fullset/die)
     private List<ItemEffect> effects = new ArrayList<>();
 
-    // Native UItem Skills & Passives (dễ dùng, ổn định hơn ExecutableItems)
+    // Native UItem Skills & Passives
     private List<com.uitem.skill.Skill> skills = new ArrayList<>();
-
-    // Optional custom model reference for resource pack (Oraxen/ItemsAdder style)
-    // Can be just name "my_model" -> looks for models/my_model.json and uses uitem:item/my_model
-    // Or full "uitem:item/some_path" or even different namespace.
-    private String model;
 
     public UItemData(String id) {
         this.id = id;
-        this.material = Material.STONE;
+        this.source = "vanilla:stone";
         this.displayName = "<white>" + id;
         this.lore = new ArrayList<>();
         this.enchantments = new LinkedHashMap<>();
         this.flags = new LinkedHashSet<>();
-        this.customModelData = -1;
         this.unbreakable = false;
         this.glowing = false;
         this.maxDurability = -1;
+        this.stackSize = 1;
         this.attributes = new ArrayList<>();
-        this.rarity = null;
-        this.oraxenId = null;
-        this.itemsAdderId = null;
-        this.executableItemsId = null;
         this.effects = new ArrayList<>();
         this.skills = new ArrayList<>();
-        this.model = null;
     }
 
     // === Getters & Setters ===
@@ -72,12 +77,29 @@ public class UItemData {
         return id;
     }
 
-    public Material getMaterial() {
-        return material;
+    public String getSource() {
+        return source;
     }
 
-    public void setMaterial(Material material) {
-        this.material = material;
+    public void setSource(String source) {
+        this.source = source != null && !source.isBlank() ? source.toLowerCase(Locale.ROOT) : "vanilla:stone";
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category != null && !category.isBlank() ? category.toUpperCase(Locale.ROOT) : null;
+    }
+
+    public String getSubCategory() {
+        return subCategory;
+    }
+
+    public void setSubCategory(String subCategory) {
+        this.subCategory = subCategory != null && !subCategory.isBlank()
+                ? subCategory.toUpperCase(Locale.ROOT) : null;
     }
 
     public String getDisplayName() {
@@ -93,7 +115,15 @@ public class UItemData {
     }
 
     public void setLore(List<String> lore) {
-        this.lore = lore;
+        this.lore = lore != null ? lore : new ArrayList<>();
+    }
+
+    public String getRarity() {
+        return rarity;
+    }
+
+    public void setRarity(String rarity) {
+        this.rarity = rarity;
     }
 
     public Map<String, Integer> getEnchantments() {
@@ -101,7 +131,7 @@ public class UItemData {
     }
 
     public void setEnchantments(Map<String, Integer> enchantments) {
-        this.enchantments = enchantments;
+        this.enchantments = enchantments != null ? enchantments : new LinkedHashMap<>();
     }
 
     public Set<String> getFlags() {
@@ -109,15 +139,7 @@ public class UItemData {
     }
 
     public void setFlags(Set<String> flags) {
-        this.flags = flags;
-    }
-
-    public int getCustomModelData() {
-        return customModelData;
-    }
-
-    public void setCustomModelData(int customModelData) {
-        this.customModelData = customModelData;
+        this.flags = flags != null ? flags : new LinkedHashSet<>();
     }
 
     public boolean isUnbreakable() {
@@ -144,44 +166,44 @@ public class UItemData {
         this.maxDurability = maxDurability;
     }
 
+    public int getStackSize() {
+        return stackSize;
+    }
+
+    public void setStackSize(int stackSize) {
+        this.stackSize = Math.max(1, Math.min(64, stackSize));
+    }
+
     public List<AttributeData> getAttributes() {
         return attributes;
     }
 
     public void setAttributes(List<AttributeData> attributes) {
-        this.attributes = attributes;
+        this.attributes = attributes != null ? attributes : new ArrayList<>();
     }
 
-    public String getRarity() {
-        return rarity;
+    public String getPermission() {
+        return permission;
     }
 
-    public void setRarity(String rarity) {
-        this.rarity = rarity;
+    public void setPermission(String permission) {
+        this.permission = (permission == null || permission.isBlank()) ? null : permission;
     }
 
-    public String getOraxenId() {
-        return oraxenId;
+    public double getCooldown() {
+        return cooldown;
     }
 
-    public void setOraxenId(String oraxenId) {
-        this.oraxenId = oraxenId;
+    public void setCooldown(double cooldown) {
+        this.cooldown = cooldown;
     }
 
-    public String getItemsAdderId() {
-        return itemsAdderId;
+    public int getRequiredLevel() {
+        return requiredLevel;
     }
 
-    public void setItemsAdderId(String itemsAdderId) {
-        this.itemsAdderId = itemsAdderId;
-    }
-
-    public String getExecutableItemsId() {
-        return executableItemsId;
-    }
-
-    public void setExecutableItemsId(String executableItemsId) {
-        this.executableItemsId = executableItemsId;
+    public void setRequiredLevel(int requiredLevel) {
+        this.requiredLevel = Math.max(0, requiredLevel);
     }
 
     public List<ItemEffect> getEffects() {
@@ -189,7 +211,7 @@ public class UItemData {
     }
 
     public void setEffects(List<ItemEffect> effects) {
-        this.effects = (effects != null) ? effects : new ArrayList<>();
+        this.effects = effects != null ? effects : new ArrayList<>();
     }
 
     public List<com.uitem.skill.Skill> getSkills() {
@@ -197,36 +219,55 @@ public class UItemData {
     }
 
     public void setSkills(List<com.uitem.skill.Skill> skills) {
-        this.skills = (skills != null) ? skills : new ArrayList<>();
+        this.skills = skills != null ? skills : new ArrayList<>();
     }
 
-    public String getModel() {
-        return model;
+    /** Deep clone UItemData. */
+    public UItemData clone() {
+        UItemData clone = new UItemData(this.id);
+        clone.source = this.source;
+        clone.category = this.category;
+        clone.subCategory = this.subCategory;
+        clone.displayName = this.displayName;
+        clone.lore = new ArrayList<>(this.lore);
+        clone.rarity = this.rarity;
+        clone.enchantments = new LinkedHashMap<>(this.enchantments);
+        clone.flags = new LinkedHashSet<>(this.flags);
+        clone.unbreakable = this.unbreakable;
+        clone.glowing = this.glowing;
+        clone.maxDurability = this.maxDurability;
+        clone.stackSize = this.stackSize;
+        clone.attributes = new ArrayList<>();
+        for (AttributeData a : this.attributes) clone.attributes.add(a.copy());
+        clone.permission = this.permission;
+        clone.cooldown = this.cooldown;
+        clone.requiredLevel = this.requiredLevel;
+        clone.effects = new ArrayList<>();
+        for (ItemEffect e : this.effects) clone.effects.add(e.copy());
+        clone.skills = new ArrayList<>();
+        for (com.uitem.skill.Skill s : this.skills) clone.skills.add(s.copy());
+        return clone;
     }
 
-    public void setModel(String model) {
-        this.model = (model != null && !model.isBlank()) ? model : null;
-    }
-
-    /**
-     * General effect that can be attached to a custom item.
-     * Supports reflect damage, extra damage on various triggers.
-     * Configurable in items.yml under "effects:".
-     */
+    /** General effect attachable to a custom item. */
     public static class ItemEffect {
-        private String trigger;     // HIT, DAMAGE, DIE, EQUIP, FULL_SET (mặc = EQUIP)
+        private String trigger;     // HIT, DAMAGE, DIE, EQUIP, FULL_SET
         private String type;        // REFLECT, EXTRA_DAMAGE
         private double chance = 100.0;
-        private double value = 0.0; // percent for REFLECT, amount for EXTRA_DAMAGE
-        private boolean applyToTarget = false; // for HIT: true = apply effect to the victim (target), false = self (holder)
+        private double value = 0.0;
+        private boolean applyToTarget = false;
 
         public ItemEffect() {}
 
         public String getTrigger() { return trigger; }
-        public void setTrigger(String trigger) { this.trigger = trigger != null ? trigger.toUpperCase(Locale.ROOT) : null; }
+        public void setTrigger(String trigger) {
+            this.trigger = trigger != null ? trigger.toUpperCase(Locale.ROOT) : null;
+        }
 
         public String getType() { return type; }
-        public void setType(String type) { this.type = type != null ? type.toUpperCase(Locale.ROOT) : null; }
+        public void setType(String type) {
+            this.type = type != null ? type.toUpperCase(Locale.ROOT) : null;
+        }
 
         public double getChance() { return chance; }
         public void setChance(double chance) { this.chance = Math.max(0, Math.min(100, chance)); }
@@ -248,48 +289,12 @@ public class UItemData {
         }
     }
 
-    /**
-     * Deep clone UItemData.
-     */
-    public UItemData clone() {
-        UItemData clone = new UItemData(this.id);
-        clone.material = this.material;
-        clone.displayName = this.displayName;
-        clone.lore = this.lore != null ? new ArrayList<>(this.lore) : new ArrayList<>();
-        clone.enchantments = this.enchantments != null ? new LinkedHashMap<>(this.enchantments) : new LinkedHashMap<>();
-        clone.flags = this.flags != null ? new LinkedHashSet<>(this.flags) : new LinkedHashSet<>();
-        clone.customModelData = this.customModelData;
-        clone.unbreakable = this.unbreakable;
-        clone.glowing = this.glowing;
-        clone.maxDurability = this.maxDurability;
-        clone.attributes = new ArrayList<>();
-        for (AttributeData attribute : this.attributes) {
-            clone.attributes.add(attribute.copy());
-        }
-        clone.rarity = this.rarity;
-        clone.oraxenId = this.oraxenId;
-        clone.itemsAdderId = this.itemsAdderId;
-        clone.executableItemsId = this.executableItemsId;
-        clone.effects = new ArrayList<>();
-        for (ItemEffect e : this.effects) {
-            clone.effects.add(e.copy());
-        }
-        clone.skills = new ArrayList<>();
-        for (com.uitem.skill.Skill s : this.skills) {
-            clone.skills.add(s.copy());
-        }
-        clone.model = this.model;
-        return clone;
-    }
-
-    /**
-     * Data class cho attribute modifier.
-     */
+    /** Attribute modifier data. */
     public static class AttributeData {
-        private String attribute; // e.g., "GENERIC_ATTACK_DAMAGE"
+        private String attribute;
         private double amount;
-        private String operation; // "ADD_NUMBER", "ADD_SCALAR", "MULTIPLY_SCALAR_1"
-        private String slot; // "HAND", "OFF_HAND", "HEAD", "CHEST", "LEGS", "FEET", "ANY"
+        private String operation; // ADD_NUMBER | ADD_SCALAR | MULTIPLY_SCALAR_1
+        private String slot;      // HAND | OFF_HAND | HEAD | CHEST | LEGS | FEET | ANY
 
         public AttributeData(String attribute, double amount, String operation, String slot) {
             this.attribute = attribute;
@@ -298,40 +303,18 @@ public class UItemData {
             this.slot = slot;
         }
 
-        public String getAttribute() {
-            return attribute;
-        }
+        public String getAttribute() { return attribute; }
+        public void setAttribute(String attribute) { this.attribute = attribute; }
 
-        public void setAttribute(String attribute) {
-            this.attribute = attribute;
-        }
+        public double getAmount() { return amount; }
+        public void setAmount(double amount) { this.amount = amount; }
 
-        public double getAmount() {
-            return amount;
-        }
+        public String getOperation() { return operation; }
+        public void setOperation(String operation) { this.operation = operation; }
 
-        public void setAmount(double amount) {
-            this.amount = amount;
-        }
+        public String getSlot() { return slot; }
+        public void setSlot(String slot) { this.slot = slot; }
 
-        public String getOperation() {
-            return operation;
-        }
-
-        public void setOperation(String operation) {
-            this.operation = operation;
-        }
-
-        public String getSlot() {
-            return slot;
-        }
-
-        public void setSlot(String slot) {
-            this.slot = slot;
-        }
-
-        public AttributeData copy() {
-            return new AttributeData(attribute, amount, operation, slot);
-        }
+        public AttributeData copy() { return new AttributeData(attribute, amount, operation, slot); }
     }
 }

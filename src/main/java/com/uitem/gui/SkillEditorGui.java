@@ -16,12 +16,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Editor cho 1 skill/passive.
- * Cho phép:
- * - Đổi trigger
- * - Đặt cooldown + chance + cancel
- * - Thêm action nhanh (preset buttons)
- * - Nhập action chi tiết qua chat
+ * Editor for a single skill/passive.
+ * Allows:
+ * - Changing trigger
+ * - Setting cooldown + chance + cancel
+ * - Quick add actions (preset buttons)
+ * - Enter detailed actions via chat
  */
 public class SkillEditorGui extends AbstractGui {
 
@@ -179,7 +179,7 @@ public class SkillEditorGui extends AbstractGui {
         setItem(28, createItem(Material.CLOCK, String.format(Messages.skillEditorCooldown(), skill.getCooldown()),
                 List.of("<yellow>" + Messages.skillEditorCooldownHint().replace("<yellow>", ""))), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            plugin.getChatInputManager().requestInput(player, "<yellow>Nhập cooldown (giây, ví dụ 4.5):", input -> {
+            plugin.getChatInputManager().requestInput(player, "<yellow>Enter cooldown (seconds, example 4.5):", input -> {
                 try {
                     double cd = Double.parseDouble(input.trim());
                     skill.setCooldown(cd);
@@ -190,8 +190,8 @@ public class SkillEditorGui extends AbstractGui {
 
         // Chance
         setItem(29, createItem(Material.GHAST_TEAR, "<gold><bold>Chance: <white>" + (int)skill.getChance() + "%</bold>",
-                List.of("<gray>% kích hoạt (hữu ích cho passive)")), ev -> {
-            plugin.getChatInputManager().requestInput(player, "<yellow>Nhập chance (0-100):", input -> {
+                List.of("<gray>% trigger chance (useful for passive)")), ev -> {
+            plugin.getChatInputManager().requestInput(player, "<yellow>Enter chance (0-100):", input -> {
                 try { skill.setChance(Double.parseDouble(input.trim())); } catch (Exception ignored) {}
                 saveAndReopen();
             }, this::reopen);
@@ -199,9 +199,9 @@ public class SkillEditorGui extends AbstractGui {
 
         // Cancel event
         setItem(30, createItem(skill.isCancelEvent() ? Material.BARRIER : Material.PAPER,
-                "<gold><bold>Cancel Event: <white>" + (skill.isCancelEvent() ? "BẬT" : "TẮT") + "</bold>",
-                List.of("<gray>Chỉ ảnh hưởng active trigger (click/drop)",
-                        "<yellow>Click để bật/tắt")), ev -> {
+                "<gold><bold>Cancel Event: <white>" + (skill.isCancelEvent() ? "ON" : "OFF") + "</bold>",
+                List.of("<gray>Only affects active triggers (click/drop)",
+                        "<yellow>Click to toggle")), ev -> {
             skill.setCancelEvent(!skill.isCancelEvent());
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
             saveAndRefresh();
@@ -268,12 +268,12 @@ public class SkillEditorGui extends AbstractGui {
 
         // Potion presets (row 3, slots 34-35 - safe from action list)
         setItem(34, createItem(Material.REDSTONE, "<light_purple>⚡ Potion Presets",
-                List.of("<gray>Click để xem danh sách potion")), ev -> {
+                List.of("<gray>Click to view the potion list")), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             new PotionPresetGui(plugin, player, itemData, skill).openAsChildOf(this);
         });
         setItem(35, createItem(Material.BREWING_STAND, "<light_purple>🍶 Potion Combos",
-                List.of("<gray>Click để xem preset combo")), ev -> {
+                List.of("<gray>Click to view preset combos")), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             new PotionPresetComboGui(plugin, player, itemData, skill).openAsChildOf(this);
         });
@@ -292,15 +292,15 @@ public class SkillEditorGui extends AbstractGui {
         // Page navigation at slot 53
         int totalPages = ACTION_PAGES.size();
         if (actionPage < totalPages - 1) {
-            setItem(53, createItem(Material.ARROW, "<yellow>Trang " + (actionPage + 2) + " ►",
-                    List.of("<gray>Click để xem thêm action")), ev -> {
+            setItem(53, createItem(Material.ARROW, "<yellow>Page " + (actionPage + 2) + " ►",
+                    List.of("<gray>Click to view more actions")), ev -> {
                 actionPage++;
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
                 refresh();
             });
         } else {
-            setItem(53, createItem(Material.ARROW, "<yellow>◄ Trang 1",
-                    List.of("<gray>Quay lại trang đầu")), ev -> {
+            setItem(53, createItem(Material.ARROW, "<yellow>◄ Page 1",
+                    List.of("<gray>Back to first page")), ev -> {
                 actionPage = 0;
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
                 refresh();
@@ -315,43 +315,43 @@ public class SkillEditorGui extends AbstractGui {
         Material mat = Material.PAPER;
         String name = "<white>" + a.getType().getDisplay();
         List<String> lore = new ArrayList<>();
-        lore.add("<gray>Loại: <white>" + a.getType().name());
+        lore.add("<gray>Type: <white>" + a.getType().name());
 
-        // Hiển thị tham số chính cho dễ đọc
+        // Show the main parameter for readability
         switch (a.getType()) {
             case MESSAGE, ACTION_BAR -> {
                 String txt = a.getStringParam("text", "");
-                if (!txt.isEmpty()) lore.add("<gray>Nội dung: <white>" + (txt.length() > 25 ? txt.substring(0, 25) + "..." : txt));
+                if (!txt.isEmpty()) lore.add("<gray>Content: <white>" + (txt.length() > 25 ? txt.substring(0, 25) + "..." : txt));
             }
-            case PLAY_SOUND -> lore.add("<gray>Âm thanh: <white>" + a.getStringParam("sound", "?"));
+            case PLAY_SOUND -> lore.add("<gray>Sound: <white>" + a.getStringParam("sound", "?"));
             case GIVE_POTION -> lore.add("<gray>Effect: <white>" + a.getStringParam("effect", "?") + " " + a.getIntParam("amplifier", 0));
-            case HEAL, DAMAGE -> lore.add("<gray>Giá trị: <white>" + a.getDoubleParam("amount", 0));
+            case HEAL, DAMAGE -> lore.add("<gray>Value: <white>" + a.getDoubleParam("amount", 0));
             case SHOOT_PROJECTILE -> lore.add("<gray>Projectile: <white>" + a.getStringParam("projectile", "FIREBALL"));
             case CONSOLE_COMMAND, PLAYER_COMMAND -> {
                 String cmd = a.getStringParam("command", "");
-                if (!cmd.isEmpty()) lore.add("<gray>Lệnh: <white>" + (cmd.length() > 28 ? cmd.substring(0, 28) + "..." : cmd));
+                if (!cmd.isEmpty()) lore.add("<gray>Command: <white>" + (cmd.length() > 28 ? cmd.substring(0, 28) + "..." : cmd));
             }
             case LAUNCH -> lore.add("<gray>Velocity: <white>" + a.getDoubleParam("y", 0));
             case TELEPORT -> lore.add("<gray>Y offset: <white>" + a.getDoubleParam("y", 0));
-            case STRIKE_LIGHTNING -> lore.add("<gray>Sét đánh tại mục tiêu");
-            case SET_FIRE -> lore.add("<gray>Lửa: <white>" + a.getIntParam("seconds", 4) + "s");
-            case FEED -> lore.add("<gray>Đói: <white>" + a.getIntParam("amount", 4));
-            case CONSUME_DURABILITY -> lore.add("<gray>Độ bền: <white>" + a.getIntParam("amount", 1));
-            case CONSUME_ITEM -> lore.add("<gray>Tiêu hao 1 item");
-            case GIVE_ITEM -> lore.add("<gray>Vật phẩm: <white>" + a.getStringParam("material", "DIAMOND") + " x" + a.getIntParam("amount", 1));
-            case REMOVE_POTION -> lore.add("<gray>Xóa effect: <white>" + a.getStringParam("effect", "all"));
+            case STRIKE_LIGHTNING -> lore.add("<gray>Lightning strike at target");
+            case SET_FIRE -> lore.add("<gray>Fire: <white>" + a.getIntParam("seconds", 4) + "s");
+            case FEED -> lore.add("<gray>Food: <white>" + a.getIntParam("amount", 4));
+            case CONSUME_DURABILITY -> lore.add("<gray>Durability: <white>" + a.getIntParam("amount", 1));
+            case CONSUME_ITEM -> lore.add("<gray>Consume 1 item");
+            case GIVE_ITEM -> lore.add("<gray>Item: <white>" + a.getStringParam("material", "DIAMOND") + " x" + a.getIntParam("amount", 1));
+            case REMOVE_POTION -> lore.add("<gray>Remove effect: <white>" + a.getStringParam("effect", "all"));
             case BLOCK_BREAK -> {
                 int r = a.getIntParam("range", 5);
                 int rad = a.getIntParam("radius", 0);
-                lore.add("<gray>Tầm: <white>" + r + (rad > 0 ? "  <yellow>Radius: " + rad + " (3x3+)" : ""));
+                lore.add("<gray>Range: <white>" + r + (rad > 0 ? "  <yellow>Radius: " + rad + " (3x3+)" : ""));
             }
             case EXPLOSION -> lore.add("<gray>Power: <white>" + a.getDoubleParam("power", 3) + " Fire: " + a.getBooleanParam("fire", false));
             case AREA_DAMAGE -> lore.add("<gray>DMG: <white>" + a.getDoubleParam("amount", 5) + " Radius: " + a.getDoubleParam("radius", 5));
-            case POTION_AREA -> lore.add("<gray>Effect: <white>" + a.getStringParam("effect", "?") + " TK: " + a.getDoubleParam("radius", 5));
-            case BLIND, GLOW, LEVITATE -> lore.add("<gray>TGian: <white>" + a.getIntParam("duration", 5) + "s");
-            case CLEAR_EFFECTS -> lore.add("<gray>Xóa toàn bộ hiệu ứng");
+            case POTION_AREA -> lore.add("<gray>Effect: <white>" + a.getStringParam("effect", "?") + " Range: " + a.getDoubleParam("radius", 5));
+            case BLIND, GLOW, LEVITATE -> lore.add("<gray>Duration: <white>" + a.getIntParam("duration", 5) + "s");
+            case CLEAR_EFFECTS -> lore.add("<gray>Clear all effects");
             case SPAWN_MOB -> lore.add("<gray>Entity: <white>" + a.getStringParam("entity", "ZOMBIE") + " x" + a.getIntParam("count", 1));
-            case FREEZE -> lore.add("<gray>Đóng băng: <white>" + a.getIntParam("duration", 5) + "s");
+            case FREEZE -> lore.add("<gray>Freeze: <white>" + a.getIntParam("duration", 5) + "s");
         }
 
         lore.add("");
@@ -399,16 +399,16 @@ public class SkillEditorGui extends AbstractGui {
         reopen();
     }
 
-    // ==================== Helpers thêm action hoàn toàn bằng GUI ====================
+    // ==================== Helpers for adding actions entirely via GUI ====================
 
     /**
-     * Thêm action và ngay lập tức hỏi giá trị chính qua chat (dễ dùng nhất cho text/command).
-     * Action chỉ được thêm vào skill sau khi người dùng xác nhận input.
+     * Add an action and immediately ask for the main value via chat (most convenient for text/command).
+     * The action is only added to the skill after the user confirms the input.
      */
     private void addActionWithPrompt(SkillAction.ActionType type) {
         SkillAction action = new SkillAction(type);
 
-        // Đặt giá trị mặc định hợp lý cho một số loại
+        // Set sensible default values for some types
         switch (type) {
             case PLAY_SOUND -> {
                 action.setParam("sound", "UI_BUTTON_CLICK");
@@ -471,7 +471,7 @@ public class SkillEditorGui extends AbstractGui {
         }
 
         // Ask for the most important value first, before adding to skill
-        // Chỉ addAction khi user cung cấp input hợp lệ
+        // Only addAction when the user provides valid input
         switch (type) {
             case MESSAGE -> promptForActionParamThenAdd(action, "text", "Enter message content (supports %player% %target%):");
             case ACTION_BAR -> promptForActionParamThenAdd(action, "text", "Enter action bar text:");
@@ -502,8 +502,8 @@ public class SkillEditorGui extends AbstractGui {
     }
 
     /**
-     * Thêm action có giá trị số, cho phép chọn nhanh bằng button trước khi hỏi custom.
-     * Action chỉ được thêm vào skill sau khi người dùng xác nhận input.
+     * Add a numeric action, allowing quick selection via button before asking for a custom value.
+     * The action is only added to the skill after the user confirms the input.
      */
     private void addNumericAction(SkillAction.ActionType type) {
         String prompt;
@@ -529,7 +529,7 @@ public class SkillEditorGui extends AbstractGui {
         promptForActionParamThenAdd(action, paramKey, prompt);
     }
 
-    /** Thêm action không cần input (có giá trị mặc định tốt) */
+    /** Add an action that needs no input (has good default values) */
     private void addDirectAction(SkillAction.ActionType type) {
         SkillAction action = new SkillAction(type);
         skill.addAction(action);
@@ -537,7 +537,7 @@ public class SkillEditorGui extends AbstractGui {
         saveAndRefresh();
     }
 
-    /** Hỏi giá trị 1 param rồi lưu + refresh (action đã tồn tại trong skill) */
+    /** Ask for a param value, then save + refresh (the action already exists in the skill) */
     private void promptForActionParam(SkillAction action, String paramKey, String promptMessage, String successMsg) {
         plugin.getChatInputManager().requestInput(player, "<yellow>" + promptMessage, input -> {
             try {
@@ -557,7 +557,7 @@ public class SkillEditorGui extends AbstractGui {
     }
 
     /**
-     * Hỏi giá trị param, chỉ add action vào skill nếu input hợp lệ.
+     * Ask for a param value; only add the action to the skill on valid input.
      */
     private void promptForActionParamThenAdd(SkillAction action, String paramKey, String promptMessage) {
         plugin.getChatInputManager().requestInput(player, "<yellow>" + promptMessage, input -> {
@@ -579,7 +579,7 @@ public class SkillEditorGui extends AbstractGui {
     }
 
     /**
-     * Khi click vào action đã có trong list → cho sửa giá trị chính.
+     * When clicking an existing action in the list → allows editing the main value.
      */
     private void editActionMainValue(SkillAction action) {
         switch (action.getType()) {

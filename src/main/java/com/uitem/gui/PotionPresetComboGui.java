@@ -13,7 +13,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.*;
 
 /**
- * GUI để chọn potion preset combos (buff combos, debuff combos, v.v.).
+ * GUI to select potion preset combos (buff combos, debuff combos, etc.).
  */
 public class PotionPresetComboGui extends AbstractGui {
 
@@ -39,10 +39,10 @@ public class PotionPresetComboGui extends AbstractGui {
         setItem(4, createItem(Material.BREWING_STAND,
                 "<light_purple><bold>Potion Combos</bold>",
                 List.of(
-                        "<gray>Trang: <white>" + (currentPage + 1) + "/" + totalPages,
-                        "<gray>Tổng: <white>" + totalPresets + " presets",
+                        "<gray>Page: <white>" + (currentPage + 1) + "/" + totalPages,
+                        "<gray>Total: <white>" + totalPresets + " presets",
                         "",
-                        "<yellow>Click để thêm combo"
+                        "<yellow>Click to add a combo"
                 )));
 
         // Display presets in grid
@@ -99,7 +99,7 @@ public class PotionPresetComboGui extends AbstractGui {
             lore.add("<aqua>  • " + combo.effectType + level + " (" + combo.durationSeconds + "s)");
         }
         lore.add("");
-        lore.add("<yellow>Click để thêm");
+        lore.add("<yellow>Click to add");
 
         return createItem(Material.POTION,
                 "<light_purple>" + preset.name,
@@ -117,7 +117,7 @@ public class PotionPresetComboGui extends AbstractGui {
         player.sendMessage(TextUtil.success(msg));
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.6f, 1.2f);
 
-        // Quay lại SkillEditorGui (giữ chuỗi parent)
+        // Go back to SkillEditorGui (keep parent chain)
         goBack();
     }
 

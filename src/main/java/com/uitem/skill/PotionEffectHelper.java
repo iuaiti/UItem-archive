@@ -8,13 +8,13 @@ import java.util.*;
 import java.util.Locale;
 
 /**
- * Helper class cho potion-related skill actions.
- * Cung cấp utility methods và preset combos.
+ * Helper class for potion-related skill actions.
+ * Provides utility methods and preset combos.
  */
 public class PotionEffectHelper {
 
     /**
-     * Các preset combo phổ biến để thêm nhanh
+     * Popular preset combos for quick addition
      */
     public static class PotionPreset {
         public final String name;
@@ -93,21 +93,21 @@ public class PotionEffectHelper {
     }
 
     /**
-     * Lấy tất cả preset combos
+     * Get all preset combos
      */
     public static Map<String, PotionPreset> getAllPresets() {
         return new LinkedHashMap<>(PRESETS);
     }
 
     /**
-     * Lấy preset theo tên
+     * Get preset by name
      */
     public static PotionPreset getPreset(String name) {
         return PRESETS.get(name);
     }
 
     /**
-     * Lấy preset bằng index
+     * Get preset by index
      */
     public static PotionPreset getPresetByIndex(int index) {
         List<PotionPreset> list = new ArrayList<>(PRESETS.values());
@@ -118,14 +118,14 @@ public class PotionEffectHelper {
     }
 
     /**
-     * Tổng số presets
+     * Total number of presets
      */
     public static int getTotalPresets() {
         return PRESETS.size();
     }
 
     /**
-     * Kiểm tra potion effect có hợp lệ không
+     * Check if a potion effect is valid
      */
     public static boolean isValidEffect(String effectName) {
         try {
@@ -137,14 +137,14 @@ public class PotionEffectHelper {
     }
 
     /**
-     * Tạo SkillAction từ PotionEffectCombo
+     * Create a SkillAction from a PotionEffectCombo
      */
     public static SkillAction createPotionAction(PotionEffectCombo combo) {
         return SkillAction.givePotion(combo.effectType, combo.durationSeconds, combo.amplifier);
     }
 
     /**
-     * Add toàn bộ preset combo vào skill
+     * Add all preset combos to a skill
      */
     public static void addPresetToSkill(Skill skill, PotionPreset preset) {
         for (PotionEffectCombo combo : preset.effects) {

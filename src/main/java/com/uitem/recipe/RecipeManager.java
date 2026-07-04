@@ -15,27 +15,27 @@ import java.util.*;
 import java.util.logging.Level;
 
 /**
- * Quản lý đọc/ghi recipe config.
+ * Manages reading/writing recipe config.
  *
- * <h3>Cấu trúc thư mục được hỗ trợ:</h3>
+ * <h3>Supported directory structure:</h3>
  * <pre>
  * plugins/UItem/
- * ├── recipes.yml            ← file đơn (backward-compat)
- * └── recipes/               ← thư mục ưu tiên hơn nếu tồn tại
+ * ├── recipes.yml            ← single-file (backward-compat)
+ * └── recipes/               ← preferred folder, used if it exists
  *     ├── boss_recipes.yml
  *     ├── weapons.yml
  *     └── special/
  *         └── events.yml
  * </pre>
  *
- * <p><b>Quy tắc giống StorageManager:</b>
+ * <p><b>Same rules as StorageManager:</b>
  * <ul>
- *   <li>Nếu thư mục {@code recipes/} tồn tại → quét TẤT CẢ file .yml (đệ quy).</li>
- *   <li>Nếu không → đọc {@code recipes.yml}.</li>
- *   <li>Reload đọc lại từ disk, không cache.</li>
- *   <li>Save từ GUI luôn ghi vào {@code recipes.yml}.</li>
- *   <li>Không ghi đè file người dùng. Không crash khi config sai.</li>
- *   <li>Mọi lỗi đều được log rõ ràng.</li>
+ *   <li>If the {@code recipes/} folder exists → scan ALL .yml files (recursively).</li>
+ *   <li>Otherwise → read {@code recipes.yml}.</li>
+ *   <li>Reload re-reads from disk, no caching.</li>
+ *   <li>Saves from GUI always write to {@code recipes.yml}.</li>
+ *   <li>Does not overwrite user files. Does not crash on bad config.</li>
+ *   <li>All errors are logged clearly.</li>
  * </ul>
  */
 public class RecipeManager {
@@ -47,7 +47,7 @@ public class RecipeManager {
     private final UItemPlugin  plugin;
     private final UItemManager itemManager;
 
-    /** Map chính: itemId → recipe. */
+    /** Main map: itemId → recipe. */
     private final Map<String, UItemRecipe> recipes = new LinkedHashMap<>();
 
     private final File legacyFile;
@@ -65,7 +65,7 @@ public class RecipeManager {
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    //  PUBLIC — truy vấn
+    //  PUBLIC — queries
     // ═════════════════════════════════════════════════════════════════════════
 
     public Map<String, UItemRecipe> getAllRecipes() {
@@ -102,7 +102,7 @@ public class RecipeManager {
         return null;
     }
 
-    /** @deprecated Dùng {@link #matchRecipe(ItemStack[])} — consumption được xử lý trong CraftingGui. */
+    /** @deprecated Use {@link #matchRecipe(ItemStack[])} — consumption is handled in CraftingGui. */
     @Deprecated
     public ItemStack matchRecipeAndConsume(ItemStack[] matrix) {
         return matchRecipe(matrix);
@@ -113,8 +113,8 @@ public class RecipeManager {
     // ═════════════════════════════════════════════════════════════════════════
 
     /**
-     * Load/reload tất cả recipes từ disk.
-     * Gọi lại khi /uitem reload.
+     * Load/reload all recipes from disk.
+     * Called whenever /uitem reload is invoked.
      */
     public void loadRecipes() {
         recipes.clear();
@@ -124,11 +124,11 @@ public class RecipeManager {
         } else if (legacyFile.exists()) {
             loadFromLegacyFile();
         }
-        // Không có file nào → 0 recipes, bình thường
+        // No file present → 0 recipes, that's fine
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    //  Load thư mục recipes/
+    //  Load: recipes/ folder
     // ─────────────────────────────────────────────────────────────────────────
 
     private void loadFromDirectory() {
@@ -163,7 +163,7 @@ public class RecipeManager {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    //  Load file recipes.yml đơn (legacy)
+    //  Load single recipes.yml file (legacy)
     // ─────────────────────────────────────────────────────────────────────────
 
     private void loadFromLegacyFile() {
@@ -173,7 +173,7 @@ public class RecipeManager {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    //  Đọc một file .yml  → int[]{loaded, skipped}
+    //  Read a single .yml file  → int[]{loaded, skipped}
     // ─────────────────────────────────────────────────────────────────────────
 
     private int[] loadSingleFile(File file, String label) {
@@ -218,7 +218,7 @@ public class RecipeManager {
             ConfigurationSection recipeSection = section.getConfigurationSection(key);
             if (recipeSection == null) { skipped++; continue; }
 
-            // Trùng ID
+            // Duplicate ID
             if (recipes.containsKey(normalise(key))) {
                 logError("[%s] Duplicate recipe id '%s' — already registered from another file. Skipped.",
                         label, key);
@@ -232,7 +232,7 @@ public class RecipeManager {
                     logError("[%s] Recipe '%s': failed to parse (missing 'result-item'?).", label, key);
                     skipped++;
                 } else {
-                    // Validate result-item tồn tại (warn nhẹ — item có thể load sau)
+                    // Validate result-item exists (soft warning — item may load later)
                     if (!itemManager.hasItem(recipe.getResultItemId())) {
                         plugin.getLogger().warning("[UItem] [" + label + "] Recipe '" + key
                                 + "': result-item '" + recipe.getResultItemId()

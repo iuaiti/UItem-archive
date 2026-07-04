@@ -12,9 +12,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Fired khi player click (trái hoặc phải) với một UItem trên tay.
+ * Fired when a player clicks (left or right) with a UItem in hand.
  *
- * <p>Dùng để implement custom behavior cho item:
+ * <p>Use it to implement custom behavior for an item:
  *
  * <pre>{@code
  * @EventHandler
@@ -23,8 +23,8 @@ import org.jetbrains.annotations.Nullable;
  *     if (event.getAction() != Action.RIGHT_CLICK_AIR &&
  *         event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
  *
- *     event.setCancelled(true); // ngăn hành động vanilla
- *     event.getPlayer().sendMessage("✨ Magic!");
+ *     event.setCancelled(true); // prevent the vanilla action
+ *     event.getPlayer().sendMessage("\u2728 Magic!");
  * }
  * }</pre>
  */
@@ -67,19 +67,19 @@ public class UItemInteractEvent extends UItemCancellableEvent {
         this.blockFace = blockFace;
     }
 
-    /** Player thực hiện interaction. */
+    /** Player performing the interaction. */
     @NotNull
     public Player getPlayer() {
         return player;
     }
 
-    /** Loại action: RIGHT_CLICK_AIR, RIGHT_CLICK_BLOCK, LEFT_CLICK_AIR, LEFT_CLICK_BLOCK. */
+    /** Action type: RIGHT_CLICK_AIR, RIGHT_CLICK_BLOCK, LEFT_CLICK_AIR, LEFT_CLICK_BLOCK. */
     @NotNull
     public Action getAction() {
         return action;
     }
 
-    /** ItemStack đang được cầm (bản copy). */
+    /** ItemStack currently held (a copy). */
     @NotNull
     public ItemStack getItemStack() {
         return itemStack;
@@ -91,24 +91,24 @@ public class UItemInteractEvent extends UItemCancellableEvent {
         return hand;
     }
 
-    /** Block bị click (null nếu click air). */
+    /** Clicked block (null if clicking air). */
     @Nullable
     public Block getClickedBlock() {
         return clickedBlock;
     }
 
-    /** Mặt block bị click (null nếu click air). */
+    /** Clicked block face (null if clicking air). */
     @Nullable
     public BlockFace getBlockFace() {
         return blockFace;
     }
 
-    /** Convenience: true nếu là right click. */
+    /** Convenience: true if it is a right click. */
     public boolean isRightClick() {
         return action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK;
     }
 
-    /** Convenience: true nếu là left click. */
+    /** Convenience: true if it is a left click. */
     public boolean isLeftClick() {
         return action == Action.LEFT_CLICK_AIR || action == Action.LEFT_CLICK_BLOCK;
     }

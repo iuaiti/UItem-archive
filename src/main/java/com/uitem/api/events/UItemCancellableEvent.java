@@ -5,8 +5,8 @@ import org.bukkit.event.Cancellable;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Base class cho các UItem events có thể bị cancel.
- * Cancel event sẽ ngăn hành động tương ứng xảy ra.
+ * Base class for cancellable UItem events.
+ * Cancelling the event prevents the corresponding action from happening.
  */
 public abstract class UItemCancellableEvent extends UItemEvent implements Cancellable {
 

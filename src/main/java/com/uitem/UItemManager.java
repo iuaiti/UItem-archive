@@ -1,5 +1,8 @@
 package com.uitem;
 
+import com.uitem.provider.ItemProvider;
+import com.uitem.provider.ProviderManager;
+import com.uitem.rarity.RarityConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
@@ -18,11 +21,9 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.uitem.rarity.RarityConfig;
-
 /**
- * Quản lý toàn bộ custom items.
- * Cung cấp CRUD operations và build ItemStack từ UItemData.
+ * Manages all custom items.
+ * Provides CRUD operations and builds ItemStacks from UItemData.
  */
 public class UItemManager {
 
@@ -39,14 +40,14 @@ public class UItemManager {
     }
 
     /**
-     * Lấy NamespacedKey dùng để đánh dấu item.
+     * Get the NamespacedKey used to mark items.
      */
     public NamespacedKey getUItemKey() {
         return uitemKey;
     }
 
     /**
-     * Thêm hoặc cập nhật một custom item.
+     * Add or update a custom item.
      */
     public void registerItem(UItemData data) {
         if (data == null || data.getId() == null || data.getId().isBlank()) {
@@ -56,7 +57,7 @@ public class UItemManager {
     }
 
     /**
-     * Xóa một custom item.
+     * Remove a custom item.
      */
     public void removeItem(String id) {
         if (id == null) {
@@ -66,7 +67,7 @@ public class UItemManager {
     }
 
     /**
-     * Lấy UItemData theo ID.
+     * Get a UItemData by ID.
      */
     public UItemData getItem(String id) {
         if (id == null) {
@@ -76,14 +77,14 @@ public class UItemManager {
     }
 
     /**
-     * Lấy tất cả items.
+     * Get all items.
      */
     public Map<String, UItemData> getAllItems() {
         return Collections.unmodifiableMap(items);
     }
 
     /**
-     * Xóa tất cả items (dùng khi reload).
+     * Clear all items (used on reload).
      */
     public void clearAll() {
         items.clear();
@@ -91,7 +92,7 @@ public class UItemManager {
 
 
     /**
-     * Tạo snapshot deep-copy để lưu async an toàn.
+     * Create a deep-copy snapshot for safe async saving.
      */
     public Map<String, UItemData> snapshotAll() {
         Map<String, UItemData> snapshot = new LinkedHashMap<>();
@@ -107,26 +108,31 @@ public class UItemManager {
     }
 
     /**
-     * Kiểm tra item tồn tại.
+     * Check whether an item exists.
      */
     public boolean hasItem(String id) {
         return id != null && items.containsKey(id.toLowerCase(Locale.ROOT));
     }
 
     /**
-     * Build ItemStack từ UItemData.
-     * Đây là method quan trọng nhất — chuyển đổi data thành item thực tế.
+     * Build an ItemStack from a UItemData.
+     * This is the most important method — it turns data into an actual item.
+     * The source ItemStack is now decided by the {@link ProviderManager} (vanilla / ia / oraxen / ...).
      */
     public ItemStack buildItemStack(UItemData data) {
         if (data == null) return new ItemStack(Material.STONE);
 
-        // Build base (integration or vanilla)
-        ItemStack integrationBase = plugin.getIntegrationManager().tryBuildFromIntegration(data);
+        // 1) Resolve source via ProviderManager — texture/model is already present in the base ItemStack.
+        ItemStack base = plugin.getProviderManager().build(data.getSource()).orElse(null);
         ItemStack itemStack;
-        if (integrationBase != null) {
-            itemStack = integrationBase;
+        if (base != null) {
+            itemStack = base.clone();
         } else {
-            Material material = data.getMaterial() != null && data.getMaterial().isItem() ? data.getMaterial() : Material.STONE;
+            // Fallback: parse vanilla material from the source
+            String[] parts = ProviderManager.split(data.getSource());
+            String fallback = "stone";
+            if (parts != null) fallback = parts[1];
+            Material material = parseVanillaMaterial(fallback);
             itemStack = new ItemStack(material);
         }
         ItemMeta meta = itemStack.getItemMeta();
@@ -182,10 +188,8 @@ public class UItemManager {
             }
         }
 
-        // Custom Model Data
-        if (data.getCustomModelData() > 0) {
-            meta.setCustomModelData(data.getCustomModelData());
-        }
+        // Custom Model Data — removed. Texture/model is managed by third-party plugins.
+        // The provider returns an ItemStack with the correct CustomModelData already, do not override.
 
         // Unbreakable
         meta.setUnbreakable(data.isUnbreakable());
@@ -225,13 +229,16 @@ public class UItemManager {
                     );
                     meta.addAttributeModifier(attribute, modifier);
                 } catch (Exception e) {
-                    plugin.getLogger().warning("Không thể thêm attribute " + attrData.getAttribute()
-                            + " cho item " + data.getId() + ": " + e.getMessage());
+                    plugin.getLogger().warning("Cannot add attribute " + attrData.getAttribute()
+                            + " to item " + data.getId() + ": " + e.getMessage());
                 }
             }
         }
 
-        // Tag item với PersistentDataContainer
+        // Stack size
+        itemStack.setAmount(Math.max(1, Math.min(64, data.getStackSize())));
+
+        // Tag the item with the PersistentDataContainer
         meta.getPersistentDataContainer().set(uitemKey, PersistentDataType.STRING, data.getId());
 
         itemStack.setItemMeta(meta);
@@ -239,19 +246,19 @@ public class UItemManager {
     }
 
     /**
-     * Build ItemStack cho preview trong GUI (có thêm thông tin phụ).
-     * Mặc định hiển thị ID và thông tin nội bộ (dành cho admin/editor).
+     * Build an ItemStack for preview in the GUI (with extra info).
+     * By default, shows the ID and internal info (for admins/editors).
      */
     public ItemStack buildPreviewItemStack(UItemData data) {
         return buildPreviewItemStack(data, true);
     }
 
     /**
-     * Build ItemStack cho preview trong GUI.
+     * Build an ItemStack for preview in the GUI.
      *
-     * @param data    dữ liệu item
-     * @param showId  nếu true thì thêm ID, Material, CMD và hướng dẫn click (dành cho admin).
-     *                Nếu false thì chỉ giữ item gốc + lore người chơi (ẩn ID cho player thường).
+     * @param data    the item data
+     * @param showId  if true, appends ID, Material, CMD and click instructions (for admins).
+     *                If false, only keeps the original item + player lore (hides the ID for normal players).
      */
     public ItemStack buildPreviewItemStack(UItemData data, boolean showId) {
         ItemStack item = buildItemStack(data);
@@ -264,12 +271,14 @@ public class UItemManager {
                 lore.add(Component.empty());
                 lore.add(miniMessage.deserialize("<dark_gray>──────────────"));
                 lore.add(miniMessage.deserialize("<gray>ID: <white>" + data.getId()));
-                Material previewMaterial = data.getMaterial() != null ? data.getMaterial() : Material.STONE;
-                lore.add(miniMessage.deserialize("<gray>Material: <white>" + previewMaterial.name()));
-                lore.add(miniMessage.deserialize("<gray>CMD: <white>" + (data.getCustomModelData() > 0 ? data.getCustomModelData() : "Không")));
+                lore.add(miniMessage.deserialize("<gray>Source: <white>" + data.getSource()));
+                if (data.getCategory() != null) {
+                    lore.add(miniMessage.deserialize("<gray>Category: <white>" + data.getCategory()
+                            + (data.getSubCategory() != null ? " / " + data.getSubCategory() : "")));
+                }
                 lore.add(miniMessage.deserialize("<dark_gray>──────────────"));
-                lore.add(miniMessage.deserialize("<yellow>Click trái: <white>Chỉnh sửa"));
-                lore.add(miniMessage.deserialize("<red>Click phải: <white>Xóa"));
+                lore.add(miniMessage.deserialize("<yellow>Left click: <white>Edit"));
+                lore.add(miniMessage.deserialize("<red>Right click: <white>Delete"));
             }
 
             meta.lore(lore);
@@ -295,9 +304,20 @@ public class UItemManager {
         }
     }
 
-    // (removed applyDisplayProperties and tagItem - logic inlined in buildItemStack for both vanilla + integration cases,
-    // so enchants/flags/attributes/etc from UItemData now apply on top of IA/Oraxen/EI base items too.
-    // This fixes "fake" high-level enchants not being real on external model items.)
+    // (old comment removed: logic only applies via the provider base item now)
+
+    /**
+     * Parse a vanilla material name (case-insensitive). Returns STONE if invalid.
+     */
+    public Material parseVanillaMaterial(String name) {
+        if (name == null || name.isBlank()) return Material.STONE;
+        try {
+            Material m = Material.valueOf(name.trim().toUpperCase(Locale.ROOT));
+            return m.isItem() ? m : Material.STONE;
+        } catch (IllegalArgumentException e) {
+            return Material.STONE;
+        }
+    }
 
     /**
      * Lấy enchantment từ key string (e.g., "sharpness", "minecraft:sharpness").

@@ -14,14 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * GUI chỉnh sửa lore (mô tả) của item.
- * Hiển thị từng dòng lore, cho phép thêm/sửa/xóa/di chuyển.
+ * GUI to edit the item's lore (description).
+ * Shows each lore line; allows adding/editing/deleting/moving.
  */
 public class LoreEditorGui extends AbstractGui {
 
     private final UItemData data;
     private int page;
-    private int selectedLine; // -1 = không chọn dòng nào
+    private int selectedLine; // -1 = no line selected
 
     private static final int ITEMS_PER_PAGE = 28;
     private static final int[] ITEM_SLOTS = {
@@ -32,7 +32,7 @@ public class LoreEditorGui extends AbstractGui {
     };
 
     public LoreEditorGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 54, "<gold><bold>Chỉnh Lore</bold> <dark_gray>- <white>" + data.getId());
+        super(plugin, player, 54, "<gold><bold>Edit Lore</bold> <dark_gray>- <white>" + data.getId());
         this.data = data;
         this.page = 0;
         this.selectedLine = -1;
@@ -53,7 +53,7 @@ public class LoreEditorGui extends AbstractGui {
 
         // Title
         setItem(4, createItem(Material.WRITABLE_BOOK,
-                "<gold><bold>Chỉnh Lore</bold>",
+                "<gold><bold>Edit Lore</bold>",
                 List.of(
                         "<gray>Edit item description",
                         "",
@@ -91,10 +91,10 @@ public class LoreEditorGui extends AbstractGui {
 
             setItem(ITEM_SLOTS[i], item, event -> {
                 if (event.getClick() == ClickType.LEFT) {
-                    // Sửa dòng
+                    // Edit line
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                     plugin.getChatInputManager().requestInput(player,
-                            "<yellow>Nhập nội dung mới cho dòng " + (finalLineIndex + 1) + " <gray>(hỗ trợ MiniMessage):",
+                            "<yellow>Enter new content for line " + (finalLineIndex + 1) + " <gray>(supports MiniMessage):",
                             input -> {
                                 if (finalLineIndex < data.getLore().size()) {
                                     data.getLore().set(finalLineIndex, input);
@@ -104,7 +104,7 @@ public class LoreEditorGui extends AbstractGui {
                                 new LoreEditorGui(plugin, player, data).open();
                             });
                 } else if (event.getClick() == ClickType.RIGHT) {
-                    // Xóa dòng
+                    // Delete line
                     if (finalLineIndex < data.getLore().size()) {
                         data.getLore().remove(finalLineIndex);
                         plugin.getItemManager().registerItem(data);
@@ -113,7 +113,7 @@ public class LoreEditorGui extends AbstractGui {
                     player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
                     refresh();
                 } else if (event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) {
-                    // Chèn dòng trống phía trên
+                    // Insert blank line above
                     if (finalLineIndex <= data.getLore().size()) {
                         data.getLore().add(finalLineIndex, "");
                         plugin.getItemManager().registerItem(data);
@@ -125,7 +125,7 @@ public class LoreEditorGui extends AbstractGui {
             });
         }
 
-        // Nút THÊM DÒNG MỚI (slot 49)
+        // ADD NEW LINE button (slot 49)
         setItem(49, createItem(Material.EMERALD,
                 "<green><bold>+ Add new line</bold>",
                 List.of(
@@ -133,7 +133,7 @@ public class LoreEditorGui extends AbstractGui {
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Nhập nội dung dòng mới <gray>(hỗ trợ MiniMessage):",
+                    "<yellow>Enter new line content <gray>(supports MiniMessage):",
                     input -> {
                         data.getLore().add(input);
                         plugin.getItemManager().registerItem(data);
@@ -142,11 +142,11 @@ public class LoreEditorGui extends AbstractGui {
                     });
         });
 
-        // Nút XÓA TẤT CẢ (slot 47)
+        // CLEAR ALL button (slot 47)
         setItem(47, createItem(Material.BARRIER,
                 "<red><bold>Clear all lore</bold>",
                 List.of(
-                        "<gray>Xóa tất cả dòng lore"
+                        "<gray>Delete all lore lines"
                 )), event -> {
             data.getLore().clear();
             plugin.getItemManager().registerItem(data);
@@ -155,7 +155,7 @@ public class LoreEditorGui extends AbstractGui {
             refresh();
         });
 
-        // Trang trước
+        // Previous page
         if (page > 0) {
             setItem(46, createPreviousButton(), event -> {
                 page--;
@@ -163,7 +163,7 @@ public class LoreEditorGui extends AbstractGui {
             });
         }
 
-        // Trang sau
+        // Next page
         if (page < totalPages - 1) {
             setItem(52, createNextButton(), event -> {
                 page++;
@@ -171,7 +171,7 @@ public class LoreEditorGui extends AbstractGui {
             });
         }
 
-        // Quay lại
+        // Back
         setItem(51, createBackButton(), event -> goBack());
     }
 }

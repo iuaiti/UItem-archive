@@ -50,7 +50,7 @@ public class CraftingGui implements InventoryHolder {
     }
 
     private void initialize() {
-        // Nicer crafting theme: use brown / orange tones for "table" feel
+        // Nicer crafting theme: use brown / orange tones for a "table" feel
         ItemStack border = new ItemStack(Material.BROWN_STAINED_GLASS_PANE);
         ItemMeta meta = border.getItemMeta();
         if (meta != null) {
@@ -82,17 +82,17 @@ public class CraftingGui implements InventoryHolder {
         inventory.setItem(RESULT_SLOT, null);
 
         // Add a small "craft grid" label hint
-        inventory.setItem(13, createInfoLabel(Material.CRAFTING_TABLE, "<gold>Lưới Chế Tạo"));
+        inventory.setItem(13, createInfoLabel(Material.CRAFTING_TABLE, "<gold>Crafting Grid"));
         inventory.setItem(22, createInfoLabel(Material.ARROW, "<yellow>→"));
-        inventory.setItem(24, createInfoLabel(Material.KNOWLEDGE_BOOK, "<gold>Kết Quả"));
+        inventory.setItem(24, createInfoLabel(Material.KNOWLEDGE_BOOK, "<gold>Result"));
 
         // Info area explaining custom crafting + FULL_SET support (visual only, not live player armor)
-        inventory.setItem(0, createInfoLabel(Material.CRAFTING_TABLE, "<gold>Chế Tạo UItem"));
-        inventory.setItem(1, createInfoLabel(Material.KNOWLEDGE_BOOK, "<gray>Item tùy chỉnh"));
-        inventory.setItem(2, createInfoLabel(Material.ANVIL, "<gray>+ vật liệu vanilla"));
-        inventory.setItem(3, createInfoLabel(Material.NETHERITE_INGOT, "<yellow>Công thức đặc biệt"));
-        inventory.setItem(4, createInfoLabel(Material.NETHER_STAR, "<gold>Kết quả ở đây"));
-        inventory.setItem(9, createInfoLabel(Material.ARMOR_STAND, "<gray>Mặc đủ 4 món giáp → kích hoạt hiệu ứng FULL_SET (trên UItem đó)"));
+        inventory.setItem(0, createInfoLabel(Material.CRAFTING_TABLE, "<gold>UItem Crafting"));
+        inventory.setItem(1, createInfoLabel(Material.KNOWLEDGE_BOOK, "<gray>Custom items"));
+        inventory.setItem(2, createInfoLabel(Material.ANVIL, "<gray>+ vanilla materials"));
+        inventory.setItem(3, createInfoLabel(Material.NETHERITE_INGOT, "<yellow>Special recipes"));
+        inventory.setItem(4, createInfoLabel(Material.NETHER_STAR, "<gold>Result appears here"));
+        inventory.setItem(9, createInfoLabel(Material.ARMOR_STAND, "<gray>Wear a full 4-piece armor set to trigger the FULL_SET effect (on the UItem)"));
 
         updateCraftButtons();
     }
@@ -114,15 +114,15 @@ public class CraftingGui implements InventoryHolder {
         boolean hasRecipe = maxU > 0;
 
         inventory.setItem(CRAFT_1_SLOT, createAmountButton(Material.LIME_DYE, "1",
-                List.of("<gray>Chế 1 đơn vị", selected == 1 ? "<green>✔ Đã chọn" : "<yellow>Click để chọn")));
+                List.of("<gray>Craft 1 unit", selected == 1 ? "<green>✔ Selected" : "<yellow>Click to select")));
         inventory.setItem(CRAFT_8_SLOT, createAmountButton(Material.LIGHT_BLUE_DYE, "8",
-                List.of("<gray>Chế 8 đơn vị", selected == 8 ? "<green>✔ Đã chọn" : "<yellow>Click để chọn")));
+                List.of("<gray>Craft 8 units", selected == 8 ? "<green>✔ Selected" : "<yellow>Click to select")));
         inventory.setItem(CRAFT_64_SLOT, createAmountButton(Material.CYAN_DYE, "64",
-                List.of("<gray>Chế 64 đơn vị", selected == 64 ? "<green>✔ Đã chọn" : "<yellow>Click để chọn")));
+                List.of("<gray>Craft 64 units", selected == 64 ? "<green>✔ Selected" : "<yellow>Click to select")));
         inventory.setItem(CRAFT_MAX_SLOT, createAmountButton(Material.MAGENTA_DYE, "MAX",
                 List.of(
-                        hasRecipe ? "<gray>Chế tối đa có thể: x" + maxU : "<gray>Không có công thức chế tạo",
-                        selected == 999 ? "<green>✔ Đã chọn" : "<yellow>Click để chọn"
+                        hasRecipe ? "<gray>Craft as many as possible: x" + maxU : "<gray>No crafting recipe available",
+                        selected == 999 ? "<green>✔ Selected" : "<yellow>Click to select"
                 )));
     }
 
@@ -130,7 +130,7 @@ public class CraftingGui implements InventoryHolder {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(TextUtil.parse("<gold><bold>Chế x" + label + "</bold>"));
+            meta.displayName(TextUtil.parse("<gold><bold>Craft x" + label + "</bold>"));
             meta.lore(lore.stream().map(TextUtil::parse).toList());
             item.setItemMeta(meta);
         }
@@ -171,7 +171,7 @@ public class CraftingGui implements InventoryHolder {
             if (pm != null) {
                 List<net.kyori.adventure.text.Component> lore = pm.lore() != null ? new ArrayList<>(pm.lore()) : new ArrayList<>();
                 lore.add(net.kyori.adventure.text.Component.empty());
-                lore.add(TextUtil.parse("<yellow>Click để chế x" + showAmt));
+                lore.add(TextUtil.parse("<yellow>Click to craft x" + showAmt));
                 lore.add(TextUtil.parse("<gray>Max units craftable: " + maxU));
                 pm.lore(lore);
                 preview.setItemMeta(pm);
@@ -404,17 +404,17 @@ public class CraftingGui implements InventoryHolder {
         }
 
         if (event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
-            // Shift-click từ bên trong GUI (slot craft/result) — cancel hết
+            // Shift-click from inside the GUI (craft/result slots) - cancel all
             if (slot < GUI_SIZE) {
                 event.setCancelled(true);
                 return;
             }
-            // Shift-click từ player inventory lên craft grid
+            // Shift-click from player inventory into the craft grid
             event.setCancelled(true);
             ItemStack clicked = event.getCurrentItem();
             if (clicked == null || clicked.getType().isAir()) return;
 
-            // Điền vào TẤT CẢ craft slot còn trống (không chỉ slot đầu)
+            // Fill ALL empty craft slots (not just the first one)
             int remaining = clicked.getAmount();
             for (int cs : CRAFT_SLOTS) {
                 if (remaining <= 0) break;
@@ -427,7 +427,7 @@ public class CraftingGui implements InventoryHolder {
                 }
             }
 
-            // Cập nhật lại slot player — setAmount(0) unreliable, dùng setItem trực tiếp
+            // Update the player slot again - setAmount(0) is unreliable, use setItem directly
             if (remaining != clicked.getAmount()) {
                 int clickedSlot = event.getSlot();
                 if (remaining <= 0) {
@@ -494,7 +494,7 @@ public class CraftingGui implements InventoryHolder {
 
     public static void removeCraftingPlayer(Player player) {
         if (player == null) {
-            // Bulk cleanup on plugin disable — clear all tracked players
+        // Bulk cleanup on plugin disable - clear all tracked players
             openCraftingGuis.clear();
         } else {
             openCraftingGuis.remove(player.getUniqueId());

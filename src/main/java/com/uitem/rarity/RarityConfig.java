@@ -16,7 +16,7 @@ public class RarityConfig {
 
     public static void load(UItemPlugin pluginInstance) {
         plugin = pluginInstance;
-        // Không clear để giữ dữ liệu nếu có lỗi khi load file
+        // Don't clear, to retain data if file loading fails
 
         // Dedicated rarity file (user requested separate file for easy copy-paste)
         rarityFile = new File(plugin.getDataFolder(), "rarity.yml");

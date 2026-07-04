@@ -17,13 +17,13 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * Thực thi skill/passive.
+ * Executes skills/passives.
  * 
- * Thiết kế ổn định:
- * - Mọi action được bọc try/catch riêng lẻ.
- * - Placeholder đơn giản: %player%, %target%, %x%, %y%, %z%, %health%
- * - Dùng SchedulerUtil (Folia-safe).
- * - Không block main thread lâu.
+ * Stable design:
+ * - Every action is wrapped in its own try/catch.
+ * - Simple placeholders: %player%, %target%, %x%, %y%, %z%, %health%
+ * - Uses SchedulerUtil (Folia-safe).
+ * - Does not block the main thread for long.
  */
 public final class SkillExecutor {
 
@@ -70,12 +70,12 @@ public final class SkillExecutor {
     }
 
     // =========================================================
-    // Main entry: thực thi danh sách skill phù hợp trigger
+    // Main entry: execute the list of skills matching the trigger
     // =========================================================
 
     /**
-     * Chạy tất cả skill của item khớp trigger.
-     * Trả về true nếu có ít nhất 1 skill được thực thi (và có thể cancel event).
+     * Run all skills on the item that match the trigger.
+     * Returns true if at least 1 skill was executed (and may cancel the event).
      */
     public boolean executeSkills(Player player, String itemId, List<Skill> skills,
                                  SkillTrigger trigger, LivingEntity target) {
@@ -164,7 +164,7 @@ public final class SkillExecutor {
     }
 
     // =========================================================
-    // Thực thi 1 action
+    // Execute a single action
     // =========================================================
 
     private boolean runSingleAction(Player player, LivingEntity target, SkillAction action, Skill skill) {
@@ -599,20 +599,19 @@ public final class SkillExecutor {
         if (target != null) {
             out = out.replace("%target%", target instanceof Player p ? p.getName() : target.getType().name());
             out = out.replace("%target_health%", String.format("%.1f", target.getHealth()));
-        } else {
-            out = out.replace("%target%", "mục tiêu");
+            out = out.replace("%target%", "target");
             out = out.replace("%target_health%", "?");
         }
         return out;
     }
 
     // =========================================================
-    // Periodic support (gọi từ listener)
+    // Periodic support (called from listener)
     // =========================================================
 
     /**
-     * Chạy skill PERIODIC / WHILE_* cho player.
-     * Được gọi định kỳ từ SkillListener.
+     * Run PERIODIC / WHILE_* skills for a player.
+     * Called periodically by SkillListener.
      */
     public void tickPeriodicSkills(Player player, String itemId, List<Skill> skills, SkillTrigger triggerType) {
         if (skills == null) return;

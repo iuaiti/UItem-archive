@@ -18,42 +18,42 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Public API của UItem — entry point duy nhất cho external developer.
+ * Public API of UItem — the single entry point for external developers.
  *
- * <h2>Cách dùng trong plugin của bạn:</h2>
+ * <h2>How to use in your plugin:</h2>
  *
  * <pre>{@code
- * // 1. Kiểm tra UItem có sẵn không (trong onEnable)
+ * // 1. Check whether UItem is available (in onEnable)
  * if (!UItemAPI.isAvailable()) {
- *     getLogger().warning("UItem không được cài — tắt tính năng liên quan.");
+ *     getLogger().warning("UItem is not installed — disabling related feature.");
  *     return;
  * }
  * UItemAPI api = UItemAPI.get();
  *
- * // 2. Lấy item theo ID
+ * // 2. Get item by ID
  * Optional<ItemStack> item = api.buildItem("ruby_sword");
  * item.ifPresent(i -> player.getInventory().addItem(i));
  *
- * // 3. Kiểm tra ItemStack có phải UItem không
+ * // 3. Check whether an ItemStack is a UItem
  * if (api.isUItem(itemInHand)) {
  *     String id = api.getUItemId(itemInHand).orElse("unknown");
  * }
  *
- * // 4. Đăng ký item mới từ code
+ * // 4. Register a new item from code
  * UItemData data = new UItemData("my_item");
  * data.setMaterial(Material.DIAMOND);
  * data.setDisplayName("<aqua>My Item");
- * api.registerItem(data, null); // null = không có sender
+ * api.registerItem(data, null); // null = no sender
  * }</pre>
  *
- * <h2>Events có thể listen:</h2>
+ * <h2>Events you can listen to:</h2>
  * <ul>
- *   <li>{@code UItemCreateEvent} — item mới được tạo</li>
- *   <li>{@code UItemDeleteEvent} — item bị xóa</li>
- *   <li>{@code UItemGiveEvent}   — item được give cho player</li>
- *   <li>{@code UItemInteractEvent} — player click với UItem trên tay</li>
- *   <li>{@code UItemPickupEvent}  — player nhặt UItem</li>
- *   <li>{@code UItemEquipEvent}   — player mặc/tháo UItem</li>
+ *   <li>{@code UItemCreateEvent} — a new item is created</li>
+ *   <li>{@code UItemDeleteEvent} — an item is deleted</li>
+ *   <li>{@code UItemGiveEvent}   — an item is given to a player</li>
+ *   <li>{@code UItemInteractEvent} — a player clicks with a UItem in hand</li>
+ *   <li>{@code UItemPickupEvent}  — a player picks up a UItem</li>
+ *   <li>{@code UItemEquipEvent}   — a player equips/unequips a UItem</li>
  * </ul>
  */
 public final class UItemAPI {
@@ -67,18 +67,18 @@ public final class UItemAPI {
     }
 
     // =========================================================
-    // Internal lifecycle — chỉ UItemPlugin gọi
+    // Internal lifecycle — only called by UItemPlugin
     // =========================================================
 
     /**
-     * Khởi tạo API instance. Chỉ gọi từ {@code UItemPlugin.onEnable()}.
+     * Initialize the API instance. Only called from {@code UItemPlugin.onEnable()}.
      */
     public static void init(@NotNull UItemPlugin plugin) {
         instance = new UItemAPI(plugin);
     }
 
     /**
-     * Hủy API instance. Chỉ gọi từ {@code UItemPlugin.onDisable()}.
+     * Destroy the API instance. Only called from {@code UItemPlugin.onDisable()}.
      */
     public static void shutdown() {
         instance = null;
@@ -89,22 +89,22 @@ public final class UItemAPI {
     // =========================================================
 
     /**
-     * Lấy UItemAPI instance.
+     * Get the UItemAPI instance.
      *
-     * @throws IllegalStateException nếu UItem chưa bật hoặc đã tắt
+     * @throws IllegalStateException if UItem is not enabled or has been disabled
      */
     @NotNull
     public static UItemAPI get() {
         if (instance == null) {
             throw new IllegalStateException(
-                    "UItem chưa được load. Kiểm tra bằng UItemAPI.isAvailable() trước.");
+                    "UItem is not loaded. Check with UItemAPI.isAvailable() first.");
         }
         return instance;
     }
 
     /**
-     * Kiểm tra UItem có đang chạy và API có sẵn không.
-     * Luôn gọi cái này trước {@link #get()} trong plugin của bạn.
+     * Check whether UItem is running and the API is available.
+     * Always call this before {@link #get()} in your plugin.
      */
     public static boolean isAvailable() {
         return instance != null;
@@ -115,10 +115,10 @@ public final class UItemAPI {
     // =========================================================
 
     /**
-     * Lấy {@link UItemData} theo ID.
+     * Get the {@link UItemData} by ID.
      *
-     * @param id ID của item (case-insensitive)
-     * @return Optional chứa data, empty nếu không tìm thấy
+     * @param id the item ID (case-insensitive)
+     * @return Optional containing the data, empty if not found
      */
     @NotNull
     public Optional<UItemData> getItem(@NotNull String id) {
@@ -126,9 +126,9 @@ public final class UItemAPI {
     }
 
     /**
-     * Lấy tất cả custom items đã đăng ký.
+     * Get all registered custom items.
      *
-     * @return Unmodifiable map của id → data
+     * @return Unmodifiable map of id → data
      */
     @NotNull
     public Map<String, UItemData> getAllItems() {
@@ -136,7 +136,7 @@ public final class UItemAPI {
     }
 
     /**
-     * Kiểm tra item ID có tồn tại không.
+     * Check whether an item ID exists.
      */
     public boolean hasItem(@NotNull String id) {
         return plugin.getItemManager().hasItem(id);
@@ -147,10 +147,10 @@ public final class UItemAPI {
     // =========================================================
 
     /**
-     * Build {@link ItemStack} từ ID.
+     * Build an {@link ItemStack} from an ID.
      *
-     * @param id ID của item
-     * @return Optional chứa ItemStack, empty nếu ID không tồn tại
+     * @param id the item ID
+     * @return Optional containing the ItemStack, empty if the ID does not exist
      */
     @NotNull
     public Optional<ItemStack> buildItem(@NotNull String id) {
@@ -160,7 +160,7 @@ public final class UItemAPI {
     }
 
     /**
-     * Build {@link ItemStack} từ {@link UItemData}.
+     * Build an {@link ItemStack} from a {@link UItemData}.
      */
     @NotNull
     public ItemStack buildItem(@NotNull UItemData data) {
@@ -172,10 +172,10 @@ public final class UItemAPI {
     // =========================================================
 
     /**
-     * Kiểm tra ItemStack có phải UItem không (có PersistentDataContainer tag).
+     * Check whether an ItemStack is a UItem (has a PersistentDataContainer tag).
      *
-     * @param item ItemStack cần kiểm tra (null-safe)
-     * @return true nếu là UItem
+     * @param item the ItemStack to check (null-safe)
+     * @return true if it is a UItem
      */
     public boolean isUItem(@Nullable ItemStack item) {
         if (item == null || item.getType().isAir()) return false;
@@ -186,10 +186,10 @@ public final class UItemAPI {
     }
 
     /**
-     * Lấy ID của UItem từ ItemStack.
+     * Get the ID of the UItem from an ItemStack.
      *
-     * @param item ItemStack cần check
-     * @return Optional chứa ID, empty nếu không phải UItem
+     * @param item the ItemStack to check
+     * @return Optional containing the ID, empty if it is not a UItem
      */
     @NotNull
     public Optional<String> getUItemId(@Nullable ItemStack item) {
@@ -202,8 +202,8 @@ public final class UItemAPI {
     }
 
     /**
-     * Lấy {@link UItemData} từ một ItemStack.
-     * Kết hợp {@link #getUItemId} và {@link #getItem}.
+     * Get the {@link UItemData} from an ItemStack.
+     * Combines {@link #getUItemId} and {@link #getItem}.
      */
     @NotNull
     public Optional<UItemData> getUItemData(@Nullable ItemStack item) {
@@ -215,14 +215,14 @@ public final class UItemAPI {
     // =========================================================
 
     /**
-     * Đăng ký (tạo hoặc update) một custom item vào UItem.
+     * Register (create or update) a custom item into UItem.
      *
-     * <p>Nếu item với ID này chưa tồn tại → fire {@link UItemCreateEvent}.
-     * Nếu đã tồn tại → update trực tiếp, không fire event (là update, không phải create).
+     * <p>If an item with this ID does not yet exist → fire {@link UItemCreateEvent}.
+     * If it already exists → update directly, no event fired (this is an update, not a create).
      *
-     * @param data    Data của item
-     * @param creator Sender thực hiện (null nếu từ code)
-     * @return true nếu item được đăng ký thành công (không bị cancel)
+     * @param data    the item data
+     * @param creator the sender performing the action (null if from code)
+     * @return true if the item was registered successfully (not cancelled)
      */
     public boolean registerItem(@NotNull UItemData data, @Nullable CommandSender creator) {
         boolean isNew = !plugin.getItemManager().hasItem(data.getId());
@@ -236,19 +236,18 @@ public final class UItemAPI {
         }
 
         plugin.getItemManager().registerItem(data);
-        plugin.getResourcePackManager().syncCmdsToLiveItems();
         plugin.getStorageManager().saveAll(plugin.getItemManager());
         return true;
     }
 
     /**
-     * Xóa một custom item khỏi UItem.
+     * Remove a custom item from UItem.
      *
-     * <p>Fire {@link UItemDeleteEvent} — cancel để ngăn xóa.
+     * <p>Fires {@link UItemDeleteEvent} — cancel to prevent deletion.
      *
-     * @param id      ID của item cần xóa
-     * @param deleter Sender thực hiện (null nếu từ code)
-     * @return true nếu item tồn tại và được xóa thành công
+     * @param id      the ID of the item to delete
+     * @param deleter the sender performing the action (null if from code)
+     * @return true if the item existed and was deleted successfully
      */
     public boolean removeItem(@NotNull String id, @Nullable CommandSender deleter) {
         UItemData data = plugin.getItemManager().getItem(id);
@@ -273,15 +272,15 @@ public final class UItemAPI {
     // =========================================================
 
     /**
-     * Give item cho player. Fire {@link UItemGiveEvent} trước khi cho.
+     * Give an item to a player. Fires {@link UItemGiveEvent} before giving.
      *
-     * <p>Item dư (inventory đầy) sẽ drop tại vị trí player.
+     * <p>Leftover items (full inventory) will be dropped at the player's location.
      *
-     * @param player Player nhận item
-     * @param id     ID của item
-     * @param amount Số lượng (1-64)
-     * @param giver  Sender thực hiện give (null nếu từ code)
-     * @return true nếu give thành công (không bị cancel và item tồn tại)
+     * @param player the player receiving the item
+     * @param id     the item ID
+     * @param amount the amount (1-64)
+     * @param giver  the sender performing the give (null if from code)
+     * @return true if the give succeeded (not cancelled and the item exists)
      */
     public boolean giveItem(
             @NotNull Player player,
@@ -300,7 +299,7 @@ public final class UItemAPI {
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) return false;
 
-        // Dùng item và amount từ event (có thể đã bị modify bởi listener)
+        // Use the item and amount from the event (may have been modified by a listener)
         ItemStack finalItem = event.getItemStack();
         finalItem.setAmount(event.getAmount());
 
@@ -312,7 +311,7 @@ public final class UItemAPI {
     }
 
     /**
-     * Overload tiện lợi không cần giver.
+     * Convenience overload that does not require a giver.
      *
      * @see #giveItem(Player, String, int, CommandSender)
      */
@@ -321,56 +320,25 @@ public final class UItemAPI {
     }
 
     // =========================================================
-    // ExecutableItems Integration
+    // Provider introspection
     // =========================================================
 
     /**
-     * Kiểm tra ExecutableItems có được phát hiện và sẵn sàng không.
-     */
-    public boolean hasExecutableItems() {
-        return plugin.getIntegrationManager().hasExecutableItems();
-    }
-
-    /**
-     * Lấy ExecutableItems item ID từ ItemStack (qua PDC của EI).
-     *
-     * @param item ItemStack cần kiểm tra
-     * @return ExecutableItems ID, null nếu không phải EI item
+     * Get the "namespace:id" (e.g. {@code "ia:ruby_sword"}) describing the source of
+     * an ItemStack that an admin is currently holding. Returns {@code null} if no
+     * provider claims it.
      */
     @Nullable
-    public String getExecutableItemsId(@Nullable ItemStack item) {
-        if (!hasExecutableItems()) return null;
-        return plugin.getIntegrationManager().getExecutableItemsIntegration().getExecutableItemId(item);
+    public String detectSource(@Nullable ItemStack item) {
+        return plugin.getProviderManager().detectSource(item);
     }
 
     /**
-     * Lấy ExecutableItems item ID từ UItem ID.
-     *
-     * @param uitemId ID của UItem
-     * @return ExecutableItems ID đã mapping, null nếu không có
-     */
-    @Nullable
-    public String getExecutableItemsIdByUItemId(@NotNull String uitemId) {
-        return getItem(uitemId)
-                .map(UItemData::getExecutableItemsId)
-                .orElse(null);
-    }
-
-    /**
-     * Lấy ExecutableItems ItemStack từ UItem ID.
-     * ExecutableItems tự xử lý skill/activator của nó — không cần trigger thủ công.
-     *
-     * @param uitemId ID của UItem
-     * @return ItemStack từ ExecutableItems, empty nếu không có mapping hoặc lỗi
+     * Get the registered source for a UItem (config string in the form "namespace:id").
      */
     @NotNull
-    public Optional<ItemStack> buildExecutableItemsItem(@NotNull String uitemId) {
-        if (!hasExecutableItems()) return Optional.empty();
-        String eiId = getExecutableItemsIdByUItemId(uitemId);
-        if (eiId == null) return Optional.empty();
-        return Optional.ofNullable(
-                plugin.getIntegrationManager().getExecutableItemsIntegration().getItem(eiId)
-        );
+    public Optional<String> getSourceForItem(@NotNull String uitemId) {
+        return getItem(uitemId).map(UItemData::getSource);
     }
 
     // =========================================================
@@ -378,8 +346,8 @@ public final class UItemAPI {
     // =========================================================
 
     /**
-     * Lấy NamespacedKey UItem dùng để tag item trong PersistentDataContainer.
-     * Hữu ích nếu bạn muốn tự đọc/ghi PDC.
+     * Get the NamespacedKey UItem uses to tag items in the PersistentDataContainer.
+     * Useful if you want to read/write the PDC yourself.
      */
     @NotNull
     public NamespacedKey getUItemKey() {
@@ -387,7 +355,7 @@ public final class UItemAPI {
     }
 
     /**
-     * Lấy plugin instance. Dùng để access các manager nội bộ nếu cần.
+     * Get the plugin instance. Use to access internal managers if needed.
      */
     @NotNull
     public UItemPlugin getPlugin() {

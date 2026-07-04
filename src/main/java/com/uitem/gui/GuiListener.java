@@ -17,7 +17,7 @@ public class GuiListener implements Listener {
         InventoryHolder holder = event.getView().getTopInventory().getHolder();
         if (holder instanceof AbstractGui gui) {
             if (event.getClickedInventory() == event.getView().getBottomInventory()) {
-                // Player clicked their own inventory → cho phép pick item
+                // Player clicked their own inventory → allow picking item
                 gui.handleBottomInventoryClick(event);
             } else {
                 // Player clicked top GUI → cancel + handler

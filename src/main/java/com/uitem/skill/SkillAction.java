@@ -10,62 +10,62 @@ import org.bukkit.util.Vector;
 import java.util.*;
 
 /**
- * Đại diện cho một hành động (action) trong skill.
- * Dễ mở rộng: thêm type mới vào enum + xử lý trong SkillExecutor.
+ * Represents an action in a skill.
+ * Easily extensible: add a new type to the enum + handle it in SkillExecutor.
  */
 public class SkillAction {
 
     public enum ActionType {
         // Communication
-        MESSAGE("Gửi tin nhắn"),
-        ACTION_BAR("Gửi action bar"),
-        TITLE("Gửi title + subtitle"),
+        MESSAGE("Send message"),
+        ACTION_BAR("Send action bar"),
+        TITLE("Send title + subtitle"),
 
         // Audio/Visual
-        PLAY_SOUND("Phát âm thanh"),
-        SPAWN_PARTICLE("Tạo particle"),
+        PLAY_SOUND("Play sound"),
+        SPAWN_PARTICLE("Spawn particle"),
 
         // Combat / Stat
-        DAMAGE("Gây sát thương"),
-        HEAL("Hồi máu"),
-        FEED("Hồi đói"),
-        SET_FIRE("Đốt cháy"),
+        DAMAGE("Deal damage"),
+        HEAL("Heal"),
+        FEED("Restore hunger"),
+        SET_FIRE("Set on fire"),
 
         // Movement
-        LAUNCH("Đẩy / Launch (velocity)"),
-        TELEPORT("Dịch chuyển"),
+        LAUNCH("Push / Launch (velocity)"),
+        TELEPORT("Teleport"),
 
         // World effect
-        STRIKE_LIGHTNING("Gọi sét"),
-        SHOOT_PROJECTILE("Bắn projectile (fireball, arrow...)"),
+        STRIKE_LIGHTNING("Summon lightning"),
+        SHOOT_PROJECTILE("Shoot projectile (fireball, arrow...)"),
 
         // Command
-        PLAYER_COMMAND("Chạy lệnh như player"),
-        CONSOLE_COMMAND("Chạy lệnh console"),
+        PLAYER_COMMAND("Run command as player"),
+        CONSOLE_COMMAND("Run console command"),
 
         // Item / Durability
-        CONSUME_DURABILITY("Tiêu hao độ bền"),
-        CONSUME_ITEM("Tiêu hao 1 item (tay đang cầm)"),
+        CONSUME_DURABILITY("Consume durability"),
+        CONSUME_ITEM("Consume 1 item (held in hand)"),
 
         // Potion
-        GIVE_POTION("Cho potion effect"),
-        REMOVE_POTION("Xóa potion effect"),
+        GIVE_POTION("Give potion effect"),
+        REMOVE_POTION("Remove potion effect"),
 
         // Other
-        GIVE_ITEM("Give item (vanilla hoặc uitem)"),
-        NOTHING("Không làm gì (placeholder)"),
+        GIVE_ITEM("Give item (vanilla or uitem)"),
+        NOTHING("Do nothing (placeholder)"),
 
         // ==== NEW ACTIONS (10 types) ====
-        BLOCK_BREAK("Phá block tại vị trí"),
-        EXPLOSION("Tạo vụ nổ"),
-        AREA_DAMAGE("Gây sát thương vùng"),
-        POTION_AREA("Potion effect vùng"),
-        BLIND("Làm mù mục tiêu"),
-        GLOW("Làm mục tiêu phát sáng"),
-        CLEAR_EFFECTS("Xóa toàn bộ hiệu ứng"),
-        LEVITATE("Bay lên (Levitating)"),
-        SPAWN_MOB("Sinh ra mob"),
-        FREEZE("Đóng băng mục tiêu");
+        BLOCK_BREAK("Break block at position"),
+        EXPLOSION("Create explosion"),
+        AREA_DAMAGE("Deal area damage"),
+        POTION_AREA("Potion effect area"),
+        BLIND("Blind target"),
+        GLOW("Make target glow"),
+        CLEAR_EFFECTS("Clear all effects"),
+        LEVITATE("Levitate"),
+        SPAWN_MOB("Spawn mob"),
+        FREEZE("Freeze target");
         
         private final String display;
 
@@ -142,7 +142,7 @@ public class SkillAction {
         return Boolean.parseBoolean(String.valueOf(v));
     }
 
-    // ==================== Factory helpers (dễ dùng khi code) ====================
+    // ==================== Factory helpers (convenient when coding) ====================
 
     public static SkillAction message(String text) {
         SkillAction a = new SkillAction(ActionType.MESSAGE);

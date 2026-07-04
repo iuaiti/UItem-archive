@@ -35,12 +35,12 @@ public class ConfirmDeleteGui extends AbstractGui {
 
     @Override
     protected void setup() {
-        // Fill tất cả với glass pane đen
+        // Fill everything with black glass panes
         for (int i = 0; i < 27; i++) {
             setItem(i, createItem(Material.BLACK_STAINED_GLASS_PANE, " "));
         }
 
-        // Hiển thị item cần xóa ở giữa
+        // Show the item to delete in the center
         setItem(13, plugin.getItemManager().buildItemStack(data));
 
         // Confirm button (green)
@@ -51,7 +51,7 @@ public class ConfirmDeleteGui extends AbstractGui {
                         "",
                         Messages.confirmDeleteWarn()
                 )), event -> {
-            // Dùng API để fire UItemDeleteEvent — plugin khác có thể cancel
+            // Use API to fire UItemDeleteEvent - other plugins can cancel it
             boolean deleted = com.uitem.api.UItemAPI.get()
                     .removeItem(data.getId(), player);
             if (!deleted) {
@@ -66,7 +66,7 @@ public class ConfirmDeleteGui extends AbstractGui {
             goBackOrList();
         });
 
-        // Cancel button (red) — quay lại GUI trước đó
+        // Cancel button (red) - returns to the previous GUI
         setItem(15, createItem(Material.RED_WOOL,
                 Messages.confirmDeleteNo(),
                 List.of(

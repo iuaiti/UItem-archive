@@ -8,11 +8,11 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Quản lý cooldown cho skill của UItem.
+ * Manages cooldowns for UItem skills.
  * 
- * - Dùng memory map nhanh cho runtime.
- * - Lưu last-used time vào player PDC để persist qua logout/restart (ổn định hơn nhiều plugin khác).
- * - Key trong PDC: uitem_cd_<itemId>_<skillId>
+ * - Uses a fast in-memory map for runtime.
+ * - Stores last-used time in player PDC to persist across logout/restart (much more stable than many other plugins).
+ * - PDC key: uitem_cd_<itemId>_<skillId>
  */
 public final class CooldownManager {
 
@@ -30,7 +30,7 @@ public final class CooldownManager {
     }
 
     private NamespacedKey getPdcKey(String itemId, String skillId) {
-        // Giới hạn độ dài key (PDC key max ~256)
+        // Limit key length (PDC key max ~256)
         String shortKey = "cd_" + safe(itemId) + "_" + safe(skillId);
         if (shortKey.length() > 80) shortKey = shortKey.substring(0, 80);
         return new NamespacedKey(pluginKeyBase.getNamespace(), shortKey);
@@ -41,8 +41,8 @@ public final class CooldownManager {
     }
 
     /**
-     * Kiểm tra xem skill có sẵn sàng (hết cooldown) không.
-     * Trả về true nếu được dùng.
+     * Check if the skill is ready (off cooldown).
+     * Returns true if it can be used.
      */
     public boolean isReady(Player player, String itemId, String skillId, double cooldownSeconds) {
         if (cooldownSeconds <= 0) return true;
@@ -55,7 +55,7 @@ public final class CooldownManager {
         String key = makeKey(itemId, skillId);
         Long last = playerMap.get(key);
 
-        // Nếu chưa có trong memory → thử load từ PDC (lần đầu join hoặc restart)
+        // If not in memory yet -> try loading from PDC (first join or after restart)
         if (last == null) {
             try {
                 NamespacedKey pdcKey = getPdcKey(itemId, skillId);
@@ -71,7 +71,7 @@ public final class CooldownManager {
     }
 
     /**
-     * Trả về thời gian còn lại (giây), 0 nếu sẵn sàng.
+     * Returns the remaining time (seconds), 0 if ready.
      */
     public double getRemainingSeconds(Player player, String itemId, String skillId, double cooldownSeconds) {
         if (cooldownSeconds <= 0) return 0;
@@ -100,7 +100,7 @@ public final class CooldownManager {
     }
 
     /**
-     * Đánh dấu skill vừa được dùng (bắt đầu cooldown).
+     * Mark the skill as just used (start cooldown).
      */
     public void markUsed(Player player, String itemId, String skillId) {
         if (player == null) return;
@@ -110,7 +110,7 @@ public final class CooldownManager {
         String key = makeKey(itemId, skillId);
         playerMap.put(key, now);
 
-        // Lưu vào PDC để persist
+        // Save to PDC for persistence
         try {
             NamespacedKey pdcKey = getPdcKey(itemId, skillId);
             player.getPersistentDataContainer().set(pdcKey, PersistentDataType.LONG, now);
@@ -118,7 +118,7 @@ public final class CooldownManager {
     }
 
     /**
-     * Xóa cooldown cho 1 skill (reset).
+     * Clear cooldown for one skill (reset).
      */
     public void reset(Player player, String itemId, String skillId) {
         if (player == null) return;
@@ -133,16 +133,16 @@ public final class CooldownManager {
     }
 
     /**
-     * Xóa toàn bộ cooldown của player (khi logout hoặc admin reset).
+     * Clear all cooldowns for a player (on logout or admin reset).
      */
     public void clearPlayer(Player player) {
         if (player == null) return;
         lastUsed.remove(player.getUniqueId());
-        // Không xóa hết PDC (quá nặng + không cần thiết). PDC sẽ tự hết hạn theo thời gian.
+        // Don't wipe the whole PDC (too heavy + unnecessary). PDC entries expire over time.
     }
 
     /**
-     * Dọn dẹp khi player quit.
+     * Cleanup when a player quits.
      */
     public void onPlayerQuit(Player player) {
         clearPlayer(player);

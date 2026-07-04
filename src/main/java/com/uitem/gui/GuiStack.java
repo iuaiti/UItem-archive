@@ -3,23 +3,23 @@ package com.uitem.gui;
 import java.util.Stack;
 
 /**
- * Stack điều hướng cho GUI.
- * Cho phép back button quay lại GUI trước đó thay vì đóng hẳn.
+ * Navigation stack for GUI.
+ * Allows the back button to return to the previous GUI instead of closing entirely.
  */
 public class GuiStack {
 
     private static final Stack<Runnable> history = new Stack<>();
 
     /**
-     * Đẩy GUI hiện tại vào stack trước khi mở GUI mới.
+     * Push the current GUI onto the stack before opening a new GUI.
      */
     public static void push(Runnable parentOpener) {
         history.push(parentOpener);
     }
 
     /**
-     * Quay lại GUI trước đó.
-     * Trả về true nếu có GUI để quay lại.
+     * Go back to the previous GUI.
+     * Returns true if there is a GUI to go back to.
      */
     public static void pop() {
         if (!history.isEmpty()) {
@@ -28,21 +28,21 @@ public class GuiStack {
     }
 
     /**
-     * Xóa toàn bộ lịch sử (khi player thoát hẳn)
+     * Clear the entire history (when the player exits completely)
      */
     public static void clear() {
         history.clear();
     }
 
     /**
-     * Kiểm tra stack có đang rỗng không
+     * Check whether the stack is currently empty
      */
     public static boolean isEmpty() {
         return history.isEmpty();
     }
 
     /**
-     * Lấy kích thước stack
+     * Get the stack size
      */
     public static int size() {
         return history.size();

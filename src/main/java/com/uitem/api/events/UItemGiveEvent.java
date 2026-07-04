@@ -9,19 +9,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Fired khi một custom item được cho (give) cho player.
+ * Fired when a custom item is given to a player.
  *
- * <p>Event này có thể modify số lượng hoặc ItemStack trước khi cho.
- * Cancel để ngăn không cho item.
+ * <p>This event can modify the amount or ItemStack before it is given.
+ * Cancel to prevent the item from being given.
  *
  * <pre>{@code
  * @EventHandler
  * public void onGive(UItemGiveEvent event) {
- *     // VIP nhận gấp đôi
+ *     // VIP receives double
  *     if (event.getRecipient().hasPermission("vip.double_items")) {
  *         event.setAmount(event.getAmount() * 2);
  *     }
- *     // Cấm give trong thế giới nether
+ *     // Disallow giving in the nether world
  *     if (event.getRecipient().getWorld().getEnvironment() == World.Environment.NETHER) {
  *         event.setCancelled(true);
  *     }
@@ -44,11 +44,11 @@ public class UItemGiveEvent extends UItemCancellableEvent {
     private int amount;
 
     /**
-     * @param itemData  Dữ liệu item được give
-     * @param recipient Player nhận item
-     * @param giver     Người thực hiện lệnh give (null nếu give qua API)
-     * @param itemStack ItemStack sắp được cho (clone)
-     * @param amount    Số lượng
+     * @param itemData  Data of the item being given
+     * @param recipient Player receiving the item
+     * @param giver     Who issued the give command (null if given via API)
+     * @param itemStack ItemStack about to be given (clone)
+     * @param amount    Amount
      */
     public UItemGiveEvent(
             @NotNull UItemData itemData,
@@ -63,42 +63,42 @@ public class UItemGiveEvent extends UItemCancellableEvent {
         this.amount = Math.max(1, amount);
     }
 
-    /** Player sẽ nhận item. */
+    /** Player who will receive the item. */
     @NotNull
     public Player getRecipient() {
         return recipient;
     }
 
     /**
-     * Ai thực hiện give. null nếu give qua API hoặc tự động.
+     * Who issued the give. null if given via API or automatically.
      */
     @Nullable
     public CommandSender getGiver() {
         return giver;
     }
 
-    /** ItemStack sắp được cho. Có thể thay thế bằng {@link #setItemStack}. */
+    /** ItemStack about to be given. Can be replaced via {@link #setItemStack}. */
     @NotNull
     public ItemStack getItemStack() {
         return itemStack;
     }
 
     /**
-     * Override ItemStack được cho.
-     * Hữu ích khi muốn thêm enchant/lore tùy theo context.
+     * Override the ItemStack being given.
+     * Useful when you want to add enchantments/lore depending on context.
      */
     public void setItemStack(@NotNull ItemStack itemStack) {
         this.itemStack = itemStack;
     }
 
-    /** Số lượng item sẽ được cho. */
+    /** Amount of the item that will be given. */
     public int getAmount() {
         return amount;
     }
 
     /**
-     * Thay đổi số lượng item sẽ được cho.
-     * Giá trị được clamp về [1, 64].
+     * Change the amount of the item that will be given.
+     * The value is clamped to [1, 64].
      */
     public void setAmount(int amount) {
         this.amount = Math.max(1, Math.min(64, amount));

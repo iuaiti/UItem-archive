@@ -16,8 +16,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 /**
- * GUI give nhiều item cùng lúc cho một hoặc nhiều người chơi.
- * Tính năng mới giống Oraxen/ItemsAdder nhưng qua GUI.
+ * GUI to give multiple items at once to one or more players.
+ * A new feature similar to Oraxen/ItemsAdder but through a GUI.
  */
 public class BulkGiveGui extends AbstractGui {
 
@@ -33,7 +33,7 @@ public class BulkGiveGui extends AbstractGui {
     private static final int ITEMS_PER_PAGE = ITEM_SLOTS.length;
 
     public BulkGiveGui(UItemPlugin plugin, Player player) {
-        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d><bold>Give Nhiều Item</bold></gradient>");
+        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d><bold>Bulk Give</bold></gradient>");
     }
 
     @Override
@@ -44,11 +44,11 @@ public class BulkGiveGui extends AbstractGui {
         setItem(4, createItem(Material.CHEST,
                 "<gradient:#ff6b6b:#ffd93d><bold>Bulk Give</bold></gradient>",
                 List.of(
-                        "<gray>Click item để chọn/bỏ chọn",
-                        "<gray>Sau đó chọn người chơi để give",
+                        "<gray>Click an item to select/deselect",
+                        "<gray>Then choose a player to give to",
                         "",
-                        "<yellow>Đã chọn: <white>" + selectedItems.size() + " item(s)",
-                        "<yellow>Số lượng mỗi item: <white>x" + giveAmount
+                        "<yellow>Selected: <white>" + selectedItems.size() + " item(s)",
+                        "<yellow>Amount per item: <white>x" + giveAmount
                 )));
 
         // Items list
@@ -75,10 +75,10 @@ public class BulkGiveGui extends AbstractGui {
                 lore.add(MiniMessage.miniMessage().deserialize("<dark_gray>──────────────"));
                 lore.add(MiniMessage.miniMessage().deserialize("<gray>ID: <white>" + data.getId()));
                 if (selected) {
-                    lore.add(MiniMessage.miniMessage().deserialize("<green>✔ ĐÃ CHỌN"));
-                    lore.add(MiniMessage.miniMessage().deserialize("<yellow>Click để bỏ chọn"));
+                    lore.add(MiniMessage.miniMessage().deserialize("<green>✔ SELECTED"));
+                    lore.add(MiniMessage.miniMessage().deserialize("<yellow>Click to deselect"));
                 } else {
-                    lore.add(MiniMessage.miniMessage().deserialize("<gray>Click để chọn"));
+                    lore.add(MiniMessage.miniMessage().deserialize("<gray>Click to select"));
                 }
                 meta.lore(lore);
 
@@ -103,9 +103,9 @@ public class BulkGiveGui extends AbstractGui {
 
         // Amount selector
         setItem(37, createItem(Material.GOLD_INGOT,
-                "<gold><bold>Số Lượng: x" + giveAmount + "</bold>",
+                "<gold><bold>Amount: x" + giveAmount + "</bold>",
                 List.of(
-                        "<gray>Số lượng mỗi item khi give",
+                        "<gray>Amount of each item to give",
                         "<yellow>Left: +1 | Right: -1",
                         "<green>Shift+Left: +8 | Shift+Right: -8"
                 )), ev -> {
@@ -119,8 +119,8 @@ public class BulkGiveGui extends AbstractGui {
 
         // Select all / Deselect all
         setItem(38, createItem(Material.LIME_DYE,
-                "<green><bold>Chọn Tất Cả</bold>",
-                List.of("<gray>Chọn tất cả item trên trang này")),
+                "<green><bold>Select All</bold>",
+                List.of("<gray>Select all items on this page")),
                 ev -> {
                     int start = page * ITEMS_PER_PAGE;
                     for (int i = start; i < Math.min(start + ITEMS_PER_PAGE, allItems.size()); i++) {
@@ -131,8 +131,8 @@ public class BulkGiveGui extends AbstractGui {
                 });
 
         setItem(39, createItem(Material.RED_DYE,
-                "<red><bold>Bỏ Chọn Tất Cả</bold>",
-                List.of("<gray>Bỏ chọn tất cả item")),
+                "<red><bold>Deselect All</bold>",
+                List.of("<gray>Deselect all items")),
                 ev -> {
                     selectedItems.clear();
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 0.8f);
@@ -141,15 +141,15 @@ public class BulkGiveGui extends AbstractGui {
 
         // Give to self
         setItem(41, createItem(Material.PLAYER_HEAD,
-                "<green><bold>Give Cho Bản Thân</bold>",
+                "<green><bold>Give To Self</bold>",
                 List.of(
-                        "<gray>Give " + selectedItems.size() + " item(s) cho bạn",
-                        "<gray>Mỗi item: x" + giveAmount,
+                        "<gray>Give " + selectedItems.size() + " item(s) to you",
+                        "<gray>Each item: x" + giveAmount,
                         "",
-                        selectedItems.isEmpty() ? "<red>Chưa chọn item nào!" : "<yellow>Click để give"
+                        selectedItems.isEmpty() ? "<red>No items selected!" : "<yellow>Click to give"
                 )), ev -> {
             if (selectedItems.isEmpty()) {
-                player.sendMessage(TextUtil.error("Chưa chọn item nào!"));
+                player.sendMessage(TextUtil.error("No items selected!"));
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.5f, 1.0f);
                 return;
             }
@@ -158,20 +158,20 @@ public class BulkGiveGui extends AbstractGui {
 
         // Give to another player
         setItem(42, createItem(Material.EMERALD,
-                "<aqua><bold>Give Cho Người Chơi Khác</bold>",
+                "<aqua><bold>Give To Another Player</bold>",
                 List.of(
-                        "<gray>Nhập tên người chơi để give",
-                        "<gray>Mỗi item: x" + giveAmount,
+                        "<gray>Enter a player name to give to",
+                        "<gray>Each item: x" + giveAmount,
                         "",
-                        selectedItems.isEmpty() ? "<red>Chưa chọn item nào!" : "<yellow>Click để nhập tên"
+                        selectedItems.isEmpty() ? "<red>No items selected!" : "<yellow>Click to enter name"
                 )), ev -> {
             if (selectedItems.isEmpty()) {
-                player.sendMessage(TextUtil.error("Chưa chọn item nào!"));
+                player.sendMessage(TextUtil.error("No items selected!"));
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.5f, 1.0f);
                 return;
             }
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Nhập tên người chơi để give (hoặc 'cancel' để hủy):",
+                    "<yellow>Enter player name to give to (or 'cancel' to abort):",
                     input -> {
                         if (input.equalsIgnoreCase("cancel") || input.equalsIgnoreCase("huy")) {
                             new BulkGiveGui(plugin, player).open();
@@ -179,7 +179,7 @@ public class BulkGiveGui extends AbstractGui {
                         }
                         Player target = Bukkit.getPlayerExact(input.trim());
                         if (target == null) {
-                            player.sendMessage(TextUtil.error("Người chơi '" + input + "' không online!"));
+                            player.sendMessage(TextUtil.error("Player '" + input + "' is not online!"));
                             new BulkGiveGui(plugin, player).open();
                             return;
                         }
@@ -189,15 +189,15 @@ public class BulkGiveGui extends AbstractGui {
 
         // Give to all online players
         setItem(43, createItem(Material.BEACON,
-                "<gold><bold>Give Cho Tất Cả Online</bold>",
+                "<gold><bold>Give To All Online</bold>",
                 List.of(
-                        "<gray>Give cho tất cả người chơi đang online",
-                        "<gray>Mỗi item: x" + giveAmount,
+                        "<gray>Give to all currently online players",
+                        "<gray>Each item: x" + giveAmount,
                         "",
-                        selectedItems.isEmpty() ? "<red>Chưa chọn item nào!" : "<yellow>Click để give"
+                        selectedItems.isEmpty() ? "<red>No items selected!" : "<yellow>Click to give"
                 )), ev -> {
             if (selectedItems.isEmpty()) {
-                player.sendMessage(TextUtil.error("Chưa chọn item nào!"));
+                player.sendMessage(TextUtil.error("No items selected!"));
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.5f, 1.0f);
                 return;
             }
@@ -206,7 +206,7 @@ public class BulkGiveGui extends AbstractGui {
                 giveItemsToPlayer(player, online);
                 count++;
             }
-            player.sendMessage(TextUtil.success("Đã give " + selectedItems.size() + " item(s) cho " + count + " người chơi!"));
+            player.sendMessage(TextUtil.success("Gave " + selectedItems.size() + " item(s) to " + count + " players!"));
         });
 
         // Pagination
@@ -231,7 +231,7 @@ public class BulkGiveGui extends AbstractGui {
 
     private void giveItemsToPlayer(Player sender, Player target) {
         if (!sender.hasPermission("uitem.give")) {
-            sender.sendMessage(TextUtil.error("Bạn không có quyền give item!"));
+            sender.sendMessage(TextUtil.error("You do not have permission to give items!"));
             return;
         }
 
@@ -242,10 +242,10 @@ public class BulkGiveGui extends AbstractGui {
         }
 
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.2f);
-        sender.sendMessage(TextUtil.success("Đã give " + successCount + "/" + selectedItems.size() +
-                " item(s) x" + giveAmount + " cho " + target.getName() + "!"));
+        sender.sendMessage(TextUtil.success("Gave " + successCount + "/" + selectedItems.size() +
+                " item(s) x" + giveAmount + " to " + target.getName() + "!"));
         if (!sender.equals(target)) {
-            target.sendMessage(TextUtil.success("Bạn nhận được " + successCount + " item(s) từ " + sender.getName() + "!"));
+            target.sendMessage(TextUtil.success("You received " + successCount + " item(s) from " + sender.getName() + "!"));
         }
     }
 }

@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * GUI chọn và chỉnh sửa enchantments cho item.
+ * GUI to pick and edit enchantments for an item.
  */
 public class EnchantmentGui extends AbstractGui {
 
@@ -35,7 +35,7 @@ public class EnchantmentGui extends AbstractGui {
     }
 
     public EnchantmentGui(UItemPlugin plugin, Player player, UItemData data, int page) {
-        super(plugin, player, 54, "<light_purple><bold>Phù Phép</bold> <dark_gray>- <white>" + data.getId());
+        super(plugin, player, 54, "<light_purple><bold>Enchantments</bold> <dark_gray>- <white>" + data.getId());
         this.data = data;
         this.page = page;
     }
@@ -55,7 +55,7 @@ public class EnchantmentGui extends AbstractGui {
 
         // Title
         setItem(4, createItem(Material.ENCHANTING_TABLE,
-                "<light_purple><bold>Trình Chỉnh Phù Phép</bold>",
+                "<light_purple><bold>Enchantment Editor</bold>",
                 List.of(
                         "<gray>Edit enchantments for this item",
                         "",
@@ -109,17 +109,17 @@ public class EnchantmentGui extends AbstractGui {
 
             setItem(ITEM_SLOTS[i], item, event -> {
                 if (event.getClick() == ClickType.SHIFT_LEFT || event.getClick() == ClickType.SHIFT_RIGHT) {
-                    // Xóa hoàn toàn
+                    // Remove entirely
                     data.getEnchantments().remove(enchKey);
                     player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
                 } else if (event.getClick() == ClickType.LEFT) {
-                    // Tăng level
+                    // Increase level
                     int newLevel = currentLevel + 1;
                     if (newLevel > 255) newLevel = 255;
                     data.getEnchantments().put(enchKey, newLevel);
                     player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.3f, 1.2f);
                 } else if (event.getClick() == ClickType.RIGHT) {
-                    // Giảm level
+                    // Decrease level
                     int newLevel = currentLevel - 1;
                     if (newLevel <= 0) {
                         data.getEnchantments().remove(enchKey);
@@ -134,7 +134,7 @@ public class EnchantmentGui extends AbstractGui {
             });
         }
 
-        // Trang trước
+        // Previous page
         if (page > 0) {
             setItem(46, createPreviousButton(), event -> {
                 page--;
@@ -142,7 +142,7 @@ public class EnchantmentGui extends AbstractGui {
             });
         }
 
-        // Trang sau
+        // Next page
         if (page < totalPages - 1) {
             setItem(52, createNextButton(), event -> {
                 page++;
@@ -150,7 +150,7 @@ public class EnchantmentGui extends AbstractGui {
             });
         }
 
-        // Quay lại
+        // Back
         setItem(49, createBackButton(), event -> goBack());
     }
 

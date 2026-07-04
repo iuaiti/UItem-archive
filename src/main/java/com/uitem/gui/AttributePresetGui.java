@@ -10,10 +10,10 @@ import org.bukkit.entity.Player;
 import java.util.List;
 
 /**
- * GUI chọn preset thuộc tính (Attribute) thay vì gõ tay.
- * Giống Oraxen/ItemsAdder nhưng hoàn toàn qua GUI.
+ * GUI to pick an attribute preset instead of typing it manually.
+ * Similar to Oraxen/ItemsAdder but entirely through a GUI.
  *
- * Người chơi chọn loại thuộc tính → chọn slot → nhập giá trị.
+ * The player picks an attribute type, then a slot, then enters a value.
  */
 public class AttributePresetGui extends AbstractGui {
 
@@ -24,50 +24,50 @@ public class AttributePresetGui extends AbstractGui {
 
     private static final List<AttrPreset> PRESETS = List.of(
             // Combat
-            new AttrPreset("⚔ Sát Thương Tay Chính", "generic_attack_damage", 5.0, "ADD_NUMBER", "HAND",
-                    "Tăng sát thương khi cầm trên tay", Material.DIAMOND_SWORD),
-            new AttrPreset("⚔ Tốc Độ Đánh", "generic_attack_speed", 1.0, "ADD_NUMBER", "HAND",
-                    "Tăng tốc độ đánh (mặc định 4.0)", Material.GOLDEN_SWORD),
-            new AttrPreset("🏹 Sát Thương Tay Phụ", "generic_attack_damage", 3.0, "ADD_NUMBER", "OFF_HAND",
-                    "Sát thương khi cầm tay phụ", Material.IRON_SWORD),
-            new AttrPreset("💥 Tầm Đánh", "generic_attack_knockback", 1.0, "ADD_NUMBER", "HAND",
-                    "Tăng lực đẩy khi đánh", Material.STICK),
+            new AttrPreset("⚔ Main Hand Damage", "generic_attack_damage", 5.0, "ADD_NUMBER", "HAND",
+                    "Increases damage while held in hand", Material.DIAMOND_SWORD),
+            new AttrPreset("⚔ Attack Speed", "generic_attack_speed", 1.0, "ADD_NUMBER", "HAND",
+                    "Increases attack speed (default 4.0)", Material.GOLDEN_SWORD),
+            new AttrPreset("🏹 Off-Hand Damage", "generic_attack_damage", 3.0, "ADD_NUMBER", "OFF_HAND",
+                    "Damage while held in off hand", Material.IRON_SWORD),
+            new AttrPreset("💥 Attack Knockback", "generic_attack_knockback", 1.0, "ADD_NUMBER", "HAND",
+                    "Increases knockback force when attacking", Material.STICK),
 
             // Defense
-            new AttrPreset("🛡 Giáp (Armor)", "generic_armor", 4.0, "ADD_NUMBER", "CHEST",
-                    "Tăng điểm giáp (mặc định 0)", Material.DIAMOND_CHESTPLATE),
-            new AttrPreset("💎 Độ Cứng Giáp", "generic_armor_toughness", 2.0, "ADD_NUMBER", "CHEST",
-                    "Giảm sát thương từ đòn mạnh", Material.NETHERITE_CHESTPLATE),
-            new AttrPreset("🔰 Kháng Knock", "generic_knockback_resistance", 0.5, "ADD_NUMBER", "CHEST",
-                    "Kháng lực đẩy (0-1, 1=miễn dịch)", Material.SHIELD),
+            new AttrPreset("🛡 Armor", "generic_armor", 4.0, "ADD_NUMBER", "CHEST",
+                    "Increases armor points (default 0)", Material.DIAMOND_CHESTPLATE),
+            new AttrPreset("💎 Armor Toughness", "generic_armor_toughness", 2.0, "ADD_NUMBER", "CHEST",
+                    "Reduces damage from strong hits", Material.NETHERITE_CHESTPLATE),
+            new AttrPreset("🔰 Knockback Resistance", "generic_knockback_resistance", 0.5, "ADD_NUMBER", "CHEST",
+                    "Knockback resistance (0-1, 1=immune)", Material.SHIELD),
 
             // Movement
-            new AttrPreset("🏃 Tốc Độ Di Chuyển", "generic_movement_speed", 0.02, "ADD_NUMBER", "FEET",
-                    "Tăng tốc độ di chuyển (mặc định 0.1)", Material.DIAMOND_BOOTS),
-            new AttrPreset("🌊 Tốc Độ Bơi", "generic_water_movement_efficiency", 0.1, "ADD_NUMBER", "FEET",
-                    "Tăng tốc độ bơi", Material.TURTLE_HELMET),
+            new AttrPreset("🏃 Movement Speed", "generic_movement_speed", 0.02, "ADD_NUMBER", "FEET",
+                    "Increases movement speed (default 0.1)", Material.DIAMOND_BOOTS),
+            new AttrPreset("🌊 Swimming Speed", "generic_water_movement_efficiency", 0.1, "ADD_NUMBER", "FEET",
+                    "Increases swimming speed", Material.TURTLE_HELMET),
 
             // Health
-            new AttrPreset("❤ Máu Tối Đa", "generic_max_health", 4.0, "ADD_NUMBER", "ANY",
-                    "Tăng máu tối đa (+4 = +2 tim)", Material.GOLDEN_APPLE),
-            new AttrPreset("🔄 Hồi Máu", "generic_max_absorption", 4.0, "ADD_NUMBER", "ANY",
-                    "Tăng máu hấp thụ tối đa", Material.ENCHANTED_GOLDEN_APPLE),
+            new AttrPreset("❤ Max Health", "generic_max_health", 4.0, "ADD_NUMBER", "ANY",
+                    "Increases max health (+4 = +2 hearts)", Material.GOLDEN_APPLE),
+            new AttrPreset("🔄 Absorption", "generic_max_absorption", 4.0, "ADD_NUMBER", "ANY",
+                    "Increases max absorption health", Material.ENCHANTED_GOLDEN_APPLE),
 
             // Luck
-            new AttrPreset("🍀 May Mắn", "generic_luck", 5.0, "ADD_NUMBER", "ANY",
-                    "Tăng may mắn (ảnh hưởng loot table)", Material.RABBIT_FOOT),
+            new AttrPreset("🍀 Luck", "generic_luck", 5.0, "ADD_NUMBER", "ANY",
+                    "Increases luck (affects loot tables)", Material.RABBIT_FOOT),
 
             // Gravity
-            new AttrPreset("🪂 Trọng Lực", "generic_gravity", -0.04, "ADD_NUMBER", "ANY",
-                    "Thay đổi trọng lực (âm = bay lên)", Material.FEATHER),
+            new AttrPreset("🪂 Gravity", "generic_gravity", -0.04, "ADD_NUMBER", "ANY",
+                    "Changes gravity (negative = floats up)", Material.FEATHER),
 
             // Scale
-            new AttrPreset("📏 Kích Thước", "generic_scale", 0.5, "ADD_NUMBER", "ANY",
-                    "Thay đổi kích thước nhân vật", Material.SLIME_BALL)
+            new AttrPreset("📏 Scale", "generic_scale", 0.5, "ADD_NUMBER", "ANY",
+                    "Changes character size", Material.SLIME_BALL)
     );
 
     public AttributePresetGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 54, "<gold><bold>Chọn Thuộc Tính (Attribute)</bold>");
+        super(plugin, player, 54, "<gold><bold>Choose Attribute</bold>");
         this.data = data;
     }
 
@@ -86,18 +86,18 @@ public class AttributePresetGui extends AbstractGui {
 
         // Header
         setItem(4, createItem(Material.IRON_SWORD,
-                "<gold><bold>Preset Thuộc Tính</bold>",
+                "<gold><bold>Attribute Presets</bold>",
                 List.of(
-                        "<gray>Chọn thuộc tính để thêm vào item",
-                        "<gray>Bạn sẽ được nhập giá trị sau",
+                        "<gray>Choose an attribute to add to the item",
+                        "<gray>You will enter the value afterwards",
                         "",
-                        "<yellow>Thuộc tính hiện tại: <white>" + data.getAttributes().size()
+                        "<yellow>Current attributes: <white>" + data.getAttributes().size()
                 )));
 
         // Display current attributes
         if (!data.getAttributes().isEmpty()) {
             setItem(8, createItem(Material.BOOK,
-                    "<aqua><bold>Thuộc Tính Hiện Tại</bold>",
+                    "<aqua><bold>Current Attributes</bold>",
                     data.getAttributes().stream()
                             .map(a -> "<gray>• <white>" + a.getAttribute() + " <yellow>+" + a.getAmount() + " <gray>(" + a.getSlot() + ")")
                             .toList()));
@@ -105,14 +105,14 @@ public class AttributePresetGui extends AbstractGui {
 
         // Clear all button
         setItem(0, createItem(Material.TNT,
-                "<red><bold>Xóa Tất Cả</bold>",
-                List.of("<gray>Xóa mọi thuộc tính đã gắn", "<red>Không thể hoàn tác!")),
+                "<red><bold>Clear All</bold>",
+                List.of("<gray>Removes all attached attributes", "<red>Cannot be undone!")),
                 ev -> {
                     data.getAttributes().clear();
                     plugin.getItemManager().registerItem(data);
                     plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
                     player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
-                    player.sendMessage(TextUtil.success("Đã xóa tất cả thuộc tính!"));
+                    player.sendMessage(TextUtil.success("All attributes removed!"));
                     refresh();
                 });
 
@@ -127,10 +127,10 @@ public class AttributePresetGui extends AbstractGui {
                             "<gray>" + preset.desc(),
                             "",
                             "<gray>Key: <white>" + preset.key(),
-                            "<gray>Mặc định: <white>+" + preset.defaultValue(),
+                            "<gray>Default: <white>+" + preset.defaultValue(),
                             "<gray>Slot: <white>" + preset.slot(),
                             "",
-                            "<yellow>Click để thêm"
+                            "<yellow>Click to add"
                     )), ev -> {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                 promptForValue(preset);
@@ -139,19 +139,19 @@ public class AttributePresetGui extends AbstractGui {
 
         // Custom attribute button
         setItem(31, createItem(Material.COMMAND_BLOCK,
-                "<light_purple><bold>⚙ Thuộc Tính Tùy Chỉnh</bold>",
+                "<light_purple><bold>⚙ Custom Attribute</bold>",
                 List.of(
-                        "<gray>Nhập thuộc tính thủ công",
-                        "<gray>Định dạng: attribute amount operation slot",
-                        "<gray>Ví dụ: generic_attack_damage 15 ADD_NUMBER HAND",
+                        "<gray>Enter an attribute manually",
+                        "<gray>Format: attribute amount operation slot",
+                        "<gray>Example: generic_attack_damage 15 ADD_NUMBER HAND",
                         "",
-                        "<yellow>Click để nhập"
+                        "<yellow>Click to enter"
                 )), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Nhập thuộc tính <gray>(attribute amount operation slot)\n" +
-                    "<gray>Ví dụ: generic_attack_damage 15 ADD_NUMBER HAND\n" +
-                    "<gray>Gõ 'cancel' để hủy:",
+                    "<yellow>Enter attribute <gray>(attribute amount operation slot)\n" +
+                    "<gray>Example: generic_attack_damage 15 ADD_NUMBER HAND\n" +
+                    "<gray>Type 'cancel' to abort:",
                     input -> {
                         if (input.equalsIgnoreCase("cancel") || input.equalsIgnoreCase("huy")) {
                             new AttributePresetGui(plugin, player, data).openAsChildOf(null);
@@ -159,7 +159,7 @@ public class AttributePresetGui extends AbstractGui {
                         }
                         String[] parts = input.trim().split("\\s+");
                         if (parts.length < 4) {
-                            player.sendMessage(TextUtil.error("Định dạng: attribute amount operation slot"));
+                            player.sendMessage(TextUtil.error("Format: attribute amount operation slot"));
                             new AttributePresetGui(plugin, player, data).open();
                             return;
                         }
@@ -171,9 +171,9 @@ public class AttributePresetGui extends AbstractGui {
                             data.getAttributes().add(new UItemData.AttributeData(attr, amount, operation, slot));
                             plugin.getItemManager().registerItem(data);
                             plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
-                            player.sendMessage(TextUtil.success("Đã thêm thuộc tính: " + attr + " +" + amount));
+                            player.sendMessage(TextUtil.success("Added attribute: " + attr + " +" + amount));
                         } catch (Exception e) {
-                            player.sendMessage(TextUtil.error("Lỗi: " + e.getMessage()));
+                            player.sendMessage(TextUtil.error("Error: " + e.getMessage()));
                         }
                         new AttributePresetGui(plugin, player, data).open();
                     });
@@ -187,9 +187,9 @@ public class AttributePresetGui extends AbstractGui {
         // Ask for slot first if it's ANY
         if ("ANY".equals(preset.slot())) {
             plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Chọn slot cho <gold>" + preset.name() + "\n" +
-                    "<gray>Nhập: HAND / OFF_HAND / HEAD / CHEST / LEGS / FEET / ANY\n" +
-                    "<gray>Hoặc Enter để dùng ANY:",
+                    "<yellow>Choose slot for <gold>" + preset.name() + "\n" +
+                    "<gray>Enter: HAND / OFF_HAND / HEAD / CHEST / LEGS / FEET / ANY\n" +
+                    "<gray>Or press Enter to use ANY:",
                     slotInput -> {
                         String slot = slotInput.trim().isEmpty() ? "ANY" : slotInput.trim().toUpperCase();
                         promptForAmount(preset, slot);
@@ -201,23 +201,23 @@ public class AttributePresetGui extends AbstractGui {
 
     private void promptForAmount(AttrPreset preset, String slot) {
         plugin.getChatInputManager().requestInput(player,
-                "<yellow>Nhập giá trị cho <gold>" + preset.name() + "\n" +
-                "<gray>Mặc định: <white>" + preset.defaultValue() + "\n" +
-                "<gray>Nhập số hoặc Enter để dùng mặc định:",
+                "<yellow>Enter value for <gold>" + preset.name() + "\n" +
+                "<gray>Default: <white>" + preset.defaultValue() + "\n" +
+                "<gray>Enter a number or press Enter to use the default:",
                 input -> {
                     double amount = preset.defaultValue();
                     if (!input.trim().isEmpty()) {
                         try {
                             amount = Double.parseDouble(input.trim());
                         } catch (NumberFormatException e) {
-                            player.sendMessage(TextUtil.error("Số không hợp lệ, dùng giá trị mặc định: " + preset.defaultValue()));
+                            player.sendMessage(TextUtil.error("Invalid number, using default value: " + preset.defaultValue()));
                         }
                     }
                     data.getAttributes().add(new UItemData.AttributeData(preset.key(), amount, preset.operation(), slot));
                     plugin.getItemManager().registerItem(data);
                     plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
                     player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.2f);
-                    player.sendMessage(TextUtil.success("Đã thêm: " + preset.name() + " +" + amount + " (" + slot + ")"));
+                    player.sendMessage(TextUtil.success("Added: " + preset.name() + " +" + amount + " (" + slot + ")"));
                     new AttributePresetGui(plugin, player, data).open();
                 });
     }

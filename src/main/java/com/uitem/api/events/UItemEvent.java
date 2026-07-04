@@ -5,14 +5,14 @@ import org.bukkit.event.Event;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Base class cho tất cả UItem events.
+ * Base class for all UItem events.
  *
- * <p>External developer dùng như sau:
+ * <p>External developers use it like this:
  * <pre>{@code
  * @EventHandler
  * public void onUItemGive(UItemGiveEvent event) {
  *     UItemData data = event.getItemData();
- *     // xử lý...
+ *     // handle...
  * }
  * }</pre>
  */
@@ -30,7 +30,7 @@ public abstract class UItemEvent extends Event {
     }
 
     /**
-     * Lấy dữ liệu của custom item liên quan đến event này.
+     * Get the data of the custom item related to this event.
      */
     @NotNull
     public UItemData getItemData() {

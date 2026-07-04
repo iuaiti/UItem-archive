@@ -71,8 +71,8 @@ public abstract class AbstractGui implements InventoryHolder {
     }
 
     /**
-     * Clear, setup lại, và mở lại inventory.
-     * Dùng cho goBack() để parent GUI được hiển thị đúng.
+     * Clear, setup again, and reopen the inventory.
+     * Used by goBack() so the parent GUI is displayed correctly.
      */
     public void reopen() {
         clickHandlers.clear();

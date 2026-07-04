@@ -58,17 +58,17 @@ public class EffectEditorGui extends AbstractGui {
 
         // Header
         setItem(4, createItem(Material.BOOK,
-                "<light_purple><bold>Hiệu Ứng cho " + data.getId() + "</bold>",
+                "<light_purple><bold>Effects for " + data.getId() + "</bold>",
                 List.of(
-                        "<gray>Kích hoạt khi hành động → áp dụng hiệu ứng chiến đấu (phản đòn/sát thương thêm)",
-                        "<yellow>Chọn trigger + loại + tỷ lệ + giá trị",
-                        "<red>QUAN TRỌNG: Sau khi lưu, dùng /uitem give <id> hoặc craft để lấy item đã cập nhật!",
-                        "<gray>HIT target: hiệu ứng có thể áp dụng cho nạn nhân (nếu loại hỗ trợ)"
+                        "<gray>Activated on action → applies combat effect (reflect/extra damage)",
+                        "<yellow>Choose trigger + type + chance + value",
+                        "<red>IMPORTANT: After saving, use /uitem give <id> or craft to get the updated item!",
+                        "<gray>HIT target: the effect can be applied to the victim (if type supports it)"
                 )));
 
-        // === Danh sách hiệu ứng hiện tại (click để xóa) - chỉ hàng đầu để chừa chỗ ===
-        setItem(9, createItem(Material.WRITABLE_BOOK, "<gold><bold>Hiệu Ứng Hiện Tại</bold>",
-                List.of("<gray>Click hiệu ứng để xóa", "<gray>Khuyến nghị tối đa: 4-6 mỗi item")));
+        // === Current effects list (click to delete) - only first row to save space ===
+        setItem(9, createItem(Material.WRITABLE_BOOK, "<gold><bold>Current Effects</bold>",
+                List.of("<gray>Click an effect to delete", "<gray>Recommended max: 4-6 per item")));
 
         List<UItemData.ItemEffect> current = data.getEffects() != null ? new ArrayList<>(data.getEffects()) : new ArrayList<>();
         int[] currentSlots = {10, 11, 12, 13, 14, 15, 16, 17};
@@ -87,13 +87,13 @@ public class EffectEditorGui extends AbstractGui {
             });
         }
         if (current.isEmpty()) {
-            setItem(10, createItem(Material.BARRIER, "<gray><italic>Chưa có hiệu ứng</italic>",
-                    List.of("<yellow>Dùng trình tạo bên dưới để thêm")));
+            setItem(10, createItem(Material.BARRIER, "<gray><italic>No effects yet</italic>",
+                    List.of("<yellow>Use the builder below to add")));
         }
 
-        // Nút xóa tất cả
-        setItem(18, createItem(Material.TNT, "<red><bold>Xóa Tất Cả Hiệu Ứng</bold>",
-                List.of("<gray>Xóa mọi hiệu ứng đã gắn")), ev -> {
+        // Clear all button
+        setItem(18, createItem(Material.TNT, "<red><bold>Clear All Effects</bold>",
+                List.of("<gray>Remove all attached effects")), ev -> {
             if (!data.getEffects().isEmpty()) {
                 data.getEffects().clear();
                 player.playSound(player.getLocation(), Sound.ENTITY_GENERIC_EXPLODE, 0.4f, 1.2f);
@@ -104,8 +104,8 @@ public class EffectEditorGui extends AbstractGui {
         });
 
         // === BUILDER (uses lower area) ===
-        setItem(25, createItem(Material.ANVIL, "<gold><bold>TRÌNH TẠO HIỆU ỨNG MỚI</bold>",
-                List.of("<gray>Chọn trigger → loại (REFLECT/EXTRA) → tỷ lệ + giá trị rồi Add")));
+        setItem(25, createItem(Material.ANVIL, "<gold><bold>NEW EFFECT BUILDER</bold>",
+                List.of("<gray>Choose trigger → type (REFLECT/EXTRA) → chance + value then Add")));
 
         // Trigger buttons
         int tStart = 28;
@@ -116,7 +116,7 @@ public class EffectEditorGui extends AbstractGui {
             setItem(tStart + ti, createItem(mat,
                     (sel ? "<green>✔ " : "<gray>") + trig,
                     List.of("<gray>Trigger: " + trig,
-                            sel ? "<green>Đã chọn" : "<yellow>Click để chọn")),
+                            sel ? "<green>Selected" : "<yellow>Click to select")),
                     ev -> {
                         pending.setTrigger(trig);
                         if (!"HIT".equals(trig)) {
@@ -127,14 +127,14 @@ public class EffectEditorGui extends AbstractGui {
                     });
         }
 
-        // Affects: Bản thân / Mục tiêu - luôn hiển thị trong builder (chỉ có hiệu lực với trigger HIT)
+        // Affects: Self / Target - always shown in builder (only effective with HIT trigger)
         boolean toTarget = pending.isApplyToTarget();
         setItem(33, createItem(!toTarget ? Material.EMERALD : Material.GRAY_STAINED_GLASS_PANE,
-                (!toTarget ? "<green><bold>BẢN THÂN (người cầm/mặc)</bold>" : "<gray>BẢN THÂN (người cầm/mặc)"),
+                (!toTarget ? "<green><bold>SELF (holder/wearer)</bold>" : "<gray>SELF (holder/wearer)"),
                 List.of(
-                        "<gray>Ai nhận hiệu ứng?",
-                        "<green>Bản thân = người chơi cầm hoặc mặc item",
-                        "<yellow>Click để áp dụng cho bản thân"
+                        "<gray>Who receives the effect?",
+                        "<green>Self = the player holding or wearing the item",
+                        "<yellow>Click to apply to self"
                 )),
                 ev -> {
                     pending.setApplyToTarget(false);
@@ -142,13 +142,13 @@ public class EffectEditorGui extends AbstractGui {
                     refresh();
                 });
 
-        // Nút Mục tiêu (slot 34 - chỉ set một lần ở đây)
+        // Target button (slot 34 - set only once here)
         setItem(34, createItem(toTarget ? Material.REDSTONE : Material.GRAY_STAINED_GLASS_PANE,
-                (toTarget ? "<red><bold>MỤC TIÊU (nạn nhân)</bold>" : "<gray>MỤC TIÊU (nạn nhân)"),
+                (toTarget ? "<red><bold>TARGET (victim)</bold>" : "<gray>TARGET (victim)"),
                 List.of(
-                        "<gray>Chỉ hữu ích với trigger HIT:",
-                        "<red>Mục tiêu = mob/người chơi bị đánh",
-                        "<yellow>Click để áp dụng cho kẻ bị đánh"
+                        "<gray>Only useful with HIT trigger:",
+                        "<red>Target = mob/player being hit",
+                        "<yellow>Click to apply to the one being hit"
                 )),
                 ev -> {
                     pending.setApplyToTarget(true);
@@ -156,10 +156,10 @@ public class EffectEditorGui extends AbstractGui {
                     refresh();
                 });
 
-        // Nhãn nhỏ cho cặp
-        setItem(35, createItem(Material.PAPER, "<gray>Áp dụng cho", List.of()));
+        // Small label for the pair
+        setItem(35, createItem(Material.PAPER, "<gray>Apply to", List.of()));
 
-        // Nút Type (sau phần affects self/target ở 33/34/35)
+        // Type button (after the affects self/target section at 33/34/35)
         int typeStart = 36;
         for (int ty = 0; ty < TYPES.size(); ty++) {
             final String typ = TYPES.get(ty);
@@ -167,7 +167,7 @@ public class EffectEditorGui extends AbstractGui {
             Material mat = sel ? Material.LIGHT_BLUE_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE;
             setItem(typeStart + ty, createItem(mat,
                     (sel ? "<aqua>✔ " : "<gray>") + typ,
-                    List.of("<gray>Loại hiệu ứng: " + typ, sel ? "<green>Đã chọn" : "<yellow>Click để chọn")),
+                    List.of("<gray>Effect type: " + typ, sel ? "<green>Selected" : "<yellow>Click to select")),
                     ev -> {
                         pending.setType(typ);
                         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.6f);
@@ -175,9 +175,9 @@ public class EffectEditorGui extends AbstractGui {
                     });
         }
 
-        // Preset Tỷ lệ (sau value ở 39)
+        // Chance presets (after value at 39)
         double ch = pending.getChance();
-        setItem(40, createItem(Material.GHAST_TEAR, "<gold><bold>Tỷ lệ: <white>" + (int)ch + "%</bold>", List.of()));
+        setItem(40, createItem(Material.GHAST_TEAR, "<gold><bold>Chance: <white>" + (int)ch + "%</bold>", List.of()));
         int[] chanceSlots = {41, 42, 43, 44};
         double[] chances = {100, 75, 50, 25};
         for (int ci = 0; ci < chances.length; ci++) {
@@ -185,18 +185,18 @@ public class EffectEditorGui extends AbstractGui {
             boolean sel = Math.abs(ch - c) < 0.1;
             setItem(chanceSlots[ci], createItem(sel ? Material.LIME_DYE : Material.GRAY_DYE,
                     (sel ? "<green>" : "<gray>") + (int) c + "%",
-                    List.of("<yellow>Đặt tỷ lệ kích hoạt thành " + (int) c + "%")), ev -> {
+                    List.of("<yellow>Set activation chance to " + (int) c + "%")), ev -> {
                 pending.setChance(c);
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
                 refresh();
             });
         }
 
-        // Điều khiển Giá trị (cho REFLECT / EXTRA_DAMAGE) - ở 39
-        setItem(39, createItem(Material.DIAMOND_SWORD, "<gold>Giá trị <white>" + pending.getValue(),
-                List.of("<gray>REFLECT = % sát thương phản đòn", "<gray>EXTRA_DAMAGE = lượng sát thương thêm phẳng", "<yellow>Click nhãn để nhập giá trị chính xác qua chat")), ev -> {
+        // Value controls (for REFLECT / EXTRA_DAMAGE) - at 39
+        setItem(39, createItem(Material.DIAMOND_SWORD, "<gold>Value <white>" + pending.getValue(),
+                List.of("<gray>REFLECT = % of damage reflected", "<gray>EXTRA_DAMAGE = flat extra damage amount", "<yellow>Click the label to enter an exact value via chat")), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            plugin.getChatInputManager().requestInput(player, "<yellow>Nhập giá trị (ví dụ: 25 cho 25% hoặc lượng):", input -> {
+            plugin.getChatInputManager().requestInput(player, "<yellow>Enter value (e.g. 25 for 25% or amount):", input -> {
                 try {
                     double v = Double.parseDouble(input.trim());
                     pending.setValue(Math.max(0, v));
@@ -205,26 +205,26 @@ public class EffectEditorGui extends AbstractGui {
             });
         });
 
-        // Nút THÊM
+        // Add button
         String targetInfo = "";
         if ("HIT".equalsIgnoreCase(pending.getTrigger())) {
-            targetInfo = pending.isApplyToTarget() ? " <red>(cho MỤC TIÊU)" : " <green>(cho BẢN THÂN)";
+            targetInfo = pending.isApplyToTarget() ? " <red>(for TARGET)" : " <green>(for SELF)";
         }
-        setItem(45, createItem(Material.EMERALD_BLOCK, "<green><bold>✔ THÊM HIỆU ỨNG NÀY</bold>",
+        setItem(45, createItem(Material.EMERALD_BLOCK, "<green><bold>✔ ADD THIS EFFECT</bold>",
                 List.of(
                         "<gray>Trigger: <white>" + safe(pending.getTrigger()) + targetInfo,
-                        "<gray>Loại: <white>" + safe(pending.getType()),
-                        "<gray>Tỷ lệ: <white>" + (int) pending.getChance() + "%  Giá trị: <white>" + pending.getValue(),
-                        "<yellow>Click để gắn vào item"
+                        "<gray>Type: <white>" + safe(pending.getType()),
+                        "<gray>Chance: <white>" + (int) pending.getChance() + "%  Value: <white>" + pending.getValue(),
+                        "<yellow>Click to attach to the item"
                 )), ev -> {
             if (pending.getTrigger() == null || pending.getType() == null) {
-                player.sendMessage(TextUtil.error("Cần ít nhất Trigger + Loại"));
+                player.sendMessage(TextUtil.error("Need at least Trigger + Type"));
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.5f, 1.0f);
                 return;
             }
             data.getEffects().add(pending.copy());
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 0.5f, 1.4f);
-            player.sendMessage(TextUtil.success("Đã thêm hiệu ứng: " + pending.getTrigger() + " / " + pending.getType() + (pending.isApplyToTarget() ? " (mục tiêu)" : "")));
+            player.sendMessage(TextUtil.success("Added effect: " + pending.getTrigger() + " / " + pending.getType() + (pending.isApplyToTarget() ? " (target)" : "")));
 
             plugin.getItemManager().registerItem(data);
             plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
@@ -239,7 +239,7 @@ public class EffectEditorGui extends AbstractGui {
             refresh();
         });
 
-        // Nút Quay lại ở dưới
+        // Back button at the bottom
         setItem(53, createBackButton(), ev -> goBack());
     }
 
@@ -266,10 +266,10 @@ public class EffectEditorGui extends AbstractGui {
         lore.add("<gray>Chance: <white>" + (int) e.getChance() + "%");
         if (e.getValue() != 0) lore.add("<gray>Value: <white>" + e.getValue());
         if ("HIT".equals(trig)) {
-            lore.add("<gray>Áp dụng cho: <white>" + (e.isApplyToTarget() ? "Mục tiêu (nạn nhân)" : "Bản thân (người cầm/mặc)"));
+            lore.add("<gray>Apply to: <white>" + (e.isApplyToTarget() ? "Target (victim)" : "Self (holder/wearer)"));
         }
         lore.add("");
-        lore.add("<red>Click để xóa");
+        lore.add("<red>Click to delete");
         return createItem(mat, name, lore);
     }
 

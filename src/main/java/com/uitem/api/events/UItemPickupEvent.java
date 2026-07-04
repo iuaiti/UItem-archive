@@ -7,14 +7,14 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Fired khi player nhặt một UItem từ dưới đất.
+ * Fired when a player picks up a UItem from the ground.
  *
- * <p>Cancel để ngăn player nhặt item (item vẫn còn trên đất).
+ * <p>Cancel to prevent the player from picking up the item (the item stays on the ground).
  *
  * <pre>{@code
  * @EventHandler
  * public void onPickup(UItemPickupEvent event) {
- *     // Chỉ owner mới nhặt được item drop của họ
+ *     // Only the owner can pick up their dropped item
  *     if (!canPickup(event.getPlayer(), event.getItemData())) {
  *         event.setCancelled(true);
  *     }
@@ -37,13 +37,13 @@ public class UItemPickupEvent extends UItemCancellableEvent {
         this.itemEntity = itemEntity;
     }
 
-    /** Player đang nhặt item. */
+    /** Player picking up the item. */
     @NotNull
     public Player getPlayer() {
         return player;
     }
 
-    /** Item entity dưới đất. */
+    /** Item entity on the ground. */
     @NotNull
     public Item getItemEntity() {
         return itemEntity;

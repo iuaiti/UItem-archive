@@ -3,23 +3,23 @@ package com.uitem.skill;
 import java.util.*;
 
 /**
- * Điều kiện đơn giản cho skill.
- * Hỗ trợ: permission, chance, health, sneaking, world, etc.
+ * Simple condition for skills.
+ * Supports: permission, chance, health, sneaking, world, etc.
  */
 public class SkillCondition {
 
     public enum ConditionType {
-        PERMISSION("Có permission"),
-        CHANCE("Tỷ lệ phần trăm"),
-        HEALTH_MIN("Máu tối thiểu"),
-        HEALTH_MAX("Máu tối đa"),
-        FOOD_MIN("Độ đói tối thiểu"),
-        SNEAKING("Đang shift"),
-        NOT_SNEAKING("Không shift"),
-        IN_WORLD("Ở world cụ thể"),
-        HAS_OFFHAND("Có item ở tay phụ"),
-        HAS_PERMISSION("Có permission (alias)"),
-        ALWAYS("Luôn đúng");
+        PERMISSION("Has permission"),
+        CHANCE("Percentage chance"),
+        HEALTH_MIN("Minimum health"),
+        HEALTH_MAX("Maximum health"),
+        FOOD_MIN("Minimum food level"),
+        SNEAKING("Is sneaking"),
+        NOT_SNEAKING("Not sneaking"),
+        IN_WORLD("In a specific world"),
+        HAS_OFFHAND("Has item in offhand"),
+        HAS_PERMISSION("Has permission (alias)"),
+        ALWAYS("Always true");
 
         private final String display;
         ConditionType(String d) { this.display = d; }
