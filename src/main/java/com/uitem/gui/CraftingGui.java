@@ -83,21 +83,13 @@ public class CraftingGui implements InventoryHolder {
         }
         inventory.setItem(RESULT_SLOT, null);
 
-        // Add a small "craft grid" label hint
-        inventory.setItem(13, createInfoLabel("crafting-table.labels.grid", Material.CRAFTING_TABLE, "<gold>Crafting Grid"));
-        inventory.setItem(22, createInfoLabel("crafting-table.labels.arrow", Material.ARROW, "<yellow>→"));
-        inventory.setItem(24, createInfoLabel("crafting-table.labels.result", Material.KNOWLEDGE_BOOK, "<gold>Result"));
+        // Label hints — compact, only the essentials
+        inventory.setItem(13, createCompactInfoLabel("crafting-table.labels.grid", Material.CRAFTING_TABLE, "<gold>Crafting Grid"));
+        inventory.setItem(22, createCompactInfoLabel("crafting-table.labels.arrow", Material.ARROW, "<yellow>→"));
+        inventory.setItem(24, createCompactInfoLabel("crafting-table.labels.result", Material.KNOWLEDGE_BOOK, "<gold>Result"));
 
-        // Info area explaining custom crafting + FULL_SET support (visual only, not live player armor)
-        inventory.setItem(0, createInfoLabel("crafting-table.labels.title", Material.CRAFTING_TABLE, "<gold>UItem Crafting"));
-        inventory.setItem(1, createInfoLabel("crafting-table.labels.custom-items", Material.KNOWLEDGE_BOOK, "<gray>Custom items"));
-        inventory.setItem(2, createInfoLabel("crafting-table.labels.vanilla-materials", Material.ANVIL, "<gray>+ vanilla materials"));
-        inventory.setItem(3, createInfoLabel("crafting-table.labels.special-recipes", Material.NETHERITE_INGOT, "<yellow>Special recipes"));
-        inventory.setItem(4, createInfoLabel("crafting-table.labels.result-hint", Material.NETHER_STAR, "<gold>Result appears here"));
-        inventory.setItem(9, createInfoLabel("crafting-table.labels.full-set-hint", Material.ARMOR_STAND, "<gray>Wear a full 4-piece armor set to trigger the FULL_SET effect (on the UItem)"));
-
-        inventory.setItem(HOME_SLOT, createInfoLabel("crafting-table.labels.home", Material.OAK_DOOR, "<gold>Crafting Home"));
-        inventory.setItem(RECIPES_SLOT, createInfoLabel("crafting-table.labels.recipes", Material.KNOWLEDGE_BOOK, "<yellow>View Recipes"));
+        inventory.setItem(HOME_SLOT, createCompactInfoLabel("crafting-table.labels.home", Material.OAK_DOOR, "<gold>Home"));
+        inventory.setItem(RECIPES_SLOT, createCompactInfoLabel("crafting-table.labels.recipes", Material.KNOWLEDGE_BOOK, "<yellow>Recipes"));
 
         updateCraftButtons();
     }
@@ -112,7 +104,7 @@ public class CraftingGui implements InventoryHolder {
         return item;
     }
 
-    private ItemStack createInfoLabel(String path, Material fallbackMaterial, String fallbackName) {
+    private ItemStack createCompactInfoLabel(String path, Material fallbackMaterial, String fallbackName) {
         return createInfoLabel(
                 GuiConfig.material(path + ".material", fallbackMaterial),
                 GuiConfig.text(path + ".name", fallbackName)
