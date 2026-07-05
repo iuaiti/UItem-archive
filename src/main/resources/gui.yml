@@ -35,12 +35,11 @@ crafting-home:
         - "<yellow>Click to craft"
     how-it-works:
       material: WRITABLE_BOOK
-      name: "<aqua><bold>How It Works</bold>"
+      name: "<aqua><bold>Categories</bold>"
       lore:
-        - "<gray>Recipes may use vanilla materials or UItems"
-        - "<gray>Shaped recipes must match the exact 3x3 layout"
-        - "<gray>Shapeless recipes can be placed anywhere"
-        - "<gray>Closing the crafting table safely returns inputs"
+        - "<gray>Use the top row to browse by item category"
+        - "<gray>Use the bottom row to browse weapon types"
+        - "<gray>Categories come from each UItem's editor data"
     featured-header:
       material: BOOKSHELF
       name: "<gold><bold>Featured Recipes</bold>"
@@ -57,6 +56,99 @@ crafting-home:
       lore:
         - "<gray>There are {more} more recipes"
         - "<yellow>Click to browse all"
+    weapon-types-header:
+      material: DIAMOND_SWORD
+      name: "<gold><bold>Weapon Types</bold>"
+      lore:
+        - "<gray>Browse craftable weapons by type"
+
+  categories:
+    weapon:
+      material: DIAMOND_SWORD
+      name: "<red><bold>Weapons</bold>"
+      lore:
+        - "<gray>Recipes: <white>{count}"
+        - "<yellow>Click to browse weapons"
+    armor:
+      material: DIAMOND_CHESTPLATE
+      name: "<aqua><bold>Armor</bold>"
+      lore:
+        - "<gray>Recipes: <white>{count}"
+        - "<yellow>Click to browse armor"
+    tool:
+      material: DIAMOND_PICKAXE
+      name: "<green><bold>Tools</bold>"
+      lore:
+        - "<gray>Recipes: <white>{count}"
+        - "<yellow>Click to browse tools"
+    ranged:
+      material: BOW
+      name: "<gold><bold>Ranged</bold>"
+      lore:
+        - "<gray>Recipes: <white>{count}"
+        - "<yellow>Click to browse ranged items"
+    magic:
+      material: BLAZE_ROD
+      name: "<light_purple><bold>Magic</bold>"
+      lore:
+        - "<gray>Recipes: <white>{count}"
+        - "<yellow>Click to browse magic items"
+    consumable:
+      material: GOLDEN_APPLE
+      name: "<yellow><bold>Consumables</bold>"
+      lore:
+        - "<gray>Recipes: <white>{count}"
+        - "<yellow>Click to browse consumables"
+    material:
+      material: DIAMOND
+      name: "<white><bold>Materials</bold>"
+      lore:
+        - "<gray>Recipes: <white>{count}"
+        - "<yellow>Click to browse materials"
+    misc:
+      material: CHEST
+      name: "<gray><bold>Misc</bold>"
+      lore:
+        - "<gray>Recipes: <white>{count}"
+        - "<yellow>Click to browse misc recipes"
+
+  weapon-types:
+    sword:
+      material: DIAMOND_SWORD
+      name: "<red><bold>Swords</bold>"
+      lore:
+        - "<gray>Weapon recipes: <white>{count}"
+        - "<yellow>Click to browse swords"
+    axe:
+      material: DIAMOND_AXE
+      name: "<red><bold>Axes</bold>"
+      lore:
+        - "<gray>Weapon recipes: <white>{count}"
+        - "<yellow>Click to browse axes"
+    dagger:
+      material: IRON_SWORD
+      name: "<red><bold>Daggers</bold>"
+      lore:
+        - "<gray>Weapon recipes: <white>{count}"
+        - "<yellow>Click to browse daggers"
+    spear:
+      material: TRIDENT
+      name: "<red><bold>Spears</bold>"
+      lore:
+        - "<gray>Weapon recipes: <white>{count}"
+        - "<yellow>Click to browse spears"
+    hammer:
+      material: MACE
+      name: "<red><bold>Hammers</bold>"
+      lore:
+        - "<gray>Weapon recipes: <white>{count}"
+        - "<yellow>Click to browse hammers"
+    staff:
+      material: BLAZE_ROD
+      name: "<red><bold>Staves</bold>"
+      lore:
+        - "<gray>Weapon recipes: <white>{count}"
+        - "<yellow>Click to browse staves"
 
 crafting-table:
   title: "<gradient:#ff6b6b:#ffd93d>Crafting</gradient>"

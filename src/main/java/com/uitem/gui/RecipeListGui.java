@@ -12,11 +12,14 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class RecipeListGui extends AbstractGui {
 
     private int page;
+    private final String categoryFilter;
+    private final String subCategoryFilter;
     // 4 rows × 7 columns (skip first and last column as border) = 28 slots
     private static final int PER_PAGE = 28;
     private static final int[] SLOTS = {
@@ -27,12 +30,18 @@ public class RecipeListGui extends AbstractGui {
     };
 
     public RecipeListGui(UItemPlugin plugin, Player player) {
-        this(plugin, player, 0);
+        this(plugin, player, 0, null, null);
     }
 
     public RecipeListGui(UItemPlugin plugin, Player player, int page) {
-        super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d>Recipe List</gradient>");
+        this(plugin, player, page, null, null);
+    }
+
+    public RecipeListGui(UItemPlugin plugin, Player player, int page, String categoryFilter, String subCategoryFilter) {
+        super(plugin, player, 54, title(categoryFilter, subCategoryFilter));
         this.page = page;
+        this.categoryFilter = normalize(categoryFilter);
+        this.subCategoryFilter = normalize(subCategoryFilter);
     }
 
     @Override
@@ -50,10 +59,12 @@ public class RecipeListGui extends AbstractGui {
 
         setItem(4, createItem(Material.KNOWLEDGE_BOOK,
                 "<gradient:#ff6b6b:#ffd93d><bold>Recipe List</bold></gradient>",
-                List.of("<gray>Click a recipe to view details")));
+                List.of(
+                        filterLabel(),
+                        "<gray>Click a recipe to view details"
+                )));
 
-        List<Map.Entry<String, UItemRecipe>> list = new ArrayList<>(
-                plugin.getRecipeManager().getAllRecipes().entrySet());
+        List<Map.Entry<String, UItemRecipe>> list = filteredRecipes();
 
         int totalPages = Math.max(1, (int) Math.ceil((double) list.size() / PER_PAGE));
         if (page >= totalPages) page = totalPages - 1;
@@ -92,7 +103,7 @@ public class RecipeListGui extends AbstractGui {
             String fid = id;
             setItem(SLOTS[i], item, ev -> {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                new RecipeDetailGui(plugin, player, fid).open();
+                new RecipeDetailGui(plugin, player, fid, categoryFilter, subCategoryFilter).openAsChildOf(this);
             });
         }
 
@@ -105,9 +116,56 @@ public class RecipeListGui extends AbstractGui {
 
         setItem(46, page > 0 ? createPreviousButton() : createItem(Material.GRAY_STAINED_GLASS_PANE, " "),
                 page > 0 ? ev -> { player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                    new RecipeListGui(plugin, player, page - 1).open(); } : null);
+                    new RecipeListGui(plugin, player, page - 1, categoryFilter, subCategoryFilter).open(); } : null);
         setItem(52, page < totalPages - 1 ? createNextButton() : createItem(Material.GRAY_STAINED_GLASS_PANE, " "),
                 page < totalPages - 1 ? ev -> { player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                    new RecipeListGui(plugin, player, page + 1).open(); } : null);
+                    new RecipeListGui(plugin, player, page + 1, categoryFilter, subCategoryFilter).open(); } : null);
+    }
+
+    private List<Map.Entry<String, UItemRecipe>> filteredRecipes() {
+        List<Map.Entry<String, UItemRecipe>> list = new ArrayList<>();
+        for (Map.Entry<String, UItemRecipe> entry : plugin.getRecipeManager().getAllRecipes().entrySet()) {
+            UItemData data = plugin.getItemManager().getItem(entry.getKey());
+            if (matchesFilter(data)) {
+                list.add(entry);
+            }
+        }
+        return list;
+    }
+
+    private boolean matchesFilter(UItemData data) {
+        if (categoryFilter == null && subCategoryFilter == null) return true;
+        if (data == null) return false;
+        if (categoryFilter != null && !categoryFilter.equals(normalize(data.getCategory()))) return false;
+        return subCategoryFilter == null || subCategoryFilter.equals(normalize(data.getSubCategory()));
+    }
+
+    private String filterLabel() {
+        if (categoryFilter == null && subCategoryFilter == null) return "<gray>Filter: <white>All recipes";
+        if (subCategoryFilter != null) return "<gray>Filter: <white>" + prettify(categoryFilter) + " / " + prettify(subCategoryFilter);
+        return "<gray>Filter: <white>" + prettify(categoryFilter);
+    }
+
+    private static String title(String category, String subCategory) {
+        String cat = normalize(category);
+        String sub = normalize(subCategory);
+        if (cat == null && sub == null) return "<gradient:#ff6b6b:#ffd93d>Recipe List</gradient>";
+        return "<gradient:#ff6b6b:#ffd93d>Recipes: </gradient><white>" + prettify(cat) + (sub != null ? " / " + prettify(sub) : "");
+    }
+
+    private static String normalize(String raw) {
+        return raw == null || raw.isBlank() ? null : raw.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private static String prettify(String raw) {
+        if (raw == null) return "All";
+        String[] parts = raw.toLowerCase(Locale.ROOT).split("_");
+        StringBuilder out = new StringBuilder();
+        for (String part : parts) {
+            if (part.isBlank()) continue;
+            if (out.length() > 0) out.append(' ');
+            out.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return out.toString();
     }
 }

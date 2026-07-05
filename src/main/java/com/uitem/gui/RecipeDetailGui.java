@@ -24,10 +24,18 @@ public class RecipeDetailGui extends AbstractGui {
     private static final int SLOT_CRAFT = 44;
 
     private final String itemId;
+    private final String backCategory;
+    private final String backSubCategory;
 
     public RecipeDetailGui(UItemPlugin plugin, Player player, String itemId) {
+        this(plugin, player, itemId, null, null);
+    }
+
+    public RecipeDetailGui(UItemPlugin plugin, Player player, String itemId, String backCategory, String backSubCategory) {
         super(plugin, player, 45, "<gold>Recipe: <white>" + itemId);
         this.itemId = itemId;
+        this.backCategory = backCategory;
+        this.backSubCategory = backSubCategory;
     }
 
     @Override
@@ -90,7 +98,7 @@ public class RecipeDetailGui extends AbstractGui {
 
         setItem(SLOT_BACK, createBackButton(), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new RecipeListGui(plugin, player).open();
+            new RecipeListGui(plugin, player, 0, backCategory, backSubCategory).open();
         });
 
         setItem(SLOT_CRAFT, createItem(Material.CRAFTING_TABLE,

@@ -4,15 +4,19 @@ import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.logging.Level;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
  * ItemsAdder provider. Uses reflection so the project compiles without ItemsAdder on the
@@ -117,50 +121,110 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
     /**
      * Fallback: scan ItemsAdder's content/data directories for item definitions.
      * IA stores items in YAML files under plugins/ItemsAdder/contents/.
+     * <p>
+     * Changed: Previously it stripped file names to only the local id; now it
+     * keeps the full namespace:id pair so that {@code getItem()} can use the correct
+     * namespace when calling {@code CustomStack.getInstance}.
      */
     private Function<Void, List<String>> buildFileFallback() {
         File pluginsDir = Bukkit.getPluginManager().getPlugin("ItemsAdder").getDataFolder();
         if (pluginsDir == null || !pluginsDir.isDirectory()) return null;
-        // Explore common subdirectories: contents/, data/items/, items/
         File[] searchDirs = {
             new File(pluginsDir, "contents"),
             new File(pluginsDir, "data" + File.separator + "items"),
             new File(pluginsDir, "items")
         };
-        List<File> ymlFiles = new ArrayList<>();
+        // Map of namespace (folder / config) → set of local id
+        Map<String, Set<String>> nsToIds = new LinkedHashMap<>();
         for (File dir : searchDirs) {
             if (dir.isDirectory()) {
-                collectYmlFiles(dir, ymlFiles);
+                scanNamespaceDir(dir, nsToIds);
             }
         }
-        if (ymlFiles.isEmpty()) return null;
-        return v -> {
-            Set<String> ids = new HashSet<>();
-            for (File f : ymlFiles) {
-                String name = stripExtension(f.getName());
-                if (name != null && !name.isBlank()) {
-                    // The parent folder is often the namespace
-                    String parent = f.getParentFile().getName();
-                    ids.add(name);
-                }
+        if (nsToIds.isEmpty()) return null;
+
+        // Flatten to string "namespace:localId"
+        List<String> ids = new ArrayList<>();
+        for (Map.Entry<String, Set<String>> entry : nsToIds.entrySet()) {
+            String ns = entry.getKey();
+            for (String local : entry.getValue()) {
+                ids.add(ns + ":" + local);
             }
-            List<String> out = new ArrayList<>(ids);
-            out.removeIf(String::isBlank);
-            Collections.sort(out);
-            return out;
-        };
+        }
+        Collections.sort(ids);
+        return v -> ids;
     }
 
-    private void collectYmlFiles(File dir, List<File> result) {
+    /**
+     * Walk a contents directory to collect item YAML files.
+     * For each file we check the parent-folder's info namespace (from an
+     * adjacent _config.yml or config.yml) so items are resolved with the
+     * correct namespace. Fallback namespace = the subfolder name.
+     */
+    private void scanNamespaceDir(File dir, Map<String, Set<String>> nsToIds) {
+        File[] entries = dir.listFiles();
+        if (entries == null) return;
+        String folderNamespace = readNamespaceFromConfig(dir);
+        for (File entry : entries) {
+            if (entry.isDirectory()) {
+                // Each subfolder may have its own namespace
+                String subNs = readNamespaceFromConfig(entry);
+                collectItemIds(entry, nsToIds, subNs);
+            } else if (isItemDefinition(entry)) {
+                String name = stripExtension(entry.getName());
+                if (name != null && !name.isBlank()) {
+                    nsToIds.computeIfAbsent(folderNamespace, k -> new HashSet<>()).add(name);
+                }
+            }
+        }
+    }
+
+    private void collectItemIds(File dir, Map<String, Set<String>> nsToIds, String ns) {
         File[] files = dir.listFiles();
         if (files == null) return;
         for (File f : files) {
             if (f.isDirectory()) {
-                collectYmlFiles(f, result);
-            } else if (f.getName().endsWith(".yml") || f.getName().endsWith(".yaml")) {
-                result.add(f);
+                String subNs = readNamespaceFromConfig(f);
+                collectItemIds(f, nsToIds, subNs);
+            } else if (isItemDefinition(f)) {
+                String name = stripExtension(f.getName());
+                if (name != null && !name.isBlank()) {
+                    nsToIds.computeIfAbsent(ns, k -> new HashSet<>()).add(name);
+                }
             }
         }
+    }
+
+    /**
+     * Read the {code namespace} from a _config.yml or config.yml in the folder.
+     * IA puts a {@code info.namespace} key in the folder's _config.yml.
+     */
+    private String readNamespaceFromConfig(File folder) {
+        if (folder == null || !folder.isDirectory()) return folderNamespaceFallback(folder);
+        for (String name : new String[]{"_config.yml", "config.yml", "_config.yaml", "config.yaml"}) {
+            File cfgFile = new File(folder, name);
+            if (!cfgFile.isFile()) continue;
+            try {
+                YamlConfiguration yaml = new YamlConfiguration();
+                yaml.load(cfgFile);
+                String ns = yaml.getString("info.namespace");
+                if (ns != null && !ns.isBlank()) return ns.trim();
+            } catch (Exception e) {
+            }
+        }
+        return folderNamespaceFallback(folder);
+    }
+
+    private String folderNamespaceFallback(File folder) {
+        return folder == null ? "itemsadder" : folder.getName();
+    }
+
+    private boolean isItemDefinition(File file) {
+        String name = file.getName();
+        return (name.endsWith(".yml") || name.endsWith(".yaml"))
+                && !name.startsWith("_")
+                && !name.equals("config.yml")
+                && !name.equals("config.yaml");
     }
 
     private String stripExtension(String name) {
@@ -240,7 +304,11 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
 
     @Override
     public List<String> listIds() {
-        return listIdsFn.apply(null);
+        try {
+            return listIdsFn.apply(null);
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 
     @Override
