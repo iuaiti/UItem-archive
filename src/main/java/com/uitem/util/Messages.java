@@ -354,6 +354,8 @@ public final class Messages {
             case "LEFT_CLICK" -> t("trigger-left", "Left Click");
             case "SHIFT_RIGHT_CLICK" -> t("trigger-sright", "Shift + Right Click");
             case "SHIFT_LEFT_CLICK" -> t("trigger-sleft", "Shift + Left Click");
+            case "SNEAK" -> t("trigger-sneak", "Sneak");
+            case "DOUBLE_SNEAK" -> t("trigger-double-sneak", "Double Sneak");
             case "DROP" -> t("trigger-drop", "Drop (Q)");
             case "SWAP_HAND" -> t("trigger-swap", "Swap Hand (F)");
             case "THROW" -> t("trigger-throw", "Throw");
@@ -376,6 +378,8 @@ public final class Messages {
             case "LEFT_CLICK" -> t("trigger-desc-left", "Activate on left click");
             case "SHIFT_RIGHT_CLICK" -> t("trigger-desc-sright", "Activate on shift + right click");
             case "SHIFT_LEFT_CLICK" -> t("trigger-desc-sleft", "Activate on shift + left click");
+            case "SNEAK" -> t("trigger-desc-sneak", "Activate when the player starts sneaking");
+            case "DOUBLE_SNEAK" -> t("trigger-desc-double-sneak", "Activate when the player sneaks twice quickly");
             case "DROP" -> t("trigger-desc-drop", "Activate when dropping the item (Q)");
             case "SWAP_HAND" -> t("trigger-desc-swap", "Activate when swapping hands (F)");
             case "THROW" -> t("trigger-desc-throw", "Activate when throwing the item");

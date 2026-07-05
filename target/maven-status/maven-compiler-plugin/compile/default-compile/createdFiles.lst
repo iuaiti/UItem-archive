@@ -6,6 +6,7 @@ com/uitem/skill/SkillTrigger.class
 com/uitem/recipe/UItemRecipe$Ingredient.class
 com/uitem/recipe/RecipeManager.class
 com/uitem/gui/AbstractGui.class
+com/uitem/gui/CraftingHomeGui.class
 com/uitem/gui/GuiStack.class
 com/uitem/skill/SkillExecutor.class
 com/uitem/gui/ItemEditorGui.class
@@ -84,6 +85,7 @@ com/uitem/gui/SkillListGui$1.class
 com/uitem/gui/ProviderPickerGui.class
 com/uitem/skill/SkillCondition.class
 com/uitem/UItemData$AttributeData.class
+com/uitem/gui/GuiConfig.class
 com/uitem/gui/SkillListGui.class
 com/uitem/storage/StorageManager$FileLoadResult.class
 com/uitem/gui/ConfirmDeleteGui.class

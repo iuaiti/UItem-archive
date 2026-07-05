@@ -21,10 +21,12 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/CategoryPickerGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ConfirmDeleteGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/CraftingGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/CraftingHomeGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/CreateWizardGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/EffectEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/EnchantmentGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/FlagGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/GuiConfig.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/GuiListener.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/GuiStack.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ItemEditorGui.java

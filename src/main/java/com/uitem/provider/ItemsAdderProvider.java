@@ -3,9 +3,15 @@ package com.uitem.provider;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -67,34 +73,100 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
 
     @SuppressWarnings("unchecked")
     private Function<Void, List<String>> buildListIdsFn() {
-        Method m = tryMethodOpt(customStackClass, "getNamespacedIds").orElse(null);
-        if (m != null) {
-            return v -> {
-                try {
-                    Object result = m.invoke(null);
-                    if (result instanceof java.util.Map<?, ?> map) {
-                        List<String> out = new ArrayList<>();
-                        for (Object k : map.keySet()) out.add(k == null ? null : k.toString());
-                        return out;
-                    }
-                    if (result instanceof java.util.Collection<?> col) {
-                        List<String> out = new ArrayList<>();
-                        for (Object o : col) {
-                            if (o != null) {
-                                String s = o.toString();
-                                int idx = s.indexOf(':');
-                                out.add(idx < 0 ? s : s.substring(idx + 1));
-                            }
-                        }
-                        return out;
-                    }
-                    return List.of();
-                } catch (Exception e) {
-                    return List.of();
-                }
-            };
+        // Try multiple method names that ItemsAdder API might expose
+        String[] candidates = {"getNamespacedIds", "getAllItems", "getItems", "getItemIds"};
+        for (String name : candidates) {
+            Method m = tryMethodOpt(customStackClass, name).orElse(null);
+            if (m != null) {
+                return buildListFn(m);
+            }
         }
+        // Fallback: scan ItemsAdder content directory
+        Function<Void, List<String>> fileFallback = buildFileFallback();
+        if (fileFallback != null) return fileFallback;
         return v -> List.of();
+    }
+
+    private Function<Void, List<String>> buildListFn(Method m) {
+        return v -> {
+            try {
+                Object result = m.invoke(null);
+                if (result == null) return List.of();
+                Set<String> ids = new HashSet<>();
+                if (result instanceof Map<?, ?> map) {
+                    for (Object k : map.keySet()) {
+                        if (k != null) ids.add(stripNamespace(k.toString()));
+                    }
+                } else if (result instanceof Collection<?> col) {
+                    for (Object o : col) {
+                        if (o != null) {
+                            ids.add(stripNamespace(o.toString()));
+                        }
+                    }
+                }
+                List<String> out = new ArrayList<>(ids);
+                out.removeIf(String::isBlank);
+                Collections.sort(out);
+                return out;
+            } catch (Exception e) {
+                return List.of();
+            }
+        };
+    }
+
+    /**
+     * Fallback: scan ItemsAdder's content/data directories for item definitions.
+     * IA stores items in YAML files under plugins/ItemsAdder/contents/.
+     */
+    private Function<Void, List<String>> buildFileFallback() {
+        File pluginsDir = Bukkit.getPluginManager().getPlugin("ItemsAdder").getDataFolder();
+        if (pluginsDir == null || !pluginsDir.isDirectory()) return null;
+        // Explore common subdirectories: contents/, data/items/, items/
+        File[] searchDirs = {
+            new File(pluginsDir, "contents"),
+            new File(pluginsDir, "data" + File.separator + "items"),
+            new File(pluginsDir, "items")
+        };
+        List<File> ymlFiles = new ArrayList<>();
+        for (File dir : searchDirs) {
+            if (dir.isDirectory()) {
+                collectYmlFiles(dir, ymlFiles);
+            }
+        }
+        if (ymlFiles.isEmpty()) return null;
+        return v -> {
+            Set<String> ids = new HashSet<>();
+            for (File f : ymlFiles) {
+                String name = stripExtension(f.getName());
+                if (name != null && !name.isBlank()) {
+                    // The parent folder is often the namespace
+                    String parent = f.getParentFile().getName();
+                    ids.add(name);
+                }
+            }
+            List<String> out = new ArrayList<>(ids);
+            out.removeIf(String::isBlank);
+            Collections.sort(out);
+            return out;
+        };
+    }
+
+    private void collectYmlFiles(File dir, List<File> result) {
+        File[] files = dir.listFiles();
+        if (files == null) return;
+        for (File f : files) {
+            if (f.isDirectory()) {
+                collectYmlFiles(f, result);
+            } else if (f.getName().endsWith(".yml") || f.getName().endsWith(".yaml")) {
+                result.add(f);
+            }
+        }
+    }
+
+    private String stripExtension(String name) {
+        if (name == null) return null;
+        int idx = name.lastIndexOf('.');
+        return idx < 0 ? name : name.substring(0, idx);
     }
 
     @Override public String getNamespace() { return NAMESPACE; }

@@ -15,6 +15,8 @@ public enum SkillTrigger {
     LEFT_CLICK(true),
     SHIFT_RIGHT_CLICK(true),
     SHIFT_LEFT_CLICK(true),
+    SNEAK(true),
+    DOUBLE_SNEAK(true),
     DROP(true),
     SWAP_HAND(true),
     THROW(true),
@@ -64,6 +66,8 @@ public enum SkillTrigger {
                 case "LEFT", "LC", "LEFTCLICK", "LEFT_CLICK" -> LEFT_CLICK;
                 case "SHIFT_RIGHT", "SRIGHT", "SHIFTRIGHT" -> SHIFT_RIGHT_CLICK;
                 case "SHIFT_LEFT", "SLEFT", "SHIFTLEFT" -> SHIFT_LEFT_CLICK;
+                case "SNEAK", "SHIFT", "CROUCH" -> SNEAK;
+                case "DOUBLE_SNEAK", "DOUBLE_SHIFT", "DOUBLESHIFT", "DOUBLE_CROUCH" -> DOUBLE_SNEAK;
                 case "Q", "DROP_ITEM" -> DROP;
                 case "F", "SWAP" -> SWAP_HAND;
                 case "THROW", "TOSS", "DROP_ITEMS" -> THROW;

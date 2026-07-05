@@ -15,14 +15,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.entity.Trident;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
+import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
@@ -45,6 +46,9 @@ public class UItemSkillListener implements Listener {
 
     // Track item đang cầm để WHILE_HOLDING
     private final Map<UUID, String> lastHeldUItem = new HashMap<>();
+
+    private final Map<UUID, Long> lastSneakAt = new HashMap<>();
+    private static final long DOUBLE_SNEAK_WINDOW_MS = 450L;
 
     // Reentrancy guard: ngăn DAMAGE action gọi target.damage() → EntityDamageByEntityEvent → vòng lặp vô hạn
     private boolean inDamageProcessing = false;
@@ -90,6 +94,7 @@ public class UItemSkillListener implements Listener {
         checkAndTickPeriodic(player, player.getInventory().getItemInMainHand());
         for (ItemStack armor : player.getInventory().getArmorContents()) {
             if (armor != null && !armor.getType().isAir()) {
+                checkAndTickHolding(player, armor, SkillTrigger.WHILE_WEARING);
                 checkAndTickPeriodic(player, armor);
             }
         }
@@ -223,6 +228,30 @@ public class UItemSkillListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onSneak(PlayerToggleSneakEvent event) {
+        if (!event.isSneaking()) return;
+
+        Player player = event.getPlayer();
+        ItemStack item = player.getInventory().getItemInMainHand();
+        UItemData data = getUItemData(item);
+        if (data == null || data.getSkills() == null || data.getSkills().isEmpty()) return;
+
+        boolean executedSneak = executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.SNEAK, null);
+        boolean executedDoubleSneak = false;
+
+        long now = System.currentTimeMillis();
+        Long last = lastSneakAt.put(player.getUniqueId(), now);
+        if (last != null && now - last <= DOUBLE_SNEAK_WINDOW_MS) {
+            executedDoubleSneak = executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.DOUBLE_SNEAK, null);
+        }
+
+        if ((executedSneak && shouldCancelAny(data, SkillTrigger.SNEAK))
+                || (executedDoubleSneak && shouldCancelAny(data, SkillTrigger.DOUBLE_SNEAK))) {
+            event.setCancelled(true);
+        }
+    }
+
     // =========================================================
     // Combat
     // =========================================================
@@ -266,6 +295,18 @@ public class UItemSkillListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEntityDeath(EntityDeathEvent event) {
+        Player killer = event.getEntity().getKiller();
+        if (killer == null) return;
+
+        ItemStack weapon = killer.getInventory().getItemInMainHand();
+        UItemData data = getUItemData(weapon);
+        if (data == null || data.getSkills() == null || data.getSkills().isEmpty()) return;
+
+        executor.executeSkills(killer, data.getId(), data.getSkills(), SkillTrigger.KILL, event.getEntity());
+    }
+
     // =========================================================
     // Equip
     // =========================================================
@@ -305,6 +346,7 @@ public class UItemSkillListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         lastHeldUItem.remove(event.getPlayer().getUniqueId());
+        lastSneakAt.remove(event.getPlayer().getUniqueId());
         executor.getCooldowns().onPlayerQuit(event.getPlayer());
     }
 

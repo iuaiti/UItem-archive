@@ -2,6 +2,8 @@ package com.uitem.command;
 
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
+import com.uitem.gui.CraftingHomeGui;
+import com.uitem.gui.ItemEditorGui;
 import com.uitem.gui.ItemListGui;
 import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
@@ -15,18 +17,25 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> ROOT_SUBCOMMANDS = List.of(
-            "give", "editor", "reload", "list", "craft", "check", "help"
+            "give", "editor", "import", "reload", "list", "craft", "check", "help"
     );
 
     private final UItemPlugin plugin;
@@ -46,6 +55,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         switch (args[0].toLowerCase(Locale.ROOT)) {
             case "give" -> handleGive(sender, args);
             case "editor", "edit", "gui" -> handleEditor(sender);
+            case "import", "fromhand" -> handleImport(sender, args);
             case "reload" -> handleReload(sender);
             case "list" -> handleList(sender);
             case "craft", "crafting" -> handleCraft(sender);
@@ -136,12 +146,118 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         new ItemListGui(plugin, player).open();
     }
 
+    private void handleImport(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("uitem.import") && !sender.hasPermission("uitem.editor")) {
+            sender.sendMessage(TextUtil.error(Messages.noPermission()));
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(TextUtil.error(Messages.playersOnly()));
+            return;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(TextUtil.error("Usage: /uitem import <id>"));
+            return;
+        }
+
+        ItemStack held = player.getInventory().getItemInMainHand();
+        if (held == null || held.getType() == Material.AIR) {
+            sender.sendMessage(TextUtil.error("You are not holding any item!"));
+            return;
+        }
+
+        String id = normalizeId(args[1]);
+        if (id.isBlank()) {
+            sender.sendMessage(TextUtil.error("Invalid item id. Use letters, numbers, '_' or '-'."));
+            return;
+        }
+        if (plugin.getItemManager().hasItem(id)) {
+            sender.sendMessage(TextUtil.error("Item '" + id + "' already exists."));
+            return;
+        }
+
+        String source = plugin.getProviderManager().detectSource(held);
+        if (source == null) {
+            sender.sendMessage(TextUtil.error("Cannot detect a provider source for the held item."));
+            return;
+        }
+
+        UItemData data = createDataFromHeldItem(id, source, held);
+        plugin.getItemManager().registerItem(data);
+        plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
+
+        player.sendMessage(TextUtil.success("Imported held item as '" + id + "'."));
+        player.sendMessage(TextUtil.prefixed("<gray>Source: <white>" + source));
+        new ItemEditorGui(plugin, player, data).open();
+    }
+
+    private UItemData createDataFromHeldItem(String id, String source, ItemStack held) {
+        UItemData data = new UItemData(id);
+        data.setSource(source);
+        data.setStackSize(held.getAmount());
+
+        ItemMeta meta = held.getItemMeta();
+        if (meta == null) {
+            data.setDisplayName("<white>" + prettifyMaterialName(held.getType()));
+            return data;
+        }
+
+        Component displayName = meta.displayName();
+        data.setDisplayName(displayName != null ? miniMessage.serialize(displayName) : "<white>" + prettifyMaterialName(held.getType()));
+
+        List<Component> lore = meta.lore();
+        if (lore != null && !lore.isEmpty()) {
+            data.setLore(lore.stream().map(miniMessage::serialize).toList());
+        }
+
+        Map<String, Integer> enchants = new LinkedHashMap<>();
+        for (Map.Entry<Enchantment, Integer> entry : meta.getEnchants().entrySet()) {
+            var key = entry.getKey().getKey();
+            enchants.put(key.getNamespace() + ":" + key.getKey(), entry.getValue());
+        }
+        data.setEnchantments(enchants);
+
+        Set<String> flags = new LinkedHashSet<>();
+        for (ItemFlag flag : meta.getItemFlags()) {
+            flags.add(flag.name());
+        }
+        data.setFlags(flags);
+
+        data.setUnbreakable(meta.isUnbreakable());
+        data.setGlowing(Boolean.TRUE.equals(meta.getEnchantmentGlintOverride()) && enchants.isEmpty());
+
+        if (meta instanceof Damageable damageable && damageable.hasMaxDamage()) {
+            data.setMaxDurability(damageable.getMaxDamage());
+        }
+
+        return data;
+    }
+
+    private String normalizeId(String raw) {
+        String normalized = raw.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9_-]+", "_")
+                .replaceAll("^_+|_+$", "");
+        return normalized.length() > 64 ? normalized.substring(0, 64) : normalized;
+    }
+
+    private String prettifyMaterialName(Material material) {
+        String[] parts = material.name().toLowerCase(Locale.ROOT).split("_");
+        StringBuilder out = new StringBuilder();
+        for (String part : parts) {
+            if (part.isBlank()) continue;
+            if (out.length() > 0) out.append(' ');
+            out.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return out.toString();
+    }
+
     private void handleReload(CommandSender sender) {
         if (!sender.hasPermission("uitem.reload")) {
             sender.sendMessage(TextUtil.error(Messages.noPermission()));
             return;
         }
         plugin.reloadConfig();
+        com.uitem.gui.GuiConfig.reload(plugin);
         Messages.reload();
         com.uitem.rarity.RarityConfig.reloadFromFile();
         plugin.getStorageManager().saveAllNow(plugin.getItemManager());
@@ -186,7 +302,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(TextUtil.error(Messages.noPermission()));
             return;
         }
-        new com.uitem.gui.CraftingGui(plugin, player).open();
+        new CraftingHomeGui(plugin, player).open();
     }
 
     private void handleList(CommandSender sender) {
@@ -222,10 +338,11 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(Component.text(""));
         sender.sendMessage(miniMessage.deserialize("  <gold>/uitem give <id> [player] [amount] <dark_gray>— <gray>Give item"));
         sender.sendMessage(miniMessage.deserialize("  <gold>/uitem editor <dark_gray>— <gray>Open the editor GUI"));
+        sender.sendMessage(miniMessage.deserialize("  <gold>/uitem import <id> <dark_gray>— <gray>Create a UItem from the held item"));
         sender.sendMessage(miniMessage.deserialize("  <gold>/uitem list <dark_gray>— <gray>List items"));
         sender.sendMessage(miniMessage.deserialize("  <gold>/uitem check <dark_gray>— <gray>Check/identify the held item"));
-        sender.sendMessage(miniMessage.deserialize("  <gold>/uitem craft <dark_gray>— <gray>Open the UItem crafting table"));
-        sender.sendMessage(miniMessage.deserialize("  <gold>/crafting <dark_gray>— <gray>List recipes"));
+        sender.sendMessage(miniMessage.deserialize("  <gold>/uitem craft <dark_gray>— <gray>Open custom crafting home"));
+        sender.sendMessage(miniMessage.deserialize("  <gold>/crafting <dark_gray>— <gray>Open custom crafting home"));
         sender.sendMessage(miniMessage.deserialize("  <gold>/uitem reload <dark_gray>— <gray>Reload plugin"));
         sender.sendMessage(miniMessage.deserialize("  <gold>/ui <dark_gray>— <gray>Short alias for /uitem"));
         sender.sendMessage(Component.text(""));
@@ -245,6 +362,11 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             for (String id : plugin.getItemManager().getAllItems().keySet()) {
                 if (id.toLowerCase(Locale.ROOT).startsWith(input)) completions.add(id);
             }
+            return completions;
+        }
+        if (args.length == 2 && root.equals("import")) {
+            String suggestion = "new_item_id";
+            if (suggestion.startsWith(args[1].toLowerCase(Locale.ROOT))) completions.add(suggestion);
             return completions;
         }
         if (root.equals("give") && args.length == 3) {

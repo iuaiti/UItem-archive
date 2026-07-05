@@ -31,6 +31,8 @@ public class CraftingGui implements InventoryHolder {
     private static final int CRAFT_8_SLOT = 37;
     private static final int CRAFT_64_SLOT = 38;
     private static final int CRAFT_MAX_SLOT = 39;
+    private static final int HOME_SLOT = 41;
+    private static final int RECIPES_SLOT = 42;
 
     private static final Set<UUID> openCraftingGuis = ConcurrentHashMap.newKeySet();
 
@@ -45,7 +47,7 @@ public class CraftingGui implements InventoryHolder {
         this.player = player;
         this.recipeManager = plugin.getRecipeManager();
         this.inventory = Bukkit.createInventory(this, GUI_SIZE,
-                TextUtil.parse("<gradient:#ff6b6b:#ffd93d>Crafting</gradient>"));
+                TextUtil.parse(GuiConfig.text("crafting-table.title", "<gradient:#ff6b6b:#ffd93d>Crafting</gradient>")));
         initialize();
     }
 
@@ -82,17 +84,20 @@ public class CraftingGui implements InventoryHolder {
         inventory.setItem(RESULT_SLOT, null);
 
         // Add a small "craft grid" label hint
-        inventory.setItem(13, createInfoLabel(Material.CRAFTING_TABLE, "<gold>Crafting Grid"));
-        inventory.setItem(22, createInfoLabel(Material.ARROW, "<yellow>→"));
-        inventory.setItem(24, createInfoLabel(Material.KNOWLEDGE_BOOK, "<gold>Result"));
+        inventory.setItem(13, createInfoLabel("crafting-table.labels.grid", Material.CRAFTING_TABLE, "<gold>Crafting Grid"));
+        inventory.setItem(22, createInfoLabel("crafting-table.labels.arrow", Material.ARROW, "<yellow>→"));
+        inventory.setItem(24, createInfoLabel("crafting-table.labels.result", Material.KNOWLEDGE_BOOK, "<gold>Result"));
 
         // Info area explaining custom crafting + FULL_SET support (visual only, not live player armor)
-        inventory.setItem(0, createInfoLabel(Material.CRAFTING_TABLE, "<gold>UItem Crafting"));
-        inventory.setItem(1, createInfoLabel(Material.KNOWLEDGE_BOOK, "<gray>Custom items"));
-        inventory.setItem(2, createInfoLabel(Material.ANVIL, "<gray>+ vanilla materials"));
-        inventory.setItem(3, createInfoLabel(Material.NETHERITE_INGOT, "<yellow>Special recipes"));
-        inventory.setItem(4, createInfoLabel(Material.NETHER_STAR, "<gold>Result appears here"));
-        inventory.setItem(9, createInfoLabel(Material.ARMOR_STAND, "<gray>Wear a full 4-piece armor set to trigger the FULL_SET effect (on the UItem)"));
+        inventory.setItem(0, createInfoLabel("crafting-table.labels.title", Material.CRAFTING_TABLE, "<gold>UItem Crafting"));
+        inventory.setItem(1, createInfoLabel("crafting-table.labels.custom-items", Material.KNOWLEDGE_BOOK, "<gray>Custom items"));
+        inventory.setItem(2, createInfoLabel("crafting-table.labels.vanilla-materials", Material.ANVIL, "<gray>+ vanilla materials"));
+        inventory.setItem(3, createInfoLabel("crafting-table.labels.special-recipes", Material.NETHERITE_INGOT, "<yellow>Special recipes"));
+        inventory.setItem(4, createInfoLabel("crafting-table.labels.result-hint", Material.NETHER_STAR, "<gold>Result appears here"));
+        inventory.setItem(9, createInfoLabel("crafting-table.labels.full-set-hint", Material.ARMOR_STAND, "<gray>Wear a full 4-piece armor set to trigger the FULL_SET effect (on the UItem)"));
+
+        inventory.setItem(HOME_SLOT, createInfoLabel("crafting-table.labels.home", Material.OAK_DOOR, "<gold>Crafting Home"));
+        inventory.setItem(RECIPES_SLOT, createInfoLabel("crafting-table.labels.recipes", Material.KNOWLEDGE_BOOK, "<yellow>View Recipes"));
 
         updateCraftButtons();
     }
@@ -105,6 +110,13 @@ public class CraftingGui implements InventoryHolder {
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    private ItemStack createInfoLabel(String path, Material fallbackMaterial, String fallbackName) {
+        return createInfoLabel(
+                GuiConfig.material(path + ".material", fallbackMaterial),
+                GuiConfig.text(path + ".name", fallbackName)
+        );
     }
 
     private void updateCraftButtons() {
@@ -384,6 +396,20 @@ public class CraftingGui implements InventoryHolder {
             updateCraftButtons();
             updateResult();
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.5f);
+            return;
+        }
+
+        if (slot == HOME_SLOT) {
+            event.setCancelled(true);
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            SchedulerUtil.runSync(plugin, () -> new CraftingHomeGui(plugin, player).open());
+            return;
+        }
+
+        if (slot == RECIPES_SLOT) {
+            event.setCancelled(true);
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            SchedulerUtil.runSync(plugin, () -> new RecipeListGui(plugin, player).open());
             return;
         }
 

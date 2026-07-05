@@ -9,12 +9,13 @@ softdepend: [Oraxen, ItemsAdder]
 commands:
   uitem:
     description: UItem main command
-    usage: /uitem|ui <give|editor|reload|list|craft|check>
+    usage: /uitem|ui <give|editor|import|reload|list|craft|check>
     aliases: [ui]
     permission: uitem.admin
   crafting:
-    description: Open the UItem crafting table
-    aliases: [craft]
+    description: Open the UItem crafting home, recipe list, or crafting table
+    aliases: [craft, recipe, recipes]
+    usage: /crafting [home|list|view <id>|craft]
 permissions:
   uitem.admin:
     description: Full access to UItem
@@ -22,6 +23,7 @@ permissions:
     children:
       uitem.give: true
       uitem.editor: true
+      uitem.import: true
       uitem.reload: true
       uitem.craft: true
       uitem.search: true
@@ -32,6 +34,9 @@ permissions:
     default: op
   uitem.editor:
     description: Allow opening item editor
+    default: op
+  uitem.import:
+    description: Allow creating a UItem from the held item
     default: op
   uitem.reload:
     description: Allow reloading plugin

@@ -32,6 +32,7 @@ public class SkillEditorGui extends AbstractGui {
     private static final List<SkillTrigger> ACTIVE_TRIGGERS = List.of(
             SkillTrigger.RIGHT_CLICK, SkillTrigger.LEFT_CLICK,
             SkillTrigger.SHIFT_RIGHT_CLICK, SkillTrigger.SHIFT_LEFT_CLICK,
+            SkillTrigger.SNEAK, SkillTrigger.DOUBLE_SNEAK,
             SkillTrigger.DROP, SkillTrigger.SWAP_HAND,
             SkillTrigger.THROW, SkillTrigger.SHOOT   // THROW = drop with velocity; SHOOT = bow/crossbow/trident launch (new)
     );
@@ -145,30 +146,19 @@ public class SkillEditorGui extends AbstractGui {
                         "<gray>Actions: <white>" + skill.getActions().size()
                 )));
 
-        // === Trigger selection (active) ===
-        setItem(9, createItem(Material.DIAMOND_SWORD, Messages.skillEditorActiveTriggers(), List.of("<gray>Right / Left Click")));
-
-        int slot = 10;
-        for (SkillTrigger t : ACTIVE_TRIGGERS) {
+        // Trigger grid: 18 slots exactly (10 active + 8 passive), no overlapping editor controls.
+        int slot = 9;
+        List<SkillTrigger> triggerOptions = new ArrayList<>();
+        triggerOptions.addAll(ACTIVE_TRIGGERS);
+        triggerOptions.addAll(PASSIVE_TRIGGERS);
+        for (SkillTrigger t : triggerOptions) {
             boolean sel = t == skill.getTrigger();
-            Material m = sel ? Material.LIME_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE;
+            Material m = sel ? Material.LIME_STAINED_GLASS_PANE : (t.isActive() ? Material.LIGHT_BLUE_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE);
             setItem(slot++, createItem(m, (sel ? "<green>✔ " : "<gray>") + t.getDisplayName(),
-                    List.of("<gray>" + t.getDescription())), ev -> {
-                skill.setTrigger(t);
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
-                saveAndRefresh();
-            });
-        }
-
-        // === Passive triggers ===
-        setItem(18, createItem(Material.CLOCK, Messages.skillEditorPassiveTriggers(), List.of()));
-
-        slot = 19;
-        for (SkillTrigger t : PASSIVE_TRIGGERS) {
-            boolean sel = t == skill.getTrigger();
-            Material m = sel ? Material.LIME_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE;
-            setItem(slot++, createItem(m, (sel ? "<green>✔ " : "<gray>") + t.getDisplayName(),
-                    List.of("<gray>" + t.getDescription())), ev -> {
+                    List.of(
+                            t.isActive() ? "<aqua>Active trigger" : "<gold>Passive trigger",
+                            "<gray>" + t.getDescription()
+                    )), ev -> {
                 skill.setTrigger(t);
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
                 saveAndRefresh();
@@ -254,13 +244,13 @@ public class SkillEditorGui extends AbstractGui {
                     List.of("<yellow>Use the action buttons below to add actions")));
         }
 
-        // Quick condition buttons (row 1, after active triggers)
-        setItem(16, createItem(Material.EMERALD, "<green>Cond: Chance 75%", List.of("<gray>Click to add 75% chance")), ev -> {
+        // Quick condition buttons (top row, outside the trigger grid)
+        setItem(7, createItem(Material.EMERALD, "<green>Cond: Chance 75%", List.of("<gray>Click to add 75% chance")), ev -> {
             skill.addCondition(com.uitem.skill.SkillCondition.chance(75));
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             saveAndRefresh();
         });
-        setItem(17, createItem(Material.REDSTONE, "<red>Cond: Chance 50%", List.of("<gray>Click to add 50% chance")), ev -> {
+        setItem(8, createItem(Material.REDSTONE, "<red>Cond: Chance 50%", List.of("<gray>Click to add 50% chance")), ev -> {
             skill.addCondition(com.uitem.skill.SkillCondition.chance(50));
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             saveAndRefresh();

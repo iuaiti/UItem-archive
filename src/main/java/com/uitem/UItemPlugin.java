@@ -66,6 +66,7 @@ public final class UItemPlugin extends JavaPlugin {
         }
 
         saveDefaultConfig();
+        com.uitem.gui.GuiConfig.init(this);
 
         this.storageManager = new StorageManager(this);
         this.itemManager = new UItemManager(this);
@@ -103,6 +104,7 @@ public final class UItemPlugin extends JavaPlugin {
         org.bukkit.command.PluginCommand craftCmd = getCommand("crafting");
         if (craftCmd != null) {
             craftCmd.setExecutor(craftingCommand);
+            craftCmd.setTabCompleter(craftingCommand);
         }
 
         registerIntegrationEnableListener();

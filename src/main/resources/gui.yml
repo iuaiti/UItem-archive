@@ -1,0 +1,96 @@
+# UItem GUI configuration
+# Supports MiniMessage formatting in names/lore.
+# Placeholders available in crafting-home:
+#   {recipes} - total loaded recipes
+#   {more}    - remaining recipes not shown in featured slots
+
+crafting-home:
+  title: "<gradient:#ff6b6b:#ffd93d><bold>UItem Crafting</bold></gradient>"
+
+  header:
+    material: CRAFTING_TABLE
+    name: "<gradient:#ff6b6b:#ffd93d><bold>Custom Crafting Home</bold></gradient>"
+    lore:
+      - "<gray>Recipes loaded: <white>{recipes}"
+      - "<gray>Create custom UItems from recipes"
+      - "<dark_gray>/crafting list, /crafting view <id>, /crafting craft"
+
+  buttons:
+    view-recipes:
+      material: KNOWLEDGE_BOOK
+      name: "<gold><bold>View Recipes</bold>"
+      lore:
+        - "<gray>Browse every UItem recipe"
+        - "<gray>Click an item to inspect its ingredients"
+        - ""
+        - "<yellow>Click to open recipe list"
+    crafting-table:
+      material: CRAFTING_TABLE
+      name: "<green><bold>Open Crafting Table</bold>"
+      lore:
+        - "<gray>Place materials or UItems in the 3x3 grid"
+        - "<gray>The result preview appears on the right"
+        - "<gray>Select x1, x8, x64 or MAX before crafting"
+        - ""
+        - "<yellow>Click to craft"
+    how-it-works:
+      material: WRITABLE_BOOK
+      name: "<aqua><bold>How It Works</bold>"
+      lore:
+        - "<gray>Recipes may use vanilla materials or UItems"
+        - "<gray>Shaped recipes must match the exact 3x3 layout"
+        - "<gray>Shapeless recipes can be placed anywhere"
+        - "<gray>Closing the crafting table safely returns inputs"
+    featured-header:
+      material: BOOKSHELF
+      name: "<gold><bold>Featured Recipes</bold>"
+      lore:
+        - "<gray>Quick preview of the first recipes"
+    no-recipes:
+      material: BARRIER
+      name: "<red>No Recipes Loaded"
+      lore:
+        - "<gray>Create recipes in the editor or recipes/*.yml"
+    more-recipes:
+      material: ARROW
+      name: "<yellow>More Recipes"
+      lore:
+        - "<gray>There are {more} more recipes"
+        - "<yellow>Click to browse all"
+
+crafting-table:
+  title: "<gradient:#ff6b6b:#ffd93d>Crafting</gradient>"
+  labels:
+    grid:
+      material: CRAFTING_TABLE
+      name: "<gold>Crafting Grid"
+    arrow:
+      material: ARROW
+      name: "<yellow>→"
+    result:
+      material: KNOWLEDGE_BOOK
+      name: "<gold>Result"
+    title:
+      material: CRAFTING_TABLE
+      name: "<gold>UItem Crafting"
+    custom-items:
+      material: KNOWLEDGE_BOOK
+      name: "<gray>Custom items"
+    vanilla-materials:
+      material: ANVIL
+      name: "<gray>+ vanilla materials"
+    special-recipes:
+      material: NETHERITE_INGOT
+      name: "<yellow>Special recipes"
+    result-hint:
+      material: NETHER_STAR
+      name: "<gold>Result appears here"
+    full-set-hint:
+      material: ARMOR_STAND
+      name: "<gray>Wear a full 4-piece armor set to trigger the FULL_SET effect (on the UItem)"
+    home:
+      material: OAK_DOOR
+      name: "<gold>Crafting Home"
+    recipes:
+      material: KNOWLEDGE_BOOK
+      name: "<yellow>View Recipes"
