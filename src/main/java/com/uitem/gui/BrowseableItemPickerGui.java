@@ -92,18 +92,22 @@ public class BrowseableItemPickerGui extends AbstractGui {
         for (int i = 0; i < ITEM_SLOTS.length; i++) {
             int idx = startIndex + i;
             if (idx >= ids.size()) break;
-            String id = ids.get(idx);
-            if (id == null) continue;
+            String rawId = ids.get(idx);
+            if (rawId == null) continue;
+
+            String localId = stripNamespace(rawId);
+            String source = provider.getNamespace() + ":" + localId;
+
             ItemStack preview;
             try {
-                preview = provider.buildPreview(id);
+                preview = provider.buildPreview(rawId);
             } catch (Exception e) {
                 preview = null;
             }
             if (preview == null || preview.getType().isAir()) {
-                preview = createItem(Material.PAPER, "<white>" + id,
+                preview = createItem(Material.PAPER, "<white>" + localId,
                         List.of("<red>No preview available (provider returned null)",
-                                "<yellow>" + provider.getNamespace() + ":" + id,
+                                "<yellow>" + source,
                                 "<yellow>Click to select anyway"));
             } else {
                 ItemMeta meta = preview.getItemMeta();
@@ -111,14 +115,13 @@ public class BrowseableItemPickerGui extends AbstractGui {
                     var lore = meta.lore();
                     if (lore == null) lore = new java.util.ArrayList<>();
                     lore.add(TextUtil.parse("<dark_gray>──────────────"));
-                    lore.add(TextUtil.parse("<gray>Source: <white>" + provider.getNamespace() + ":" + id));
+                    lore.add(TextUtil.parse("<gray>Source: <white>" + source));
                     lore.add(TextUtil.parse("<yellow>Click to select"));
                     meta.lore(lore);
                     preview.setItemMeta(meta);
                 }
             }
             setItem(ITEM_SLOTS[i], preview, ev -> {
-                String source = provider.getNamespace() + ":" + id;
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.0f);
                 player.sendMessage(TextUtil.success("Source = " + source));
                 if (callback != null) callback.accept(source);
@@ -131,5 +134,11 @@ public class BrowseableItemPickerGui extends AbstractGui {
                 page < totalPages - 1 ? ev -> { page++; refresh(); } : null);
 
         setItem(45, createBackButton(), ev -> goBack());
+    }
+
+    private static String stripNamespace(String full) {
+        if (full == null) return null;
+        int idx = full.indexOf(':');
+        return idx < 0 ? full : full.substring(idx + 1);
     }
 }
