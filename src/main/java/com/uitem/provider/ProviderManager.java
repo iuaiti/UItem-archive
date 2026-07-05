@@ -133,7 +133,10 @@ public class ProviderManager {
             if (!p.isAvailable()) continue;
             String id = null;
             if (p instanceof ItemsAdderProvider ia) {
-                id = ia.extractLocalId(stack);
+                // Prefer the full namespaced id returned by ItemsAdder
+                // (e.g. "itemsadder:ruby_sword"), because CustomStack.getInstance expects it.
+                id = ia.extractFullId(stack);
+                if (id == null) id = ia.extractLocalId(stack);
             } else if (p instanceof OraxenProvider oraxen) {
                 id = oraxen.extractLocalId(stack);
             }

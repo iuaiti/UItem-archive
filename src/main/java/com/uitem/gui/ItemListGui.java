@@ -125,8 +125,8 @@ public class ItemListGui extends AbstractGui {
                         "<yellow>Click to start"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
-            // Wizard requires ID later (entered at step 4) — pass null so wizard asks for ID itself.
-            new CreateWizardGui(plugin, player, (String) null).open();
+            // Wizard creates the item with generated ID then opens editor directly.
+            new CreateWizardGui(plugin, player).openAsChildOf(this);
         });
 
         if (player.hasPermission("uitem.give")) {

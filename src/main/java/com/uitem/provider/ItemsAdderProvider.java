@@ -107,14 +107,14 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
     public boolean exists(String id) {
         if (id == null || id.isBlank()) return false;
         try {
-            return getInstance.invoke(null, id) != null;
+            return resolveCustomStack(id) != null;
         } catch (Exception e) { return false; }
     }
 
     @Override
     public ItemStack getItem(String id) {
         try {
-            Object cs = getInstance.invoke(null, id);
+            Object cs = resolveCustomStack(id);
             if (cs == null) return null;
             Object result = getItemStack.invoke(cs);
             return result instanceof ItemStack is ? is.clone() : null;
@@ -123,10 +123,41 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
         }
     }
 
+    /**
+     * Resolve a CustomStack by id. ItemsAdder's {@code CustomStack.getInstance(String)}
+     * expects a full namespaced id ({@code itemsadder:ruby_sword} or a custom namespace
+     * configured in itemsadder config). When the user only passes the local id
+     * ({@code ruby_sword}), we retry with the default {@code itemsadder:} prefix so that
+     * the correct texture/model is loaded instead of falling back to vanilla.
+     */
+    private Object resolveCustomStack(String id) throws Exception {
+        Object cs = getInstance.invoke(null, id);
+        if (cs != null) return cs;
+        if (id.indexOf(':') < 0) {
+            cs = getInstance.invoke(null, "itemsadder:" + id);
+            if (cs != null) return cs;
+            // Some configs use "ia:" as the namespace alias.
+            cs = getInstance.invoke(null, "ia:" + id);
+            if (cs != null) return cs;
+        }
+        return null;
+    }
+
     public String extractLocalId(ItemStack stack) {
         if (stack == null) return null;
         String full = idFromStack.apply(stack);
         return stripNamespace(full);
+    }
+
+    /**
+     * Return the FULL namespaced id (e.g. {@code itemsadder:ruby_sword}) returned by
+     * ItemsAdder for the given stack, WITHOUT stripping the namespace. This is needed
+     * because {@code CustomStack.getInstance(String)} expects the full namespaced id,
+     * and stripping a custom namespace would break lookups.
+     */
+    public String extractFullId(ItemStack stack) {
+        if (stack == null) return null;
+        return idFromStack.apply(stack);
     }
 
     static String stripNamespace(String full) {
