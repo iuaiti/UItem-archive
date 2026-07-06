@@ -53,12 +53,6 @@ public class BrowseableItemPickerGui extends AbstractGui {
 
     private List<String> loadIds() {
         List<String> all = new ArrayList<>(provider.listIds());
-        int total = all.size();
-        all.removeIf(id -> id == null || !provider.exists(id));
-        int removed = total - all.size();
-        if (removed > 0) {
-            player.sendMessage(TextUtil.info("Filtered " + removed + " unregistered items from " + total));
-        }
         all.sort(Comparator.nullsFirst(String::compareTo));
         if (filter != null && !filter.isBlank()) {
             String lower = filter.toLowerCase(Locale.ROOT);
