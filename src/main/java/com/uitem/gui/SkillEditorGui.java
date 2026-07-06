@@ -177,7 +177,7 @@ public class SkillEditorGui extends AbstractGui {
         }
 
         // === Cooldown (row 3) ===
-        setItem(28, createItem(Material.CLOCK, String.format(Messages.skillEditorCooldown(), skill.getCooldown()),
+        setItem(28, createItem(Material.CLOCK, Messages.skillEditorCooldown().replace("%s", String.valueOf(skill.getCooldown())),
                 List.of(Messages.skillEditorCooldownHint())), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             plugin.getChatInputManager().requestInput(player, "<yellow>" + Messages.skillPrompt("cooldown", "Enter cooldown (seconds, example 4.5):"), input -> {
@@ -190,7 +190,7 @@ public class SkillEditorGui extends AbstractGui {
         });
 
         // Chance
-        setItem(29, createItem(Material.GHAST_TEAR, String.format(Messages.skillEditorChance(), (int) skill.getChance()),
+        setItem(29, createItem(Material.GHAST_TEAR, Messages.skillEditorChance().replace("%s", String.valueOf((int) skill.getChance())),
                 List.of(Messages.skillEditorChanceHint())), ev -> {
             plugin.getChatInputManager().requestInput(player, "<yellow>" + Messages.skillPrompt("chance", "Enter chance (0-100):"), input -> {
                 try { skill.setChance(Double.parseDouble(input.trim())); } catch (Exception ignored) {}
@@ -200,7 +200,7 @@ public class SkillEditorGui extends AbstractGui {
 
         // Cancel event
         setItem(30, createItem(skill.isCancelEvent() ? Material.BARRIER : Material.PAPER,
-                String.format(Messages.skillEditorCancelEvent(), skill.isCancelEvent() ? Messages.stateOn() : Messages.stateOff()),
+                Messages.skillEditorCancelEvent().replace("%s", skill.isCancelEvent() ? Messages.stateOn() : Messages.stateOff()),
                 List.of(Messages.skillEditorCancelHint(), Messages.skillEditorCancelClick())), ev -> {
             skill.setCancelEvent(!skill.isCancelEvent());
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
