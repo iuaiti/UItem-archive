@@ -55,9 +55,9 @@ public class PotionPresetGui extends AbstractGui {
         int slot = 10;
         int slotsInRow = 0;
         for (int i = startIdx; i < endIdx; i++) {
-            if (slotsInRow == 8) {
+            if (slotsInRow == 7) {
                 slotsInRow = 0;
-                slot += 3; // skip to next row (9-1=8, then +3 = +2 for border)
+                slot += 2; // skip right border (slot 17) and left border (slot 18)
             }
 
             final PotionEffectRegistry.PotionInfo info = allEffects.get(i);

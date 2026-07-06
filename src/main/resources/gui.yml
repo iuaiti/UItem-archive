@@ -152,6 +152,9 @@ crafting-home:
 
 crafting-table:
   title: "<gradient:#ff6b6b:#ffd93d>Crafting</gradient>"
+  border:
+    primary: BROWN_STAINED_GLASS_PANE
+    accent: ORANGE_STAINED_GLASS_PANE
   labels:
     grid:
       material: CRAFTING_TABLE
@@ -162,27 +165,83 @@ crafting-table:
     result:
       material: KNOWLEDGE_BOOK
       name: "<gold>Result"
-    title:
-      material: CRAFTING_TABLE
-      name: "<gold>UItem Crafting"
-    custom-items:
-      material: KNOWLEDGE_BOOK
-      name: "<gray>Custom items"
-    vanilla-materials:
-      material: ANVIL
-      name: "<gray>+ vanilla materials"
-    special-recipes:
-      material: NETHERITE_INGOT
-      name: "<yellow>Special recipes"
-    result-hint:
-      material: NETHER_STAR
-      name: "<gold>Result appears here"
-    full-set-hint:
-      material: ARMOR_STAND
-      name: "<gray>Wear a full 4-piece armor set to trigger the FULL_SET effect (on the UItem)"
     home:
       material: OAK_DOOR
       name: "<gold>Crafting Home"
     recipes:
       material: KNOWLEDGE_BOOK
       name: "<yellow>View Recipes"
+  buttons:
+    craft-1:
+      material: LIME_DYE
+      name: "<gold><bold>Craft x1</bold>"
+      lore:
+        - "<gray>Craft 1 unit"
+    craft-8:
+      material: LIGHT_BLUE_DYE
+      name: "<gold><bold>Craft x8</bold>"
+      lore:
+        - "<gray>Craft 8 units"
+    craft-64:
+      material: CYAN_DYE
+      name: "<gold><bold>Craft x64</bold>"
+      lore:
+        - "<gray>Craft 64 units"
+    craft-max:
+      material: MAGENTA_DYE
+      name: "<gold><bold>Craft x{max}</bold>"
+      lore:
+        - "{count_msg}"
+    selected: "<green>✔ Selected"
+    click: "<yellow>Click to select"
+    max-with-recipe: "<gray>Craft as many as possible: x{count}"
+    max-no-recipe: "<gray>No crafting recipe available"
+  result:
+    click-to-craft: "<yellow>Click to craft x{amount}"
+    max-units: "<gray>Max units craftable: {max}"
+
+recipe-list:
+  title: "<gradient:#ff6b6b:#ffd93d>Recipe List</gradient>"
+  title-filtered: "<gradient:#ff6b6b:#ffd93d>Recipes: </gradient><white>{category}{sub}"
+  header:
+    material: KNOWLEDGE_BOOK
+    name: "<gradient:#ff6b6b:#ffd93d><bold>Recipe List</bold></gradient>"
+    lore:
+      - "{filter}"
+      - "<gray>Click a recipe to view details"
+  filter:
+    all: "<gray>Filter: <white>All recipes"
+    category: "<gray>Filter: <white>{category}"
+    subcategory: "<gray>Filter: <white>{category} / {sub}"
+  recipe:
+    type-line: "<gold>{type} <dark_gray>| <gold>x{amount}"
+    click-view: "<yellow>Click to view the recipe"
+  deleted:
+    name: "<red>{id}"
+    lore:
+      - "<gray>Item deleted"
+  craft-button:
+    material: CRAFTING_TABLE
+    name: "<green><bold>Craft</bold>"
+    lore:
+      - "<gray>Open crafting table"
+
+recipe-detail:
+  title: "<gold>Recipe: <white>{id}"
+  header:
+    material: KNOWLEDGE_BOOK
+    name: "<gold><bold>{id}</bold>"
+    lore:
+      - "<gray>{type}"
+      - "<gray>Output: x{amount}"
+  type-shaped: "Shaped 3x3"
+  type-shapeless: "Shapeless"
+  arrow: "<yellow>→"
+  not-found:
+    material: BARRIER
+    name: "<red>Not found"
+  craft-button:
+    material: CRAFTING_TABLE
+    name: "<green><bold>Craft</bold>"
+    lore:
+      - "<gray>Open crafting table"

@@ -52,14 +52,13 @@ public class CraftingGui implements InventoryHolder {
     }
 
     private void initialize() {
-        // Nicer crafting theme: use brown / orange tones for a "table" feel
-        ItemStack border = new ItemStack(Material.BROWN_STAINED_GLASS_PANE);
+        ItemStack border = new ItemStack(GuiConfig.material("crafting-table.border.primary", Material.BROWN_STAINED_GLASS_PANE));
         ItemMeta meta = border.getItemMeta();
         if (meta != null) {
             meta.displayName(TextUtil.parse(" "));
             border.setItemMeta(meta);
         }
-        ItemStack accent = new ItemStack(Material.ORANGE_STAINED_GLASS_PANE);
+        ItemStack accent = new ItemStack(GuiConfig.material("crafting-table.border.accent", Material.ORANGE_STAINED_GLASS_PANE));
         ItemMeta am = accent.getItemMeta();
         if (am != null) {
             am.displayName(TextUtil.parse(" "));
@@ -72,43 +71,33 @@ public class CraftingGui implements InventoryHolder {
             if (row == 0 || row == 4 || col == 0 || col == 8) {
                 inventory.setItem(i, border.clone());
             } else {
-                // light inner fill
                 inventory.setItem(i, accent.clone());
             }
         }
 
-        // Clear craft grid + result
         for (int slot : CRAFT_SLOTS) {
             inventory.setItem(slot, null);
         }
         inventory.setItem(RESULT_SLOT, null);
 
-        // Label hints — compact, only the essentials
-        inventory.setItem(13, createCompactInfoLabel("crafting-table.labels.grid", Material.CRAFTING_TABLE, "<gold>Crafting Grid"));
-        inventory.setItem(22, createCompactInfoLabel("crafting-table.labels.arrow", Material.ARROW, "<yellow>→"));
-        inventory.setItem(24, createCompactInfoLabel("crafting-table.labels.result", Material.KNOWLEDGE_BOOK, "<gold>Result"));
+        inventory.setItem(13, createLabel("crafting-table.labels.grid", Material.CRAFTING_TABLE, "<gold>Crafting Grid"));
+        inventory.setItem(22, createLabel("crafting-table.labels.arrow", Material.ARROW, "<yellow>→"));
+        inventory.setItem(24, createLabel("crafting-table.labels.result", Material.KNOWLEDGE_BOOK, "<gold>Result"));
 
-        inventory.setItem(HOME_SLOT, createCompactInfoLabel("crafting-table.labels.home", Material.OAK_DOOR, "<gold>Home"));
-        inventory.setItem(RECIPES_SLOT, createCompactInfoLabel("crafting-table.labels.recipes", Material.KNOWLEDGE_BOOK, "<yellow>Recipes"));
+        inventory.setItem(HOME_SLOT, createLabel("crafting-table.labels.home", Material.OAK_DOOR, "<gold>Home"));
+        inventory.setItem(RECIPES_SLOT, createLabel("crafting-table.labels.recipes", Material.KNOWLEDGE_BOOK, "<yellow>Recipes"));
 
         updateCraftButtons();
     }
 
-    private ItemStack createInfoLabel(Material mat, String name) {
-        ItemStack item = new ItemStack(mat);
+    private ItemStack createLabel(String path, Material fallbackMaterial, String fallbackName) {
+        ItemStack item = new ItemStack(GuiConfig.material(path + ".material", fallbackMaterial));
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(TextUtil.parse(name));
+            meta.displayName(TextUtil.parse(GuiConfig.text(path + ".name", fallbackName)));
             item.setItemMeta(meta);
         }
         return item;
-    }
-
-    private ItemStack createCompactInfoLabel(String path, Material fallbackMaterial, String fallbackName) {
-        return createInfoLabel(
-                GuiConfig.material(path + ".material", fallbackMaterial),
-                GuiConfig.text(path + ".name", fallbackName)
-        );
     }
 
     private void updateCraftButtons() {
@@ -117,24 +106,32 @@ public class CraftingGui implements InventoryHolder {
         int maxU = maxCraftable(matrix);
         boolean hasRecipe = maxU > 0;
 
-        inventory.setItem(CRAFT_1_SLOT, createAmountButton(Material.LIME_DYE, "1",
-                List.of("<gray>Craft 1 unit", selected == 1 ? "<green>✔ Selected" : "<yellow>Click to select")));
-        inventory.setItem(CRAFT_8_SLOT, createAmountButton(Material.LIGHT_BLUE_DYE, "8",
-                List.of("<gray>Craft 8 units", selected == 8 ? "<green>✔ Selected" : "<yellow>Click to select")));
-        inventory.setItem(CRAFT_64_SLOT, createAmountButton(Material.CYAN_DYE, "64",
-                List.of("<gray>Craft 64 units", selected == 64 ? "<green>✔ Selected" : "<yellow>Click to select")));
-        inventory.setItem(CRAFT_MAX_SLOT, createAmountButton(Material.MAGENTA_DYE, "MAX",
-                List.of(
-                        hasRecipe ? "<gray>Craft as many as possible: x" + maxU : "<gray>No crafting recipe available",
-                        selected == 999 ? "<green>✔ Selected" : "<yellow>Click to select"
-                )));
+        inventory.setItem(CRAFT_1_SLOT, createAmountButton("crafting-table.buttons.craft-1", "1",
+                "<gray>Craft 1 unit", selected == 1));
+        inventory.setItem(CRAFT_8_SLOT, createAmountButton("crafting-table.buttons.craft-8", "8",
+                "<gray>Craft 8 units", selected == 8));
+        inventory.setItem(CRAFT_64_SLOT, createAmountButton("crafting-table.buttons.craft-64", "64",
+                "<gray>Craft 64 units", selected == 64));
+        inventory.setItem(CRAFT_MAX_SLOT, createAmountButton("crafting-table.buttons.craft-max", "MAX",
+                hasRecipe
+                        ? GuiConfig.text("crafting-table.buttons.max-with-recipe", "<gray>Craft as many as possible: x{count}", Map.of("count", String.valueOf(maxU)))
+                        : GuiConfig.text("crafting-table.buttons.max-no-recipe", "<gray>No crafting recipe available"),
+                selected == 999));
     }
 
-    private ItemStack createAmountButton(Material mat, String label, List<String> lore) {
+    private ItemStack createAmountButton(String path, String label, String lorePrefix, boolean selected) {
+        Material mat = GuiConfig.material(path + ".material", Material.LIME_DYE);
+        String name = GuiConfig.text(path + ".name", "<gold><bold>Craft x" + label + "</bold>");
+        String suffix = selected
+                ? GuiConfig.text("crafting-table.buttons.selected", "<green>✔ Selected")
+                : GuiConfig.text("crafting-table.buttons.click", "<yellow>Click to select");
+        List<String> lore = GuiConfig.lore(path + ".lore", List.of(lorePrefix));
+        lore.add(suffix);
+
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(TextUtil.parse("<gold><bold>Craft x" + label + "</bold>"));
+            meta.displayName(TextUtil.parse(name));
             meta.lore(lore.stream().map(TextUtil::parse).toList());
             item.setItemMeta(meta);
         }
@@ -175,8 +172,8 @@ public class CraftingGui implements InventoryHolder {
             if (pm != null) {
                 List<net.kyori.adventure.text.Component> lore = pm.lore() != null ? new ArrayList<>(pm.lore()) : new ArrayList<>();
                 lore.add(net.kyori.adventure.text.Component.empty());
-                lore.add(TextUtil.parse("<yellow>Click to craft x" + showAmt));
-                lore.add(TextUtil.parse("<gray>Max units craftable: " + maxU));
+                lore.add(TextUtil.parse(GuiConfig.text("crafting-table.result.click-to-craft", "<yellow>Click to craft x{amount}", Map.of("amount", String.valueOf(showAmt)))));
+                lore.add(TextUtil.parse(GuiConfig.text("crafting-table.result.max-units", "<gray>Max units craftable: {max}", Map.of("max", String.valueOf(maxU)))));
                 pm.lore(lore);
                 preview.setItemMeta(pm);
             }

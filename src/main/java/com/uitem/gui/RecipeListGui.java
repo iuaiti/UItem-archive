@@ -57,12 +57,14 @@ public class RecipeListGui extends AbstractGui {
     protected void setup() {
         fillBorder(6);
 
-        setItem(4, createItem(Material.KNOWLEDGE_BOOK,
-                "<gradient:#ff6b6b:#ffd93d><bold>Recipe List</bold></gradient>",
-                List.of(
-                        filterLabel(),
+        Map<String, String> fltr = Map.of("filter", filterLabel());
+        setItem(4, createItem(
+                GuiConfig.material("recipe-list.header.material", Material.KNOWLEDGE_BOOK),
+                GuiConfig.text("recipe-list.header.name", "<gradient:#ff6b6b:#ffd93d><bold>Recipe List</bold></gradient>", fltr),
+                GuiConfig.lore("recipe-list.header.lore", List.of(
+                        "{filter}",
                         "<gray>Click a recipe to view details"
-                )));
+                ), fltr)));
 
         List<Map.Entry<String, UItemRecipe>> list = filteredRecipes();
 
@@ -80,7 +82,9 @@ public class RecipeListGui extends AbstractGui {
             UItemRecipe recipe = entry.getValue();
             UItemData data = plugin.getItemManager().getItem(id);
 
-            String type = recipe.isShaped() ? "Shaped" : "Shapeless";
+            String type = recipe.isShaped()
+                    ? GuiConfig.text("recipe-detail.type-shaped", "Shaped 3x3")
+                    : GuiConfig.text("recipe-detail.type-shapeless", "Shapeless");
             ItemStack item;
             if (data != null) {
                 boolean showId = player.isOp() || player.hasPermission("uitem.id");
@@ -90,14 +94,16 @@ public class RecipeListGui extends AbstractGui {
                     var lore = meta.lore();
                     if (lore == null) lore = new ArrayList<>();
                     lore.add(TextUtil.parse(""));
-                    lore.add(TextUtil.parse("<gold>" + type + " <dark_gray>| <gold>x" + recipe.getResultAmount()));
-                    lore.add(TextUtil.parse("<yellow>Click to view the recipe"));
+                    lore.add(TextUtil.parse(GuiConfig.text("recipe-list.recipe.type-line", "<gold>{type} <dark_gray>| <gold>x{amount}", Map.of("type", type, "amount", String.valueOf(recipe.getResultAmount())))));
+                    lore.add(TextUtil.parse(GuiConfig.text("recipe-list.recipe.click-view", "<yellow>Click to view the recipe")));
                     meta.lore(lore);
                     item.setItemMeta(meta);
                 }
             } else {
-                item = createItem(Material.BARRIER, "<red>" + id,
-                        List.of("<gray>Item deleted"));
+                item = createItem(
+                        GuiConfig.material("recipe-list.deleted.material", Material.BARRIER),
+                        GuiConfig.text("recipe-list.deleted.name", "<red>{id}", Map.of("id", id)),
+                        GuiConfig.lore("recipe-list.deleted.lore", List.of("<gray>Item deleted")));
             }
 
             String fid = id;
@@ -107,9 +113,10 @@ public class RecipeListGui extends AbstractGui {
             });
         }
 
-        setItem(49, createItem(Material.CRAFTING_TABLE,
-                "<green><bold>Craft</bold>",
-                List.of("<gray>Open crafting table")), ev -> {
+        setItem(49, createItem(
+                GuiConfig.material("recipe-list.craft-button.material", Material.CRAFTING_TABLE),
+                GuiConfig.text("recipe-list.craft-button.name", "<green><bold>Craft</bold>"),
+                GuiConfig.lore("recipe-list.craft-button.lore", List.of("<gray>Open crafting table"))), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new CraftingGui(plugin, player).open();
         });
@@ -141,16 +148,22 @@ public class RecipeListGui extends AbstractGui {
     }
 
     private String filterLabel() {
-        if (categoryFilter == null && subCategoryFilter == null) return "<gray>Filter: <white>All recipes";
-        if (subCategoryFilter != null) return "<gray>Filter: <white>" + prettify(categoryFilter) + " / " + prettify(subCategoryFilter);
-        return "<gray>Filter: <white>" + prettify(categoryFilter);
+        String cat = prettify(categoryFilter);
+        String sub = prettify(subCategoryFilter);
+        if (categoryFilter == null && subCategoryFilter == null)
+            return GuiConfig.text("recipe-list.filter.all", "<gray>Filter: <white>All recipes");
+        if (subCategoryFilter != null)
+            return GuiConfig.text("recipe-list.filter.subcategory", "<gray>Filter: <white>{category} / {sub}", Map.of("category", cat, "sub", sub));
+        return GuiConfig.text("recipe-list.filter.category", "<gray>Filter: <white>{category}", Map.of("category", cat));
     }
 
     private static String title(String category, String subCategory) {
         String cat = normalize(category);
         String sub = normalize(subCategory);
-        if (cat == null && sub == null) return "<gradient:#ff6b6b:#ffd93d>Recipe List</gradient>";
-        return "<gradient:#ff6b6b:#ffd93d>Recipes: </gradient><white>" + prettify(cat) + (sub != null ? " / " + prettify(sub) : "");
+        if (cat == null && sub == null)
+            return GuiConfig.text("recipe-list.title", "<gradient:#ff6b6b:#ffd93d>Recipe List</gradient>");
+        return GuiConfig.text("recipe-list.title-filtered", "<gradient:#ff6b6b:#ffd93d>Recipes: </gradient><white>{category}{sub}",
+                Map.of("category", prettify(category), "sub", sub != null ? " / " + prettify(sub) : ""));
     }
 
     private static String normalize(String raw) {

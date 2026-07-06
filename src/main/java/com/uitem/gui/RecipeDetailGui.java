@@ -32,7 +32,7 @@ public class RecipeDetailGui extends AbstractGui {
     }
 
     public RecipeDetailGui(UItemPlugin plugin, Player player, String itemId, String backCategory, String backSubCategory) {
-        super(plugin, player, 45, "<gold>Recipe: <white>" + itemId);
+        super(plugin, player, 45, GuiConfig.text("recipe-detail.title", "<gold>Recipe: <white>{id}", Map.of("id", itemId)));
         this.itemId = itemId;
         this.backCategory = backCategory;
         this.backSubCategory = backSubCategory;
@@ -56,15 +56,23 @@ public class RecipeDetailGui extends AbstractGui {
         UItemData data = plugin.getItemManager().getItem(itemId);
 
         if (recipe == null || data == null) {
-            setItem(22, createItem(Material.BARRIER, "<red>Not found"));
+            setItem(22, createItem(
+                    GuiConfig.material("recipe-detail.not-found.material", Material.BARRIER),
+                    GuiConfig.text("recipe-detail.not-found.name", "<red>Not found")));
             setItem(SLOT_BACK, createBackButton(), ev -> new RecipeListGui(plugin, player).open());
             return;
         }
 
-        setItem(4, createItem(Material.KNOWLEDGE_BOOK,
-                "<gold><bold>" + itemId + "</bold>",
-                List.of("<gray>" + (recipe.isShaped() ? "Shaped 3x3" : "Shapeless"),
-                        "<gray>Output: x" + recipe.getResultAmount())));
+        String type = recipe.isShaped()
+                ? GuiConfig.text("recipe-detail.type-shaped", "Shaped 3x3")
+                : GuiConfig.text("recipe-detail.type-shapeless", "Shapeless");
+        setItem(4, createItem(
+                GuiConfig.material("recipe-detail.header.material", Material.KNOWLEDGE_BOOK),
+                GuiConfig.text("recipe-detail.header.name", "<gold><bold>{id}</bold>", Map.of("id", itemId)),
+                GuiConfig.lore("recipe-detail.header.lore", List.of(
+                        "<gray>{type}",
+                        "<gray>Output: x{amount}"
+                ), Map.of("type", type, "amount", String.valueOf(recipe.getResultAmount())))));
 
         if (recipe.isShaped()) {
             ItemStack[] matrix = recipe.toMatrix();
@@ -88,8 +96,9 @@ public class RecipeDetailGui extends AbstractGui {
             }
         }
 
-        setItem(SLOT_ARROW1, createItem(Material.ARROW, "<yellow>→"));
-        setItem(SLOT_ARROW2, createItem(Material.ARROW, "<yellow>→"));
+        String arrowName = GuiConfig.text("recipe-detail.arrow", "<yellow>→");
+        setItem(SLOT_ARROW1, createItem(Material.ARROW, arrowName));
+        setItem(SLOT_ARROW2, createItem(Material.ARROW, arrowName));
 
         boolean showId = player.isOp() || player.hasPermission("uitem.id");
         ItemStack result = plugin.getItemManager().buildPreviewItemStack(data, showId);
@@ -101,9 +110,10 @@ public class RecipeDetailGui extends AbstractGui {
             new RecipeListGui(plugin, player, 0, backCategory, backSubCategory).open();
         });
 
-        setItem(SLOT_CRAFT, createItem(Material.CRAFTING_TABLE,
-                "<green><bold>Craft</bold>",
-                List.of("<gray>Open crafting table")), ev -> {
+        setItem(SLOT_CRAFT, createItem(
+                GuiConfig.material("recipe-detail.craft-button.material", Material.CRAFTING_TABLE),
+                GuiConfig.text("recipe-detail.craft-button.name", "<green><bold>Craft</bold>"),
+                GuiConfig.lore("recipe-detail.craft-button.lore", List.of("<gray>Open crafting table"))), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new CraftingGui(plugin, player).open();
         });

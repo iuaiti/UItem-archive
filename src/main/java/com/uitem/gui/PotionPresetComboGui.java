@@ -53,9 +53,9 @@ public class PotionPresetComboGui extends AbstractGui {
         int slot = 10;
         int slotsInRow = 0;
         for (int i = startIdx; i < endIdx; i++) {
-            if (slotsInRow == 8) {
+            if (slotsInRow == 7) {
                 slotsInRow = 0;
-                slot += 3;
+                slot += 2; // skip right border (slot 17→19), left border (slot 18→20)
             }
 
             final PotionEffectHelper.PotionPreset preset = allPresets.get(i);

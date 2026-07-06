@@ -15,12 +15,14 @@ import java.util.Map;
 public class CraftingHomeGui extends AbstractGui {
 
     private static final String[] CATEGORIES = {"WEAPON", "ARMOR", "TOOL", "RANGED", "MAGIC", "CONSUMABLE", "MATERIAL", "MISC"};
-    private static final int[] CATEGORY_SLOTS = {10, 11, 12, 13, 14, 15, 16, 19};
+    private static final int[] CATEGORY_SLOTS = {10, 11, 12, 13, 19, 20, 21, 22};
     private static final String[] WEAPON_TYPES = {"SWORD", "AXE", "DAGGER", "SPEAR", "HAMMER", "STAFF"};
-    private static final int[] WEAPON_SLOTS = {29, 30, 31, 32, 33, 34};
+    private static final int[] WEAPON_SLOTS = {28, 29, 30, 31, 32, 33};
+    private static final int SLOT_RECIPES = 37;
+    private static final int SLOT_CRAFT = 40;
 
     public CraftingHomeGui(UItemPlugin plugin, Player player) {
-        super(plugin, player, 45, GuiConfig.text("crafting-home.title", "<gradient:#ff6b6b:#ffd93d><bold>UItem Crafting</bold></gradient>"));
+        super(plugin, player, 54, GuiConfig.text("crafting-home.title", "<gradient:#ff6b6b:#ffd93d><bold>UItem Crafting</bold></gradient>"));
     }
 
     @Override
@@ -34,35 +36,41 @@ public class CraftingHomeGui extends AbstractGui {
 
     @Override
     protected void setup() {
-        fillBorder(5);
+        fillBorder(6);
 
         int recipeCount = plugin.getRecipeManager().getAllRecipes().size();
         Map<String, String> placeholders = Map.of("recipes", String.valueOf(recipeCount));
         setItem(4, createItem(
                 GuiConfig.material("crafting-home.header.material", Material.CRAFTING_TABLE),
-                GuiConfig.text("crafting-home.header.name", "<gradient:#ff6b6b:#ffd93d><bold>Custom Crafting Home</bold></gradient>", placeholders),
+                GuiConfig.text("crafting-home.header.name", "<gradient:#ff6b6b:#ffd93d><bold>Custom Crafting Hub</bold></gradient>", placeholders),
                 GuiConfig.lore("crafting-home.header.lore", List.of(
                         "<gray>Recipes loaded: <white>{recipes}",
-                        "<gray>Create custom UItems from recipes",
-                        "<dark_gray>/crafting list, /crafting view <id>, /crafting craft"
+                        "<gray>Click a category or weapon type below"
                 ), placeholders)));
 
-        setItem(20, configuredItem("crafting-home.buttons.view-recipes", Material.KNOWLEDGE_BOOK,
+        if (recipeCount == 0) {
+            setItem(22, configuredItem("crafting-home.buttons.no-recipes", Material.BARRIER,
+                    "<red>No Recipes Loaded", List.of("<gray>Create recipes in the editor or recipes/*.yml")));
+            return;
+        }
+
+        renderCategoryButtons();
+
+        setItem(SLOT_RECIPES, configuredItem("crafting-home.buttons.view-recipes", Material.KNOWLEDGE_BOOK,
                 "<gold><bold>All Recipes</bold>", List.of(
                         "<gray>Browse every UItem recipe",
                         "<gray>Click an item to inspect its ingredients",
                         "",
-                        "<yellow>Click to open all recipes"
+                        "<yellow>Click to open"
                 )), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             new RecipeListGui(plugin, player).openAsChildOf(this);
         });
 
-        setItem(22, configuredItem("crafting-home.buttons.crafting-table", Material.CRAFTING_TABLE,
+        setItem(SLOT_CRAFT, configuredItem("crafting-home.buttons.crafting-table", Material.CRAFTING_TABLE,
                 "<green><bold>Open Crafting Table</bold>", List.of(
                         "<gray>Place materials or UItems in the 3x3 grid",
                         "<gray>The result preview appears on the right",
-                        "<gray>Select x1, x8, x64 or MAX before crafting",
                         "",
                         "<yellow>Click to craft"
                 )), ev -> {
@@ -70,20 +78,6 @@ public class CraftingHomeGui extends AbstractGui {
             new CraftingGui(plugin, player).open();
         });
 
-        setItem(24, configuredItem("crafting-home.buttons.how-it-works", Material.WRITABLE_BOOK,
-                "<aqua><bold>Categories</bold>", List.of(
-                        "<gray>Use the top row to browse by item category",
-                        "<gray>Use the bottom row to browse weapon types",
-                        "<gray>Categories come from each UItem's editor data"
-                )));
-
-        if (recipeCount == 0) {
-            setItem(31, configuredItem("crafting-home.buttons.no-recipes", Material.BARRIER,
-                    "<red>No Recipes Loaded", List.of("<gray>Create recipes in the editor or recipes/*.yml")));
-            return;
-        }
-
-        renderCategoryButtons();
         renderWeaponTypeButtons();
     }
 
@@ -103,9 +97,6 @@ public class CraftingHomeGui extends AbstractGui {
     }
 
     private void renderWeaponTypeButtons() {
-        setItem(27, configuredItem("crafting-home.buttons.weapon-types-header", Material.DIAMOND_SWORD,
-                "<gold><bold>Weapon Types</bold>", List.of("<gray>Browse craftable weapons by type")));
-
         for (int i = 0; i < WEAPON_TYPES.length; i++) {
             String type = WEAPON_TYPES[i];
             int count = countRecipes("WEAPON", type);
