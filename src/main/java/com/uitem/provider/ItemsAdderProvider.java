@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -75,7 +76,6 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
 
     @SuppressWarnings("unchecked")
     private Function<Void, List<String>> buildListIdsFn() {
-        // Try multiple method names that ItemsAdder API might expose
         String[] candidates = {"getNamespacedIds", "getAllItems", "getItems", "getItemIds"};
         for (String name : candidates) {
             Method m = tryMethodOpt(customStackClass, name).orElse(null);
@@ -83,13 +83,17 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
                 return buildListFn(m);
             }
         }
-        // Fallback: scan ItemsAdder content directory
         Function<Void, List<String>> fileFallback = buildFileFallback();
-        if (fileFallback != null) return fileFallback;
+        if (fileFallback != null) {
+            Bukkit.getLogger().info("[UItem] ItemsAdder listIds: using file fallback (directory scan)");
+            return fileFallback;
+        }
+        Bukkit.getLogger().warning("[UItem] ItemsAdder listIds: no API method found and no files detected. Item list will be empty.");
         return v -> List.of();
     }
 
     private Function<Void, List<String>> buildListFn(Method m) {
+        final String methodName = m.getName();
         return v -> {
             try {
                 Object result = m.invoke(null);
@@ -97,20 +101,26 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
                 Set<String> ids = new HashSet<>();
                 if (result instanceof Map<?, ?> map) {
                     for (Object k : map.keySet()) {
-                        if (k != null) ids.add(k.toString());
+                        if (k != null) {
+                            String s = k.toString();
+                            if (!s.isBlank()) ids.add(s);
+                        }
                     }
                 } else if (result instanceof Collection<?> col) {
                     for (Object o : col) {
                         if (o != null) {
-                            ids.add(o.toString());
+                            String s = o.toString();
+                            if (!s.isBlank()) ids.add(s);
                         }
                     }
                 }
                 List<String> out = new ArrayList<>(ids);
                 out.removeIf(String::isBlank);
                 Collections.sort(out);
+                Bukkit.getLogger().info("[UItem] ItemsAdder " + methodName + " → " + out.size() + " items");
                 return out;
             } catch (Exception e) {
+                Bukkit.getLogger().warning("[UItem] ItemsAdder " + methodName + " failed: " + e.getMessage());
                 return List.of();
             }
         };
@@ -264,17 +274,42 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
      * ({@code ruby_sword}), we retry with the default {@code itemsadder:} prefix so that
      * the correct texture/model is loaded instead of falling back to vanilla.
      */
-    private Object resolveCustomStack(String id) throws Exception {
-        Object cs = getInstance.invoke(null, id);
+    private Object resolveCustomStack(String storeId) throws Exception {
+        String iaNativeId = stripProviderPrefix(storeId);
+        if (iaNativeId == null || iaNativeId.isBlank()) return null;
+
+        Object cs = getInstance.invoke(null, iaNativeId);
         if (cs != null) return cs;
-        if (id.indexOf(':') < 0) {
-            cs = getInstance.invoke(null, "itemsadder:" + id);
+
+        if (iaNativeId.indexOf(':') < 0) {
+            cs = getInstance.invoke(null, "itemsadder:" + iaNativeId);
             if (cs != null) return cs;
-            // Some configs use "ia:" as the namespace alias.
-            cs = getInstance.invoke(null, "ia:" + id);
+            cs = getInstance.invoke(null, "ia:" + iaNativeId);
             if (cs != null) return cs;
         }
         return null;
+    }
+
+    /**
+     * Strip our own provider prefix ("ia" or "itemsadder") from a storage id
+     * so that {@code CustomStack.getInstance} receives only the IA-native
+     * namespace:id pair. Examples:
+     * <ul>
+     *   <li>{@code ia:myitem:rubysword} → {@code myitem:rubysword}
+     *   <li>{@code ia:itemsadder:rubysword} → {@code itemsadder:rubysword}
+     *   <li>{@code ia:rubysword} → {@code rubysword} (legacy single-segment)
+     *   <li>{@code itemsadder:rubysword} → {@code rubysword}
+     * </ul>
+     */
+    private String stripProviderPrefix(String storeId) {
+        if (storeId == null || storeId.isBlank()) return null;
+        int idx = storeId.indexOf(':');
+        if (idx < 0) return storeId;
+        String prefix = storeId.substring(0, idx).toLowerCase(Locale.ROOT);
+        if (prefix.equals("ia") || prefix.equals("itemsadder")) {
+            return storeId.substring(idx + 1);
+        }
+        return storeId;
     }
 
     public String extractLocalId(ItemStack stack) {
