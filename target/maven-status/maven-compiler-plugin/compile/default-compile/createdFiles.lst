@@ -6,7 +6,10 @@ com/uitem/skill/SkillTrigger.class
 com/uitem/recipe/UItemRecipe$Ingredient.class
 com/uitem/recipe/RecipeManager.class
 com/uitem/gui/AbstractGui.class
+com/uitem/gui/CraftingHomeGui.class
+com/uitem/gui/GuiStack.class
 com/uitem/skill/SkillExecutor.class
+com/uitem/gui/ItemEditorGui.class
 com/uitem/skill/PotionEffectHelper$PotionEffectCombo.class
 com/uitem/listener/UItemSkillListener.class
 com/uitem/gui/BulkGiveGui.class
@@ -20,6 +23,7 @@ com/uitem/api/events/UItemPickupEvent.class
 com/uitem/skill/PotionEffectHelper$PotionPreset.class
 com/uitem/storage/StorageManager$PendingSave.class
 com/uitem/provider/OraxenProvider.class
+com/uitem/gui/EnchantmentGui.class
 com/uitem/skill/CooldownManager.class
 com/uitem/skill/PotionAuraManager.class
 com/uitem/rarity/RarityConfig$RarityEntry.class
@@ -29,6 +33,7 @@ com/uitem/util/TextUtil.class
 com/uitem/api/events/UItemEquipEvent.class
 com/uitem/api/events/UItemGiveEvent.class
 com/uitem/gui/CategoryPickerGui.class
+com/uitem/gui/CraftingGui.class
 com/uitem/gui/SkillEditorGui.class
 com/uitem/gui/PotionPresetComboGui.class
 com/uitem/skill/SkillActionBar$CooldownEntry.class
@@ -40,8 +45,11 @@ com/uitem/api/events/UItemInteractEvent.class
 com/uitem/listener/UItemActionListener$1.class
 com/uitem/skill/SkillActionBar.class
 com/uitem/skill/SkillCondition$ConditionType.class
+com/uitem/gui/FlagGui$1.class
+com/uitem/gui/MaterialPickerGui.class
 com/uitem/command/CraftingCommand.class
 com/uitem/command/UItemCommand.class
+com/uitem/gui/CreateWizardGui.class
 com/uitem/gui/AttributePresetGui$AttrPreset.class
 com/uitem/util/PotionEffectRegistry.class
 com/uitem/rarity/RarityConfig.class
@@ -49,11 +57,15 @@ com/uitem/api/UItemAPI.class
 com/uitem/gui/RecipeEditorGui.class
 com/uitem/gui/SkillEditorGui$1.class
 com/uitem/listener/UItemSkillListener$1.class
+com/uitem/gui/EffectEditorGui.class
+com/uitem/gui/CreateWizardGui$WizardState.class
 com/uitem/UItemPlugin$1.class
 com/uitem/provider/ItemProvider.class
 com/uitem/skill/SkillExecutor$1.class
+com/uitem/gui/LoreEditorGui.class
 com/uitem/chat/ChatInputManager.class
 com/uitem/api/events/UItemCancellableEvent.class
+com/uitem/gui/FlagGui.class
 com/uitem/skill/Skill.class
 com/uitem/gui/RecipeDetailGui.class
 com/uitem/UItemData.class
@@ -64,6 +76,7 @@ com/uitem/provider/ProviderManager$ProviderFactory.class
 com/uitem/provider/ProviderManager.class
 com/uitem/gui/BrowseableItemPickerGui.class
 com/uitem/util/SchedulerUtil.class
+com/uitem/gui/ItemEditorGui$1.class
 com/uitem/gui/PotionPresetGui.class
 com/uitem/gui/RarityEditorGui.class
 com/uitem/search/SearchManager.class
@@ -72,6 +85,7 @@ com/uitem/gui/SkillListGui$1.class
 com/uitem/gui/ProviderPickerGui.class
 com/uitem/skill/SkillCondition.class
 com/uitem/UItemData$AttributeData.class
+com/uitem/gui/GuiConfig.class
 com/uitem/gui/SkillListGui.class
 com/uitem/storage/StorageManager$FileLoadResult.class
 com/uitem/gui/ConfirmDeleteGui.class
@@ -83,4 +97,6 @@ com/uitem/storage/StorageManager.class
 com/uitem/provider/BrowseableProvider.class
 com/uitem/UItemPlugin.class
 com/uitem/gui/SetupItemStepGui.class
+com/uitem/gui/ItemListGui.class
+com/uitem/gui/ParticlePickerGui.class
 com/uitem/skill/SkillExecutor$2.class
