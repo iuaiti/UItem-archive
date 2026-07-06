@@ -79,7 +79,6 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
     private Function<Void, List<String>> buildListIdsFn() {
         Function<Void, List<String>> fileFallback = buildFileFallback();
         if (fileFallback != null) {
-            Bukkit.getLogger().info("[UItem] ItemsAdder listIds: using file fallback (directory scan)");
             return v -> {
                 List<String> raw = fileFallback.apply(null);
                 List<String> out = new ArrayList<>();
@@ -90,14 +89,9 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
                         // skip unresolvable
                     }
                 }
-                int removed = raw.size() - out.size();
-                if (removed > 0) {
-                    Bukkit.getLogger().info("[UItem] IA file fallback: filtered " + removed + " unresolvable items, kept " + out.size());
-                }
                 return out;
             };
         }
-        Bukkit.getLogger().warning("[UItem] ItemsAdder listIds: no files detected. Item list will be empty.");
         return v -> List.of();
     }
 
@@ -126,10 +120,8 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
                 List<String> out = new ArrayList<>(ids);
                 out.removeIf(String::isBlank);
                 Collections.sort(out);
-                Bukkit.getLogger().info("[UItem] ItemsAdder " + methodName + " → " + out.size() + " items");
                 return out;
             } catch (Exception e) {
-                Bukkit.getLogger().warning("[UItem] ItemsAdder " + methodName + " failed: " + e.getMessage());
                 return List.of();
             }
         };
@@ -295,24 +287,14 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
         if (iaNativeId == null || iaNativeId.isBlank()) return null;
 
         Object cs = getInstance.invoke(null, iaNativeId);
-        if (cs != null) {
-            Bukkit.getLogger().info("[UItem] IA resolve OK: \"" + storeId + "\" → \"" + iaNativeId + "\"");
-            return cs;
-        }
+        if (cs != null) return cs;
 
         if (iaNativeId.indexOf(':') < 0) {
             cs = getInstance.invoke(null, "itemsadder:" + iaNativeId);
-            if (cs != null) {
-                Bukkit.getLogger().info("[UItem] IA resolve OK (retry itemsadder:): \"" + storeId + "\"");
-                return cs;
-            }
+            if (cs != null) return cs;
             cs = getInstance.invoke(null, "ia:" + iaNativeId);
-            if (cs != null) {
-                Bukkit.getLogger().info("[UItem] IA resolve OK (retry ia:): \"" + storeId + "\"");
-                return cs;
-            }
+            if (cs != null) return cs;
         }
-        Bukkit.getLogger().warning("[UItem] IA resolve FAIL: \"" + storeId + "\" → \"" + iaNativeId + "\"");
         return null;
     }
 
@@ -364,19 +346,14 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
     @Override
     public List<String> listIds() {
         try {
-            List<String> result = listIdsFn.apply(null);
-            int show = Math.min(result.size(), 10);
-            Bukkit.getLogger().info("[UItem] IA listIds → " + result.size() + " items, first " + show + ": " + result.subList(0, show));
-            return result;
+            return listIdsFn.apply(null);
         } catch (Exception e) {
-            Bukkit.getLogger().warning("[UItem] IA listIds failed: " + e.getMessage());
             return List.of();
         }
     }
 
     @Override
     public ItemStack buildPreview(String id) {
-        Bukkit.getLogger().info("[UItem] IA buildPreview(\"" + id + "\")");
         return getItem(id);
     }
 }

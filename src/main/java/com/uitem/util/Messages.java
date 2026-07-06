@@ -325,12 +325,6 @@ public final class Messages {
     public static String skillListDesc() { return t("skill-list-desc", "<gray>Native UItem skill system (no ExecutableItems needed)"); }
     public static String skillListAdd() { return t("skill-list-add", "<green><bold>+ ADD NEW SKILL</bold>"); }
     public static String skillListAddDesc() { return t("skill-list-add-desc", "<gray>Create active or passive skill"); }
-    public static String skillListPresetFireball() { return t("skill-preset-fireball", "<red><bold>Preset: Fireball</bold>"); }
-    public static String skillListPresetLifesteal() { return t("skill-preset-lifesteal", "<green><bold>Preset: Lifesteal</bold>"); }
-    public static String skillListPresetRegen() { return t("skill-preset-regen", "<aqua><bold>Preset: Regen Aura</bold>"); }
-    public static String skillListPresetFireballDesc() { return t("skill-preset-fireball-desc", "<gray>Right Click \u2192 shoot Small Fireball"); }
-    public static String skillListPresetLifestealDesc() { return t("skill-preset-lifesteal-desc", "<gray>On Hit \u2192 heal with chance"); }
-    public static String skillListPresetRegenDesc() { return t("skill-preset-regen-desc", "<gray>While Holding \u2192 periodic heal"); }
     public static String skillListClickEdit() { return t("skill-list-click-edit", "<yellow>Left click: Edit"); }
     public static String skillListClickDelete() { return t("skill-list-click-delete", "<red>Right click: Delete"); }
     public static String skillListFolia() { return t("skill-list-folia", "<yellow>Easy & Stable • Folia-safe"); }
@@ -369,10 +363,8 @@ public final class Messages {
     public static String skillEditorCondChance75Desc() { return t("skill-editor-cond-chance-75-desc", "<gray>Click to add 75% chance"); }
     public static String skillEditorCondChance50() { return t("skill-editor-cond-chance-50", "<red>Cond: Chance 50%"); }
     public static String skillEditorCondChance50Desc() { return t("skill-editor-cond-chance-50-desc", "<gray>Click to add 50% chance"); }
-    public static String skillEditorPotionPresets() { return t("skill-editor-potion-presets", "<light_purple>⚡ Potion Presets"); }
-    public static String skillEditorPotionPresetsDesc() { return t("skill-editor-potion-presets-desc", "<gray>Click to view the potion list"); }
-    public static String skillEditorPotionCombos() { return t("skill-editor-potion-combos", "<light_purple>🍶 Potion Combos"); }
-    public static String skillEditorPotionCombosDesc() { return t("skill-editor-potion-combos-desc", "<gray>Click to view preset combos"); }
+    public static String skillEditorParticlePicker() { return t("skill-editor-particle-picker", "<gold>✦ Particle Picker"); }
+    public static String skillEditorParticlePickerDesc() { return t("skill-editor-particle-picker-desc", "<gray>Click to browse all particles and configure them"); }
     public static String skillEditorPageNext(int page) { return t("skill-editor-page-next", "<yellow>Page {page} ►", "{page}", String.valueOf(page)); }
     public static String skillEditorPageNextDesc() { return t("skill-editor-page-next-desc", "<gray>Click to view more actions"); }
     public static String skillEditorPageFirst() { return t("skill-editor-page-first", "<yellow>◄ Page 1"); }
@@ -448,8 +440,6 @@ public final class Messages {
     // Feedback messages
     public static String skillAdded(String type) { return t("skill-added", "Added {type}", "{type}", type); }
     public static String skillUpdated(String type) { return t("skill-updated", "Updated {type}", "{type}", type); }
-    public static String skillPresetAdded(String name) { return t("skill-preset-added", "Added preset: {name}", "{name}", name); }
-
     // ==================== Help ====================
     public static String helpTitle() { return t("help-title", "  <gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <gray>\u2014 Ultimate Item Plugin"); }
     public static String helpGive() { return t("help-give", "  <gold>/uitem give <id> [player] [amount] <dark_gray>\u2014 <gray>Give item"); }

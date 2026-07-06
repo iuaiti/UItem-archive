@@ -50,7 +50,6 @@ public class SkillEditorGui extends AbstractGui {
                     SkillAction.ActionType.TITLE,
                     SkillAction.ActionType.PLAY_SOUND,
                     SkillAction.ActionType.SPAWN_PARTICLE,
-                    SkillAction.ActionType.GIVE_POTION,
                     SkillAction.ActionType.HEAL,
                     SkillAction.ActionType.DAMAGE,
                     SkillAction.ActionType.SHOOT_PROJECTILE
@@ -146,7 +145,7 @@ public class SkillEditorGui extends AbstractGui {
                         Messages.skillEditorHeaderActions(skill.getActions().size())
                 )));
 
-        // Trigger: single compact field - left/right click cycles through the trigger list (no chat needed).
+        // === Settings Row (10-16) ===
         List<SkillTrigger> triggerOptions = new ArrayList<>();
         triggerOptions.addAll(ACTIVE_TRIGGERS);
         triggerOptions.addAll(PASSIVE_TRIGGERS);
@@ -154,7 +153,7 @@ public class SkillEditorGui extends AbstractGui {
         int triggerIdx = triggerOptions.indexOf(currentTrigger);
         if (triggerIdx < 0) triggerIdx = 0;
         final int currentTriggerIdx = triggerIdx;
-        setItem(9, createItem(Material.NETHER_STAR, Messages.skillEditorTriggerField(),
+        setItem(10, createItem(Material.NETHER_STAR, Messages.skillEditorTriggerField(),
                 List.of(
                         "<gray>" + Messages.skillLabel("current", "Current") + ": <white>" + currentTrigger.getDisplayName() +
                                 (currentTrigger.isActive() ? " <aqua>(" + Messages.skillLabel("active-state", "Active") + ")" : " <gold>(" + Messages.skillLabel("passive-state", "Passive") + ")"),
@@ -170,27 +169,17 @@ public class SkillEditorGui extends AbstractGui {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
             saveAndRefresh();
         });
-        // Filler for the space freed up by condensing the trigger grid into one field
-        for (int i = 10; i <= 25; i++) {
-            if (i == 17 || i == 18) continue; // already border-filled by fillBorder
-            setItem(i, createItem(Material.GRAY_STAINED_GLASS_PANE, " "));
-        }
 
-        // === Cooldown (row 3) ===
-        setItem(28, createItem(Material.CLOCK, Messages.skillEditorCooldown().replace("%s", String.valueOf(skill.getCooldown())),
+        setItem(11, createItem(Material.CLOCK, Messages.skillEditorCooldown().replace("%s", String.valueOf(skill.getCooldown())),
                 List.of(Messages.skillEditorCooldownHint())), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             plugin.getChatInputManager().requestInput(player, "<yellow>" + Messages.skillPrompt("cooldown", "Enter cooldown (seconds, example 4.5):"), input -> {
-                try {
-                    double cd = Double.parseDouble(input.trim());
-                    skill.setCooldown(cd);
-                } catch (Exception ignored) {}
+                try { double cd = Double.parseDouble(input.trim()); skill.setCooldown(cd); } catch (Exception ignored) {}
                 saveAndReopen();
             }, this::reopen);
         });
 
-        // Chance
-        setItem(29, createItem(Material.GHAST_TEAR, Messages.skillEditorChance().replace("%s", String.valueOf((int) skill.getChance())),
+        setItem(12, createItem(Material.GHAST_TEAR, Messages.skillEditorChance().replace("%s", String.valueOf((int) skill.getChance())),
                 List.of(Messages.skillEditorChanceHint())), ev -> {
             plugin.getChatInputManager().requestInput(player, "<yellow>" + Messages.skillPrompt("chance", "Enter chance (0-100):"), input -> {
                 try { skill.setChance(Double.parseDouble(input.trim())); } catch (Exception ignored) {}
@@ -198,8 +187,7 @@ public class SkillEditorGui extends AbstractGui {
             }, this::reopen);
         });
 
-        // Cancel event
-        setItem(30, createItem(skill.isCancelEvent() ? Material.BARRIER : Material.PAPER,
+        setItem(13, createItem(skill.isCancelEvent() ? Material.BARRIER : Material.PAPER,
                 Messages.skillEditorCancelEvent().replace("%s", skill.isCancelEvent() ? Messages.stateOn() : Messages.stateOff()),
                 List.of(Messages.skillEditorCancelHint(), Messages.skillEditorCancelClick())), ev -> {
             skill.setCancelEvent(!skill.isCancelEvent());
@@ -207,8 +195,7 @@ public class SkillEditorGui extends AbstractGui {
             saveAndRefresh();
         });
 
-        // Rename Skill (overrides the border pane at slot 26 - safe, purely decorative before this)
-        setItem(26, createItem(Material.NAME_TAG, Messages.skillEditorRenameButton(),
+        setItem(14, createItem(Material.NAME_TAG, Messages.skillEditorRenameButton(),
                 List.of(Messages.skillEditorRenameHint())), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             plugin.getChatInputManager().requestInput(player, "<yellow>" + Messages.skillEditorRenamePrompt(), input -> {
@@ -227,6 +214,7 @@ public class SkillEditorGui extends AbstractGui {
                 plugin.getItemManager().registerItem(itemData);
                 plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), itemData);
                 player.sendMessage(TextUtil.success(Messages.skillEditorRenamed(newId)));
+                player.sendActionBar(TextUtil.parse("<green>✎ " + newId));
                 Runnable back = getBackAction();
                 SkillEditorGui newGui = new SkillEditorGui(plugin, player, itemData, skill);
                 if (back != null) newGui.setBackAction(back);
@@ -234,80 +222,59 @@ public class SkillEditorGui extends AbstractGui {
             }, this::reopen);
         });
 
-        // === Actions section header (row 3) ===
-        setItem(31, createItem(Material.WRITABLE_BOOK,
-                Messages.skillEditorActionsHeader(skill.getActions().size()),
-                List.of(Messages.skillEditorActionsHint())));
-
-        // Action list items (row 3, slots 32-33 only to avoid overlap with potion presets at 34-35)
-        List<SkillAction> acts = skill.getActions();
-        int[] actSlots = {32, 33};
-        for (int i = 0; i < Math.min(acts.size(), actSlots.length); i++) {
-            final int idx = i;
-            SkillAction a = acts.get(i);
-            ItemStack icon = buildActionIcon(a);
-            setItem(actSlots[i], icon, ev -> {
-                if (idx >= skill.getActions().size()) return;
-                if (ev.isRightClick()) {
-                    skill.getActions().remove(idx);
-                    player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
-                    saveAndRefresh();
-                } else {
-                    editActionMainValue(a);
-                }
-            });
-        }
-        // Extra actions overflow (row 4, slots 36-43)
-        int[] actSlotsExtra = {36, 37, 38, 39, 40, 41, 42, 43};
-        for (int i = 0; i < Math.min(acts.size() - actSlots.length, actSlotsExtra.length); i++) {
-            final int idx = i + actSlots.length;
-            if (idx >= acts.size()) break;
-            SkillAction a = acts.get(idx);
-            ItemStack icon = buildActionIcon(a);
-            setItem(actSlotsExtra[i], icon, ev -> {
-                if (idx >= skill.getActions().size()) return;
-                if (ev.isRightClick()) {
-                    skill.getActions().remove(idx);
-                    player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
-                    saveAndRefresh();
-                } else {
-                    editActionMainValue(a);
-                }
-            });
-        }
-
-        if (acts.isEmpty()) {
-            setItem(31, createItem(Material.BARRIER, "<gray><italic>" + Messages.skillEditorNoActions() + "</italic>",
-                    List.of(Messages.skillText("use-buttons-below", "<yellow>Use the action buttons below to add actions"))));
-        }
-
-        // Quick condition buttons (top row, outside the trigger grid)
-        setItem(7, createItem(Material.EMERALD, Messages.skillEditorCondChance75(), List.of(Messages.skillEditorCondChance75Desc())), ev -> {
+        setItem(15, createItem(Material.EMERALD, Messages.skillEditorCondChance75(), List.of(Messages.skillEditorCondChance75Desc())), ev -> {
             skill.addCondition(com.uitem.skill.SkillCondition.chance(75));
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             saveAndRefresh();
         });
-        setItem(8, createItem(Material.REDSTONE, Messages.skillEditorCondChance50(), List.of(Messages.skillEditorCondChance50Desc())), ev -> {
+        setItem(16, createItem(Material.REDSTONE, Messages.skillEditorCondChance50(), List.of(Messages.skillEditorCondChance50Desc())), ev -> {
             skill.addCondition(com.uitem.skill.SkillCondition.chance(50));
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             saveAndRefresh();
         });
 
-        // Potion presets (row 3, slots 34-35 - safe from action list)
-        setItem(34, createItem(Material.REDSTONE, Messages.skillEditorPotionPresets(),
-                List.of(Messages.skillEditorPotionPresetsDesc())), ev -> {
+        // === Particle Picker + Actions Row (19-25) ===
+        setItem(19, createItem(Material.FIREWORK_STAR, Messages.skillEditorParticlePicker(),
+                List.of(Messages.skillEditorParticlePickerDesc())), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
-            new PotionPresetGui(plugin, player, itemData, skill).openAsChildOf(this);
-        });
-        setItem(35, createItem(Material.BREWING_STAND, Messages.skillEditorPotionCombos(),
-                List.of(Messages.skillEditorPotionCombosDesc())), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
-            new PotionPresetComboGui(plugin, player, itemData, skill).openAsChildOf(this);
+            new ParticlePickerGui(plugin, player, itemData, skill).openAsChildOf(this);
         });
 
-        // === Action type buttons (paged, slots 44-52, slot 53 = navigation) ===
+        int[] actSlots = {22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
+        List<SkillAction> acts = skill.getActions();
+        if (acts.isEmpty()) {
+            setItem(22, createItem(Material.WRITABLE_BOOK,
+                    Messages.skillEditorActionsHeader(0),
+                    List.of(Messages.skillEditorActionsHint())));
+            setItem(23, createItem(Material.BARRIER, "<gray><italic>" + Messages.skillEditorNoActions() + "</italic>",
+                    List.of(Messages.skillText("use-buttons-below", "<yellow>Use the action buttons below to add actions"))));
+        } else {
+            setItem(22, createItem(Material.WRITABLE_BOOK,
+                    Messages.skillEditorActionsHeader(acts.size()),
+                    List.of(Messages.skillEditorActionsHint())));
+            for (int i = 0; i < Math.min(acts.size(), actSlots.length); i++) {
+                final int idx = i;
+                SkillAction a = acts.get(idx);
+                ItemStack icon = buildActionIcon(a);
+                setItem(actSlots[i], icon, ev -> {
+                    if (idx >= skill.getActions().size()) return;
+                    if (ev.isRightClick()) {
+                        skill.getActions().remove(idx);
+                        player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
+                        saveAndRefresh();
+                    } else {
+                        editActionMainValue(a);
+                    }
+                });
+            }
+        }
+
+        // Back
+        setItem(44, createBackButton(), ev -> goBack());
+
+        // === Action type buttons (46-53) ===
         List<SkillAction.ActionType> pageActions = ACTION_PAGES.get(actionPage);
-        int actionSlot = 44;
+        int actionSlot = 46;
         for (SkillAction.ActionType at : pageActions) {
             if (actionSlot >= 53) break;
             Material mat = ACTION_MATERIALS.getOrDefault(at, Material.PAPER);
@@ -316,7 +283,6 @@ public class SkillEditorGui extends AbstractGui {
         for (int i = actionSlot; i < 53; i++) {
             setItem(i, createItem(Material.GRAY_STAINED_GLASS_PANE, " "));
         }
-        // Page navigation at slot 53
         int totalPages = ACTION_PAGES.size();
         if (actionPage < totalPages - 1) {
             setItem(53, createItem(Material.ARROW, Messages.skillEditorPageNext(actionPage + 2),
@@ -333,9 +299,6 @@ public class SkillEditorGui extends AbstractGui {
                 refresh();
             });
         }
-
-        // Back (slot 27 is safe - passive triggers end at slot 26 for 8 triggers)
-        setItem(27, createBackButton(), ev -> goBack());
     }
 
     private ItemStack buildActionIcon(SkillAction a) {
@@ -398,7 +361,7 @@ public class SkillEditorGui extends AbstractGui {
 
     private void addActionByType(SkillAction.ActionType type) {
         switch (type) {
-            case MESSAGE, ACTION_BAR, TITLE, PLAY_SOUND, GIVE_POTION, SHOOT_PROJECTILE,
+            case MESSAGE, ACTION_BAR, TITLE, PLAY_SOUND, SHOOT_PROJECTILE,
                  CONSOLE_COMMAND, PLAYER_COMMAND, SPAWN_PARTICLE ->
                 addActionWithPrompt(type);
             case HEAL, DAMAGE, FEED, SET_FIRE, CONSUME_DURABILITY ->
@@ -442,11 +405,6 @@ public class SkillEditorGui extends AbstractGui {
                 action.setParam("volume", 1.0);
                 action.setParam("pitch", 1.0);
             }
-            case GIVE_POTION -> {
-                action.setParam("effect", "SPEED");
-                action.setParam("duration", 10);
-                action.setParam("amplifier", 0);
-            }
             case SHOOT_PROJECTILE -> {
                 action.setParam("projectile", "SMALL_FIREBALL");
                 action.setParam("speed", 1.5);
@@ -485,7 +443,11 @@ public class SkillEditorGui extends AbstractGui {
             case SPAWN_PARTICLE -> {
                 action.setParam("particle", "FLAME");
                 action.setParam("count", 10);
-                action.setParam("offset", 0.3);
+                action.setParam("offset-x", 0.3);
+                action.setParam("offset-y", 0.3);
+                action.setParam("offset-z", 0.3);
+                action.setParam("speed", 0.01);
+                action.setParam("interval", 0);
             }
             case BLIND, GLOW, LEVITATE, FREEZE -> {
                 action.setParam("duration", 5);
@@ -505,7 +467,6 @@ public class SkillEditorGui extends AbstractGui {
             case TITLE -> promptForActionParamThenAdd(action, "title", Messages.skillPrompt("title", "Enter Title:"));
             case PLAY_SOUND -> promptForActionParamThenAdd(action, "sound", Messages.skillPrompt("sound", "Enter sound name (e.g. ENTITY_BLAZE_SHOOT):"));
             case SPAWN_PARTICLE -> promptForActionParamThenAdd(action, "particle", Messages.skillPrompt("particle", "Enter particle name (e.g. FLAME, HEART):"));
-            case GIVE_POTION -> promptForActionParamThenAdd(action, "effect", Messages.skillPrompt("potion-effect", "Enter potion effect (e.g. SPEED, STRENGTH):"));
             case SHOOT_PROJECTILE -> promptForActionParamThenAdd(action, "projectile", Messages.skillPrompt("projectile", "Projectile (SMALL_FIREBALL / ARROW / WITHER_SKULL...):"));
             case CONSOLE_COMMAND, PLAYER_COMMAND -> promptForActionParamThenAdd(action, "command", Messages.skillPrompt("command", "Enter command (supports %player% %target%):"));
             case LAUNCH -> promptForActionParamThenAdd(action, "y", Messages.skillPrompt("launch-y", "Enter launch Y power (e.g. 1.5):"));
@@ -612,7 +573,6 @@ public class SkillEditorGui extends AbstractGui {
         switch (action.getType()) {
             case MESSAGE, ACTION_BAR -> promptForActionParam(action, "text", Messages.skillPrompt("edit-content", "Enter new content:"), Messages.skillUpdated("content"));
             case PLAY_SOUND -> promptForActionParam(action, "sound", Messages.skillPrompt("edit-sound", "Enter new sound:"), Messages.skillUpdated("sound"));
-            case GIVE_POTION -> promptForActionParam(action, "effect", Messages.skillPrompt("edit-potion-effect", "Enter new effect (e.g. STRENGTH):"), Messages.skillUpdated("potion"));
             case HEAL, DAMAGE, AREA_DAMAGE -> promptForActionParam(action, "amount", Messages.skillPrompt("edit-value", "Enter new value:"), Messages.skillUpdated("value"));
             case SHOOT_PROJECTILE -> promptForActionParam(action, "projectile", Messages.skillPrompt("edit-projectile", "Enter new projectile type:"), Messages.skillUpdated("projectile"));
             case CONSOLE_COMMAND, PLAYER_COMMAND -> promptForActionParam(action, "command", Messages.skillPrompt("edit-command", "Enter new command:"), Messages.skillUpdated("command"));

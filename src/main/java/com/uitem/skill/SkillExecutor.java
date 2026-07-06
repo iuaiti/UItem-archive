@@ -220,10 +220,29 @@ public final class SkillExecutor {
             case SPAWN_PARTICLE -> {
                 String p = action.getStringParam("particle", "FLAME");
                 int count = action.getIntParam("count", 10);
-                double off = action.getDoubleParam("offset", 0.3);
+                double offX = action.getDoubleParam("offset-x", action.getDoubleParam("offset", 0.3));
+                double offY = action.getDoubleParam("offset-y", action.getDoubleParam("offset", 0.3));
+                double offZ = action.getDoubleParam("offset-z", action.getDoubleParam("offset", 0.3));
+                double speed = action.getDoubleParam("speed", 0.01);
+                int interval = action.getIntParam("interval", 0);
                 try {
                     Particle particle = Particle.valueOf(p.toUpperCase(Locale.ROOT));
-                    world.spawnParticle(particle, loc.clone().add(0, 1, 0), count, off, off, off, 0.01);
+                    Location particleLoc = loc.clone().add(0, 1, 0);
+                    if (interval > 0) {
+                        int[] spawned = {0};
+                        new org.bukkit.scheduler.BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                if (spawned[0]++ >= count || !player.isOnline()) {
+                                    this.cancel();
+                                    return;
+                                }
+                                world.spawnParticle(particle, particleLoc, 1, offX, offY, offZ, speed);
+                            }
+                        }.runTaskTimer(plugin, 0, interval);
+                    } else {
+                        world.spawnParticle(particle, particleLoc, count, offX, offY, offZ, speed);
+                    }
                 } catch (Exception e) {
                     plugin.getLogger().warning("[Skill] SPAWN_PARTICLE: invalid particle '" + p + "'");
                 }

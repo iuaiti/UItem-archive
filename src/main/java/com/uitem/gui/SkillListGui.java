@@ -102,25 +102,6 @@ public class SkillListGui extends AbstractGui {
             new SkillEditorGui(plugin, player, data, newSkill).openAsChildOf(this);
         });
 
-        // Quick add presets
-        setItem(42, createItem(Material.FIRE_CHARGE, Messages.skillListPresetFireball(),
-                List.of(Messages.skillListPresetFireballDesc())), ev -> {
-            addPresetFireball();
-            refresh();
-        });
-
-        setItem(43, createItem(Material.GOLDEN_APPLE, Messages.skillListPresetLifesteal(),
-                List.of(Messages.skillListPresetLifestealDesc())), ev -> {
-            addPresetLifesteal();
-            refresh();
-        });
-
-        setItem(44, createItem(Material.CLOCK, Messages.skillListPresetRegen(),
-                List.of(Messages.skillListPresetRegenDesc())), ev -> {
-            addPresetRegenAura();
-            refresh();
-        });
-
         // Back
         setItem(53, createBackButton(), ev -> goBack());
     }
@@ -148,49 +129,5 @@ public class SkillListGui extends AbstractGui {
         return createItem(mat, "<light_purple>" + sk.getId() + " <dark_gray>→ <white>" + sk.getTrigger().name(), lore);
     }
 
-    private void addPresetFireball() {
-        Skill sk = new Skill("fireball");
-        sk.setDisplayName("<red>Fireball");
-        sk.setTrigger(SkillTrigger.RIGHT_CLICK);
-        sk.setCooldown(6.0);
-        sk.setCancelEvent(true);
-        sk.addAction(com.uitem.skill.SkillAction.playSound("ENTITY_BLAZE_SHOOT", 1.0f, 1.0f));
-        sk.addAction(com.uitem.skill.SkillAction.shootProjectile("SMALL_FIREBALL", 1.6, 7.0));
-        sk.addAction(com.uitem.skill.SkillAction.actionBar("<red>Fireball!"));
-        data.getSkills().add(sk);
 
-        plugin.getItemManager().registerItem(data);
-        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
-        player.sendMessage(TextUtil.success(Messages.skillPresetAdded("Fireball")));
-    }
-
-    private void addPresetLifesteal() {
-        Skill sk = new Skill("lifesteal");
-        sk.setDisplayName("<red>Lifesteal");
-        sk.setTrigger(SkillTrigger.HIT);
-        sk.setCooldown(0);
-        sk.setChance(35);
-        sk.addAction(com.uitem.skill.SkillAction.heal(2.5));
-        sk.addAction(com.uitem.skill.SkillAction.actionBar("<red>+2.5 HP"));
-        data.getSkills().add(sk);
-
-        plugin.getItemManager().registerItem(data);
-        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
-        player.sendMessage(TextUtil.success(Messages.skillPresetAdded("Lifesteal")));
-    }
-
-    private void addPresetRegenAura() {
-        Skill sk = new Skill("regen_aura");
-        sk.setDisplayName("<aqua>Regen Aura");
-        sk.setTrigger(SkillTrigger.WHILE_HOLDING);
-        sk.setCooldown(4.0); // interval
-        sk.setPeriodTicks(20);
-        sk.addAction(com.uitem.skill.SkillAction.heal(1.0));
-        sk.addAction(com.uitem.skill.SkillAction.playSound("BLOCK_NOTE_BLOCK_HARP", 0.6f, 1.8f));
-        data.getSkills().add(sk);
-
-        plugin.getItemManager().registerItem(data);
-        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
-        player.sendMessage(TextUtil.success(Messages.skillPresetAdded("Regen Aura")));
-    }
 }

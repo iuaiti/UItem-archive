@@ -98,3 +98,5 @@ com/uitem/provider/BrowseableProvider.class
 com/uitem/UItemPlugin.class
 com/uitem/gui/SetupItemStepGui.class
 com/uitem/gui/ItemListGui.class
+com/uitem/gui/ParticlePickerGui.class
+com/uitem/skill/SkillExecutor$2.class

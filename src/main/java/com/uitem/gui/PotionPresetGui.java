@@ -34,6 +34,12 @@ public class PotionPresetGui extends AbstractGui {
     protected void setup() {
         fillBorder(6);
 
+        // Clear bottom row for navigation (overwrite fillBorder's bottom border)
+        ItemStack navBg = createItem(Material.GRAY_STAINED_GLASS_PANE, " ");
+        for (int i = 45; i <= 53; i++) {
+            inventory.setItem(i, navBg);
+        }
+
         // Header
         int totalEffects = PotionEffectRegistry.getTotalEffects();
         int totalPages = (int) Math.ceil((double) totalEffects / ITEMS_PER_PAGE);
@@ -57,12 +63,11 @@ public class PotionPresetGui extends AbstractGui {
         for (int i = startIdx; i < endIdx; i++) {
             if (slotsInRow == 7) {
                 slotsInRow = 0;
-                slot += 2; // skip right border (slot 17) and left border (slot 18)
+                slot += 2;
             }
 
             final PotionEffectRegistry.PotionInfo info = allEffects.get(i);
             ItemStack icon = createPotionIcon(info);
-            final int idx = i;
             
             setItem(slot, icon, ev -> {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
@@ -73,24 +78,25 @@ public class PotionPresetGui extends AbstractGui {
             slotsInRow++;
         }
 
-        // Navigation
-        if (currentPage > 0) {
-            setItem(48, createItem(Material.ARROW, "<gray>< Previous Page"), ev -> {
-                currentPage--;
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
-                refresh();
-            });
-        }
-
-        if (endIdx < allEffects.size()) {
-            setItem(50, createItem(Material.ARROW, "<gray>Next Page >"), ev -> {
-                currentPage++;
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
-                refresh();
-            });
-        }
-
-        // Back
+        // Navigation row (always show prev/next when applicable, back always visible)
+        setItem(45, currentPage > 0
+                ? createItem(Material.ARROW, "<gray>< Previous Page")
+                : createItem(Material.GRAY_STAINED_GLASS_PANE, " "),
+                currentPage > 0 ? ev -> {
+                    currentPage--;
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
+                    refresh();
+                } : null);
+        setItem(46, createItem(Material.PAPER,
+                "<gray>Page <white>" + (currentPage + 1) + "/" + totalPages));
+        setItem(47, endIdx < allEffects.size()
+                ? createItem(Material.ARROW, "<gray>Next Page >")
+                : createItem(Material.GRAY_STAINED_GLASS_PANE, " "),
+                endIdx < allEffects.size() ? ev -> {
+                    currentPage++;
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
+                    refresh();
+                } : null);
         setItem(53, createBackButton(), ev -> goBack());
     }
 

@@ -11,8 +11,19 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 public final class TextUtil {
 
     private static final MiniMessage MINI_MESSAGE = MiniMessage.miniMessage();
+    private static String prefixString = "<gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <dark_gray>\u2502 ";
 
     private TextUtil() {
+    }
+
+    /**
+     * Load/reload the prefix from config.yml.
+     */
+    public static void loadPrefix(com.uitem.UItemPlugin plugin) {
+        String cfg = plugin.getConfig().getString("prefix");
+        if (cfg != null && !cfg.isEmpty()) {
+            prefixString = cfg;
+        }
     }
 
     /**
@@ -37,7 +48,7 @@ public final class TextUtil {
      * Prefix for plugin messages.
      */
     public static Component prefix() {
-        return MINI_MESSAGE.deserialize("<gradient:#ff6b6b:#ffd93d><bold>UItem</bold></gradient> <dark_gray>│ ");
+        return MINI_MESSAGE.deserialize(prefixString);
     }
 
     /**

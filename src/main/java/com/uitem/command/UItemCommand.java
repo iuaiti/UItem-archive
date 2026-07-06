@@ -257,6 +257,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             return;
         }
         plugin.reloadConfig();
+        com.uitem.util.TextUtil.loadPrefix(plugin);
         com.uitem.gui.GuiConfig.reload(plugin);
         Messages.reload();
         com.uitem.rarity.RarityConfig.reloadFromFile();

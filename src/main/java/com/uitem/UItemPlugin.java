@@ -19,9 +19,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.server.PluginEnableEvent;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.util.List;
@@ -66,6 +65,7 @@ public final class UItemPlugin extends JavaPlugin {
         }
 
         saveDefaultConfig();
+        com.uitem.util.TextUtil.loadPrefix(this);
         com.uitem.gui.GuiConfig.init(this);
 
         this.storageManager = new StorageManager(this);
@@ -233,7 +233,7 @@ public final class UItemPlugin extends JavaPlugin {
             if (!hasItemYml) {
                 File exampleItems = new File(itemsDir, "examples.yml");
                 if (!exampleItems.exists()) {
-                    org.bukkit.configuration.file.YamlConfiguration ex = new org.bukkit.configuration.file.YamlConfiguration();
+                    YamlConfiguration ex = new YamlConfiguration();
                     ex.set("items.kiem_vi_du.source", "vanilla:diamond_sword");
                     ex.set("items.kiem_vi_du.category", "WEAPON");
                     ex.set("items.kiem_vi_du.sub-category", "SWORD");
@@ -277,7 +277,7 @@ public final class UItemPlugin extends JavaPlugin {
             if (!hasRecipeYml) {
                 File exampleRecipes = new File(recipesDir, "examples.yml");
                 if (!exampleRecipes.exists()) {
-                    org.bukkit.configuration.file.YamlConfiguration ex = new org.bukkit.configuration.file.YamlConfiguration();
+                    YamlConfiguration ex = new YamlConfiguration();
                     ex.set("cong_thuc_kiem_vi_du.result-item", "kiem_vi_du");
                     ex.set("cong_thuc_kiem_vi_du.result-amount", 1);
                     ex.set("cong_thuc_kiem_vi_du.shaped", true);
@@ -344,4 +344,5 @@ public final class UItemPlugin extends JavaPlugin {
             getLogger().warning("[UItem] Could not create " + fileName + ": " + e.getMessage());
         }
     }
+
 }

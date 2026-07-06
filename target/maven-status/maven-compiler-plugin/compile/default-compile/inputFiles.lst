@@ -33,6 +33,7 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ItemListGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/LoreEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/MaterialPickerGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ParticlePickerGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PotionPresetComboGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/PotionPresetGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ProviderPickerGui.java
