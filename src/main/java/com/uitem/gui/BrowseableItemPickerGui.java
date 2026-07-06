@@ -106,24 +106,22 @@ public class BrowseableItemPickerGui extends AbstractGui {
             }
             if (preview == null || preview.getType().isAir()) {
                 preview = createItem(Material.PAPER, "<white>" + displayId,
-                        List.of("<red>No preview available (provider returned null)",
-                                "<yellow>" + source,
-                                "<yellow>Click to select anyway"));
+                        previewLore(rawId, source, true));
             } else {
                 ItemMeta meta = preview.getItemMeta();
                 if (meta != null) {
                     var lore = meta.lore();
                     if (lore == null) lore = new java.util.ArrayList<>();
-                    lore.add(TextUtil.parse("<dark_gray>──────────────"));
-                    lore.add(TextUtil.parse("<gray>Source: <white>" + source));
-                    lore.add(TextUtil.parse("<yellow>Click to select"));
+                    for (String line : previewLore(rawId, source, false)) {
+                        lore.add(TextUtil.parse(line));
+                    }
                     meta.lore(lore);
                     preview.setItemMeta(meta);
                 }
             }
             setItem(ITEM_SLOTS[i], preview, ev -> {
                 player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.0f);
-                player.sendMessage(TextUtil.success("Source = " + source));
+                player.sendMessage(TextUtil.success("Selected " + provider.getDisplayName() + " item: " + rawId));
                 if (callback != null) callback.accept(source);
             });
         }
@@ -142,6 +140,35 @@ public class BrowseableItemPickerGui extends AbstractGui {
             return provider.getNamespace() + ":" + rawId;
         }
         return provider.getNamespace() + ":" + displayId(rawId);
+    }
+
+    private List<String> previewLore(String rawId, String source, boolean missingPreview) {
+        List<String> lore = new ArrayList<>();
+        if (missingPreview) {
+            lore.add("<red>No preview available (provider returned null)");
+        }
+        lore.add("<dark_gray>──────────────");
+
+        String providerNs = provider.getNamespace();
+        if (providerNs.equals("ia")) {
+            lore.add("<gray>Provider: <white>ItemsAdder");
+            lore.add("<gray>Namespace: <white>" + innerNamespace(rawId));
+            lore.add("<gray>Item ID: <white>" + displayId(rawId));
+        } else if (providerNs.equals("oraxen")) {
+            lore.add("<gray>Provider: <white>Oraxen");
+            lore.add("<gray>Item ID: <white>" + displayId(rawId));
+        } else {
+            lore.add("<gray>Source: <white>" + source);
+        }
+
+        lore.add("<yellow>Click to select");
+        return lore;
+    }
+
+    private static String innerNamespace(String rawId) {
+        if (rawId == null) return "unknown";
+        int idx = rawId.indexOf(':');
+        return idx < 0 ? "itemsadder" : rawId.substring(0, idx);
     }
 
     private static String displayId(String full) {
