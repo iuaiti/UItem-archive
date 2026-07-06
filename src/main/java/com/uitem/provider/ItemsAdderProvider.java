@@ -76,19 +76,27 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
 
     @SuppressWarnings("unchecked")
     private Function<Void, List<String>> buildListIdsFn() {
-        String[] candidates = {"getNamespacedIds", "getAllItems", "getItems", "getItemIds"};
-        for (String name : candidates) {
-            Method m = tryMethodOpt(customStackClass, name).orElse(null);
-            if (m != null) {
-                return buildListFn(m);
-            }
-        }
         Function<Void, List<String>> fileFallback = buildFileFallback();
         if (fileFallback != null) {
             Bukkit.getLogger().info("[UItem] ItemsAdder listIds: using file fallback (directory scan)");
-            return fileFallback;
+            return v -> {
+                List<String> raw = fileFallback.apply(null);
+                List<String> out = new ArrayList<>();
+                for (String id : raw) {
+                    try {
+                        if (getInstance.invoke(null, id) != null) out.add(id);
+                    } catch (Exception e) {
+                        // skip unresolvable
+                    }
+                }
+                int removed = raw.size() - out.size();
+                if (removed > 0) {
+                    Bukkit.getLogger().info("[UItem] IA file fallback: filtered " + removed + " unresolvable items, kept " + out.size());
+                }
+                return out;
+            };
         }
-        Bukkit.getLogger().warning("[UItem] ItemsAdder listIds: no API method found and no files detected. Item list will be empty.");
+        Bukkit.getLogger().warning("[UItem] ItemsAdder listIds: no files detected. Item list will be empty.");
         return v -> List.of();
     }
 
