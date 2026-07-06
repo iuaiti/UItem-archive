@@ -99,7 +99,7 @@ public class LoreEditorGui extends AbstractGui {
                                 if (finalLineIndex < data.getLore().size()) {
                                     data.getLore().set(finalLineIndex, input);
                                     plugin.getItemManager().registerItem(data);
-                                    plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+                                    plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
                                 }
                                 new LoreEditorGui(plugin, player, data).open();
                             });
@@ -108,7 +108,7 @@ public class LoreEditorGui extends AbstractGui {
                     if (finalLineIndex < data.getLore().size()) {
                         data.getLore().remove(finalLineIndex);
                         plugin.getItemManager().registerItem(data);
-                        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+                        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
                     }
                     player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
                     refresh();
@@ -117,7 +117,7 @@ public class LoreEditorGui extends AbstractGui {
                     if (finalLineIndex <= data.getLore().size()) {
                         data.getLore().add(finalLineIndex, "");
                         plugin.getItemManager().registerItem(data);
-                        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+                        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
                     }
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
                     refresh();
@@ -137,7 +137,7 @@ public class LoreEditorGui extends AbstractGui {
                     input -> {
                         data.getLore().add(input);
                         plugin.getItemManager().registerItem(data);
-                        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+                        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
                         new LoreEditorGui(plugin, player, data).open();
                     });
         });
@@ -150,7 +150,7 @@ public class LoreEditorGui extends AbstractGui {
                 )), event -> {
             data.getLore().clear();
             plugin.getItemManager().registerItem(data);
-            plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+            plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
             refresh();
         });

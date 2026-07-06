@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/dev/workspace-fd75dde1 -iname \"*gui.yml*\" -o -iname \"*recipe*\" 2>/dev/null | grep -v node_modules | head -50)",
+      "Read(//Users/dev/**)",
+      "Bash(mvn -q -o compile)"
+    ]
+  }
+}

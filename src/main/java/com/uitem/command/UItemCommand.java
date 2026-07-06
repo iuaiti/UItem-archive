@@ -260,7 +260,9 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         com.uitem.gui.GuiConfig.reload(plugin);
         Messages.reload();
         com.uitem.rarity.RarityConfig.reloadFromFile();
-        plugin.getStorageManager().saveAllNow(plugin.getItemManager());
+        // Do NOT saveAllNow() before loadAll(): that would flush the stale in-memory snapshot to
+        // disk first, overwriting any manual edits made directly to the item config files.
+        // Disk is the source of truth on reload - just re-read it.
         plugin.getStorageManager().loadAll(plugin.getItemManager());
         plugin.getRecipeManager().loadRecipes();
         plugin.getProviderManager().detect();

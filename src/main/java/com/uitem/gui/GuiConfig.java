@@ -49,6 +49,17 @@ public final class GuiConfig {
         return replace(value != null ? value : fallback, placeholders);
     }
 
+    public static int slot(String path, int fallback) {
+        if (config == null || !config.isSet(path)) return fallback;
+        return config.getInt(path, fallback);
+    }
+
+    public static List<Integer> slotList(String path, List<Integer> fallback) {
+        if (config == null || !config.isSet(path)) return fallback;
+        List<Integer> list = config.getIntegerList(path);
+        return list.isEmpty() ? fallback : list;
+    }
+
     public static List<String> lore(String path, List<String> fallback) {
         return lore(path, fallback, Map.of());
     }

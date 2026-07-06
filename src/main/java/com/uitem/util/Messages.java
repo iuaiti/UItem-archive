@@ -333,6 +333,10 @@ public final class Messages {
     public static String skillListPresetRegenDesc() { return t("skill-preset-regen-desc", "<gray>While Holding \u2192 periodic heal"); }
     public static String skillListClickEdit() { return t("skill-list-click-edit", "<yellow>Left click: Edit"); }
     public static String skillListClickDelete() { return t("skill-list-click-delete", "<red>Right click: Delete"); }
+    public static String skillListFolia() { return t("skill-list-folia", "<yellow>Easy & Stable • Folia-safe"); }
+    public static String skillListEmpty() { return t("skill-list-empty", "<gray><italic>No skills yet</italic>"); }
+    public static String skillListEmptyHint() { return t("skill-list-empty-hint", "<yellow>Click button below to add new skill"); }
+    public static String skillListAddClick() { return t("skill-list-add-click", "<yellow>Click to create"); }
 
     public static String skillEditorTitle(String skillId) { return t("skill-editor-title", "<light_purple><bold>Edit Skill:</bold> <white>{id}", "{id}", skillId); }
     public static String skillEditorActiveTriggers() { return t("skill-editor-active-triggers", "<gold><bold>Active Triggers</bold>"); }
@@ -346,6 +350,44 @@ public final class Messages {
     public static String skillEditorAddAction() { return t("skill-editor-add-action", "<green><bold>+ ADD ACTION</bold>"); }
     public static String skillEditorChooseAction() { return t("skill-editor-choose-action", "<green><bold>CHOOSE ACTION TYPE (Click to add)</bold>"); }
     public static String skillEditorNoActions() { return t("skill-editor-no-actions", "<gray><italic>No actions yet</italic>"); }
+
+    public static String skillEditorTriggerField() { return t("skill-editor-trigger-field", "<gold><bold>⚡ Trigger</bold>"); }
+
+    public static String skillEditorHeaderTitle(String id, String triggerDisplay) {
+        return t("skill-editor-header-title", "<light_purple><bold>{id}</bold> <dark_gray>- {trigger}")
+                .replace("{id}", id).replace("{trigger}", triggerDisplay);
+    }
+    public static String skillEditorHeaderCooldown(double seconds) { return t("skill-editor-header-cooldown", "<gray>Cooldown: <white>{seconds}s", "{seconds}", String.valueOf(seconds)); }
+    public static String skillEditorHeaderChance(int percent) { return t("skill-editor-header-chance", "<gray>Chance: <white>{percent}%", "{percent}", String.valueOf(percent)); }
+    public static String skillEditorHeaderActions(int count) { return t("skill-editor-header-actions", "<gray>Actions: <white>{count}", "{count}", String.valueOf(count)); }
+    public static String skillEditorChanceHint() { return t("skill-editor-chance-hint", "<gray>% trigger chance (useful for passive)"); }
+    public static String skillEditorCancelHint() { return t("skill-editor-cancel-hint", "<gray>Only affects active triggers (click/drop)"); }
+    public static String skillEditorCancelClick() { return t("skill-editor-cancel-click", "<yellow>Click to toggle"); }
+    public static String stateOn() { return t("state-on", "ON"); }
+    public static String stateOff() { return t("state-off", "OFF"); }
+    public static String skillEditorCondChance75() { return t("skill-editor-cond-chance-75", "<green>Cond: Chance 75%"); }
+    public static String skillEditorCondChance75Desc() { return t("skill-editor-cond-chance-75-desc", "<gray>Click to add 75% chance"); }
+    public static String skillEditorCondChance50() { return t("skill-editor-cond-chance-50", "<red>Cond: Chance 50%"); }
+    public static String skillEditorCondChance50Desc() { return t("skill-editor-cond-chance-50-desc", "<gray>Click to add 50% chance"); }
+    public static String skillEditorPotionPresets() { return t("skill-editor-potion-presets", "<light_purple>⚡ Potion Presets"); }
+    public static String skillEditorPotionPresetsDesc() { return t("skill-editor-potion-presets-desc", "<gray>Click to view the potion list"); }
+    public static String skillEditorPotionCombos() { return t("skill-editor-potion-combos", "<light_purple>🍶 Potion Combos"); }
+    public static String skillEditorPotionCombosDesc() { return t("skill-editor-potion-combos-desc", "<gray>Click to view preset combos"); }
+    public static String skillEditorPageNext(int page) { return t("skill-editor-page-next", "<yellow>Page {page} ►", "{page}", String.valueOf(page)); }
+    public static String skillEditorPageNextDesc() { return t("skill-editor-page-next-desc", "<gray>Click to view more actions"); }
+    public static String skillEditorPageFirst() { return t("skill-editor-page-first", "<yellow>◄ Page 1"); }
+    public static String skillEditorPageFirstDesc() { return t("skill-editor-page-first-desc", "<gray>Back to first page"); }
+    public static String skillEditorRenameButton() { return t("skill-editor-rename-button", "<gold><bold>✎ Rename Skill</bold>"); }
+    public static String skillEditorRenameHint() { return t("skill-editor-rename-hint", "<yellow>Click to rename this skill's ID"); }
+    public static String skillEditorRenamePrompt() { return t("skill-editor-rename-prompt", "Enter new skill ID (letters/numbers/underscore):"); }
+    public static String skillEditorRenameInvalid() { return t("skill-editor-rename-invalid", "Invalid skill ID."); }
+    public static String skillEditorRenameDuplicate(String id) { return t("skill-editor-rename-duplicate", "A skill with ID '{id}' already exists on this item.", "{id}", id); }
+    public static String skillEditorRenamed(String id) { return t("skill-editor-renamed", "Skill renamed to '{id}'.", "{id}", id); }
+    public static String skillListShiftDelete() { return t("skill-list-shift-delete", "<red>Shift + Right-click to delete"); }
+    public static String skillLabel(String key, String def) { return t("skill-label-" + key, def); }
+    public static String skillPrompt(String key, String def) { return t("skill-prompt-" + key, def); }
+    public static String skillText(String key, String def) { return t("skill-text-" + key, def); }
+    public static String skillEditorTriggerClick() { return t("skill-editor-trigger-click", "<yellow>Left-click: Next  <gray>|  <yellow>Right-click: Previous"); }
 
     // Skill trigger display names (used in GUI + lore)
     public static String skillTriggerDisplayName(String key) {

@@ -139,37 +139,48 @@ public class SkillEditorGui extends AbstractGui {
 
         // Header
         setItem(4, createItem(Material.ENCHANTED_BOOK,
-                "<light_purple><bold>" + skill.getId() + "</bold> <dark_gray>- " + skill.getTrigger().getDisplayName(),
+                Messages.skillEditorHeaderTitle(skill.getId(), skill.getTrigger().getDisplayName()),
                 List.of(
-                        "<gray>Cooldown: <white>" + skill.getCooldown() + "s",
-                        "<gray>Chance: <white>" + (int) skill.getChance() + "%",
-                        "<gray>Actions: <white>" + skill.getActions().size()
+                        Messages.skillEditorHeaderCooldown(skill.getCooldown()),
+                        Messages.skillEditorHeaderChance((int) skill.getChance()),
+                        Messages.skillEditorHeaderActions(skill.getActions().size())
                 )));
 
-        // Trigger grid: 18 slots exactly (10 active + 8 passive), no overlapping editor controls.
-        int slot = 9;
+        // Trigger: single compact field - left/right click cycles through the trigger list (no chat needed).
         List<SkillTrigger> triggerOptions = new ArrayList<>();
         triggerOptions.addAll(ACTIVE_TRIGGERS);
         triggerOptions.addAll(PASSIVE_TRIGGERS);
-        for (SkillTrigger t : triggerOptions) {
-            boolean sel = t == skill.getTrigger();
-            Material m = sel ? Material.LIME_STAINED_GLASS_PANE : (t.isActive() ? Material.LIGHT_BLUE_STAINED_GLASS_PANE : Material.GRAY_STAINED_GLASS_PANE);
-            setItem(slot++, createItem(m, (sel ? "<green>✔ " : "<gray>") + t.getDisplayName(),
-                    List.of(
-                            t.isActive() ? "<aqua>Active trigger" : "<gold>Passive trigger",
-                            "<gray>" + t.getDescription()
-                    )), ev -> {
-                skill.setTrigger(t);
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
-                saveAndRefresh();
-            });
+        SkillTrigger currentTrigger = skill.getTrigger();
+        int triggerIdx = triggerOptions.indexOf(currentTrigger);
+        if (triggerIdx < 0) triggerIdx = 0;
+        final int currentTriggerIdx = triggerIdx;
+        setItem(9, createItem(Material.NETHER_STAR, Messages.skillEditorTriggerField(),
+                List.of(
+                        "<gray>" + Messages.skillLabel("current", "Current") + ": <white>" + currentTrigger.getDisplayName() +
+                                (currentTrigger.isActive() ? " <aqua>(" + Messages.skillLabel("active-state", "Active") + ")" : " <gold>(" + Messages.skillLabel("passive-state", "Passive") + ")"),
+                        "<gray>" + currentTrigger.getDescription(),
+                        "",
+                        Messages.skillEditorTriggerClick()
+                )), ev -> {
+            int size = triggerOptions.size();
+            int newIdx = ev.isRightClick()
+                    ? (currentTriggerIdx - 1 + size) % size
+                    : (currentTriggerIdx + 1) % size;
+            skill.setTrigger(triggerOptions.get(newIdx));
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.5f);
+            saveAndRefresh();
+        });
+        // Filler for the space freed up by condensing the trigger grid into one field
+        for (int i = 10; i <= 25; i++) {
+            if (i == 17 || i == 18) continue; // already border-filled by fillBorder
+            setItem(i, createItem(Material.GRAY_STAINED_GLASS_PANE, " "));
         }
 
         // === Cooldown (row 3) ===
         setItem(28, createItem(Material.CLOCK, String.format(Messages.skillEditorCooldown(), skill.getCooldown()),
-                List.of("<yellow>" + Messages.skillEditorCooldownHint().replace("<yellow>", ""))), ev -> {
+                List.of(Messages.skillEditorCooldownHint())), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            plugin.getChatInputManager().requestInput(player, "<yellow>Enter cooldown (seconds, example 4.5):", input -> {
+            plugin.getChatInputManager().requestInput(player, "<yellow>" + Messages.skillPrompt("cooldown", "Enter cooldown (seconds, example 4.5):"), input -> {
                 try {
                     double cd = Double.parseDouble(input.trim());
                     skill.setCooldown(cd);
@@ -179,9 +190,9 @@ public class SkillEditorGui extends AbstractGui {
         });
 
         // Chance
-        setItem(29, createItem(Material.GHAST_TEAR, "<gold><bold>Chance: <white>" + (int)skill.getChance() + "%</bold>",
-                List.of("<gray>% trigger chance (useful for passive)")), ev -> {
-            plugin.getChatInputManager().requestInput(player, "<yellow>Enter chance (0-100):", input -> {
+        setItem(29, createItem(Material.GHAST_TEAR, String.format(Messages.skillEditorChance(), (int) skill.getChance()),
+                List.of(Messages.skillEditorChanceHint())), ev -> {
+            plugin.getChatInputManager().requestInput(player, "<yellow>" + Messages.skillPrompt("chance", "Enter chance (0-100):"), input -> {
                 try { skill.setChance(Double.parseDouble(input.trim())); } catch (Exception ignored) {}
                 saveAndReopen();
             }, this::reopen);
@@ -189,12 +200,38 @@ public class SkillEditorGui extends AbstractGui {
 
         // Cancel event
         setItem(30, createItem(skill.isCancelEvent() ? Material.BARRIER : Material.PAPER,
-                "<gold><bold>Cancel Event: <white>" + (skill.isCancelEvent() ? "ON" : "OFF") + "</bold>",
-                List.of("<gray>Only affects active triggers (click/drop)",
-                        "<yellow>Click to toggle")), ev -> {
+                String.format(Messages.skillEditorCancelEvent(), skill.isCancelEvent() ? Messages.stateOn() : Messages.stateOff()),
+                List.of(Messages.skillEditorCancelHint(), Messages.skillEditorCancelClick())), ev -> {
             skill.setCancelEvent(!skill.isCancelEvent());
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.4f, 1.0f);
             saveAndRefresh();
+        });
+
+        // Rename Skill (overrides the border pane at slot 26 - safe, purely decorative before this)
+        setItem(26, createItem(Material.NAME_TAG, Messages.skillEditorRenameButton(),
+                List.of(Messages.skillEditorRenameHint())), ev -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+            plugin.getChatInputManager().requestInput(player, "<yellow>" + Messages.skillEditorRenamePrompt(), input -> {
+                String newId = input.trim().toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9_]", "");
+                if (newId.isEmpty()) {
+                    player.sendMessage(TextUtil.error(Messages.skillEditorRenameInvalid()));
+                    reopen();
+                    return;
+                }
+                if (!newId.equals(skill.getId()) && itemData.getSkills().stream().anyMatch(s -> s.getId() != null && s.getId().equalsIgnoreCase(newId))) {
+                    player.sendMessage(TextUtil.error(Messages.skillEditorRenameDuplicate(newId)));
+                    reopen();
+                    return;
+                }
+                skill.setId(newId);
+                plugin.getItemManager().registerItem(itemData);
+                plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), itemData);
+                player.sendMessage(TextUtil.success(Messages.skillEditorRenamed(newId)));
+                Runnable back = getBackAction();
+                SkillEditorGui newGui = new SkillEditorGui(plugin, player, itemData, skill);
+                if (back != null) newGui.setBackAction(back);
+                newGui.open();
+            }, this::reopen);
         });
 
         // === Actions section header (row 3) ===
@@ -241,29 +278,29 @@ public class SkillEditorGui extends AbstractGui {
 
         if (acts.isEmpty()) {
             setItem(31, createItem(Material.BARRIER, "<gray><italic>" + Messages.skillEditorNoActions() + "</italic>",
-                    List.of("<yellow>Use the action buttons below to add actions")));
+                    List.of(Messages.skillText("use-buttons-below", "<yellow>Use the action buttons below to add actions"))));
         }
 
         // Quick condition buttons (top row, outside the trigger grid)
-        setItem(7, createItem(Material.EMERALD, "<green>Cond: Chance 75%", List.of("<gray>Click to add 75% chance")), ev -> {
+        setItem(7, createItem(Material.EMERALD, Messages.skillEditorCondChance75(), List.of(Messages.skillEditorCondChance75Desc())), ev -> {
             skill.addCondition(com.uitem.skill.SkillCondition.chance(75));
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             saveAndRefresh();
         });
-        setItem(8, createItem(Material.REDSTONE, "<red>Cond: Chance 50%", List.of("<gray>Click to add 50% chance")), ev -> {
+        setItem(8, createItem(Material.REDSTONE, Messages.skillEditorCondChance50(), List.of(Messages.skillEditorCondChance50Desc())), ev -> {
             skill.addCondition(com.uitem.skill.SkillCondition.chance(50));
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             saveAndRefresh();
         });
 
         // Potion presets (row 3, slots 34-35 - safe from action list)
-        setItem(34, createItem(Material.REDSTONE, "<light_purple>⚡ Potion Presets",
-                List.of("<gray>Click to view the potion list")), ev -> {
+        setItem(34, createItem(Material.REDSTONE, Messages.skillEditorPotionPresets(),
+                List.of(Messages.skillEditorPotionPresetsDesc())), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             new PotionPresetGui(plugin, player, itemData, skill).openAsChildOf(this);
         });
-        setItem(35, createItem(Material.BREWING_STAND, "<light_purple>🍶 Potion Combos",
-                List.of("<gray>Click to view preset combos")), ev -> {
+        setItem(35, createItem(Material.BREWING_STAND, Messages.skillEditorPotionCombos(),
+                List.of(Messages.skillEditorPotionCombosDesc())), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
             new PotionPresetComboGui(plugin, player, itemData, skill).openAsChildOf(this);
         });
@@ -282,15 +319,15 @@ public class SkillEditorGui extends AbstractGui {
         // Page navigation at slot 53
         int totalPages = ACTION_PAGES.size();
         if (actionPage < totalPages - 1) {
-            setItem(53, createItem(Material.ARROW, "<yellow>Page " + (actionPage + 2) + " ►",
-                    List.of("<gray>Click to view more actions")), ev -> {
+            setItem(53, createItem(Material.ARROW, Messages.skillEditorPageNext(actionPage + 2),
+                    List.of(Messages.skillEditorPageNextDesc())), ev -> {
                 actionPage++;
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
                 refresh();
             });
         } else {
-            setItem(53, createItem(Material.ARROW, "<yellow>◄ Page 1",
-                    List.of("<gray>Back to first page")), ev -> {
+            setItem(53, createItem(Material.ARROW, Messages.skillEditorPageFirst(),
+                    List.of(Messages.skillEditorPageFirstDesc())), ev -> {
                 actionPage = 0;
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
                 refresh();
@@ -305,48 +342,48 @@ public class SkillEditorGui extends AbstractGui {
         Material mat = Material.PAPER;
         String name = "<white>" + a.getType().getDisplay();
         List<String> lore = new ArrayList<>();
-        lore.add("<gray>Type: <white>" + a.getType().name());
+        lore.add("<gray>" + Messages.skillLabel("type", "Type") + ": <white>" + a.getType().name());
 
         // Show the main parameter for readability
         switch (a.getType()) {
             case MESSAGE, ACTION_BAR -> {
                 String txt = a.getStringParam("text", "");
-                if (!txt.isEmpty()) lore.add("<gray>Content: <white>" + (txt.length() > 25 ? txt.substring(0, 25) + "..." : txt));
+                if (!txt.isEmpty()) lore.add("<gray>" + Messages.skillLabel("content", "Content") + ": <white>" + (txt.length() > 25 ? txt.substring(0, 25) + "..." : txt));
             }
-            case PLAY_SOUND -> lore.add("<gray>Sound: <white>" + a.getStringParam("sound", "?"));
-            case GIVE_POTION -> lore.add("<gray>Effect: <white>" + a.getStringParam("effect", "?") + " " + a.getIntParam("amplifier", 0));
-            case HEAL, DAMAGE -> lore.add("<gray>Value: <white>" + a.getDoubleParam("amount", 0));
-            case SHOOT_PROJECTILE -> lore.add("<gray>Projectile: <white>" + a.getStringParam("projectile", "FIREBALL"));
+            case PLAY_SOUND -> lore.add("<gray>" + Messages.skillLabel("sound", "Sound") + ": <white>" + a.getStringParam("sound", "?"));
+            case GIVE_POTION -> lore.add("<gray>" + Messages.skillLabel("effect", "Effect") + ": <white>" + a.getStringParam("effect", "?") + " " + a.getIntParam("amplifier", 0));
+            case HEAL, DAMAGE -> lore.add("<gray>" + Messages.skillLabel("value", "Value") + ": <white>" + a.getDoubleParam("amount", 0));
+            case SHOOT_PROJECTILE -> lore.add("<gray>" + Messages.skillLabel("projectile", "Projectile") + ": <white>" + a.getStringParam("projectile", "FIREBALL"));
             case CONSOLE_COMMAND, PLAYER_COMMAND -> {
                 String cmd = a.getStringParam("command", "");
-                if (!cmd.isEmpty()) lore.add("<gray>Command: <white>" + (cmd.length() > 28 ? cmd.substring(0, 28) + "..." : cmd));
+                if (!cmd.isEmpty()) lore.add("<gray>" + Messages.skillLabel("command", "Command") + ": <white>" + (cmd.length() > 28 ? cmd.substring(0, 28) + "..." : cmd));
             }
-            case LAUNCH -> lore.add("<gray>Velocity: <white>" + a.getDoubleParam("y", 0));
-            case TELEPORT -> lore.add("<gray>Y offset: <white>" + a.getDoubleParam("y", 0));
-            case STRIKE_LIGHTNING -> lore.add("<gray>Lightning strike at target");
-            case SET_FIRE -> lore.add("<gray>Fire: <white>" + a.getIntParam("seconds", 4) + "s");
-            case FEED -> lore.add("<gray>Food: <white>" + a.getIntParam("amount", 4));
-            case CONSUME_DURABILITY -> lore.add("<gray>Durability: <white>" + a.getIntParam("amount", 1));
-            case CONSUME_ITEM -> lore.add("<gray>Consume 1 item");
-            case GIVE_ITEM -> lore.add("<gray>Item: <white>" + a.getStringParam("material", "DIAMOND") + " x" + a.getIntParam("amount", 1));
-            case REMOVE_POTION -> lore.add("<gray>Remove effect: <white>" + a.getStringParam("effect", "all"));
+            case LAUNCH -> lore.add("<gray>" + Messages.skillLabel("velocity", "Velocity") + ": <white>" + a.getDoubleParam("y", 0));
+            case TELEPORT -> lore.add("<gray>" + Messages.skillLabel("y-offset", "Y offset") + ": <white>" + a.getDoubleParam("y", 0));
+            case STRIKE_LIGHTNING -> lore.add("<gray>" + Messages.skillText("lightning-strike", "Lightning strike at target"));
+            case SET_FIRE -> lore.add("<gray>" + Messages.skillLabel("fire", "Fire") + ": <white>" + a.getIntParam("seconds", 4) + "s");
+            case FEED -> lore.add("<gray>" + Messages.skillLabel("food", "Food") + ": <white>" + a.getIntParam("amount", 4));
+            case CONSUME_DURABILITY -> lore.add("<gray>" + Messages.skillLabel("durability", "Durability") + ": <white>" + a.getIntParam("amount", 1));
+            case CONSUME_ITEM -> lore.add("<gray>" + Messages.skillText("consume-item", "Consume 1 item"));
+            case GIVE_ITEM -> lore.add("<gray>" + Messages.skillLabel("item", "Item") + ": <white>" + a.getStringParam("material", "DIAMOND") + " x" + a.getIntParam("amount", 1));
+            case REMOVE_POTION -> lore.add("<gray>" + Messages.skillLabel("remove-effect", "Remove effect") + ": <white>" + a.getStringParam("effect", "all"));
             case BLOCK_BREAK -> {
                 int r = a.getIntParam("range", 5);
                 int rad = a.getIntParam("radius", 0);
-                lore.add("<gray>Range: <white>" + r + (rad > 0 ? "  <yellow>Radius: " + rad + " (3x3+)" : ""));
+                lore.add("<gray>" + Messages.skillLabel("range", "Range") + ": <white>" + r + (rad > 0 ? "  <yellow>" + Messages.skillLabel("radius", "Radius") + ": " + rad + " (3x3+)" : ""));
             }
-            case EXPLOSION -> lore.add("<gray>Power: <white>" + a.getDoubleParam("power", 3) + " Fire: " + a.getBooleanParam("fire", false));
-            case AREA_DAMAGE -> lore.add("<gray>DMG: <white>" + a.getDoubleParam("amount", 5) + " Radius: " + a.getDoubleParam("radius", 5));
-            case POTION_AREA -> lore.add("<gray>Effect: <white>" + a.getStringParam("effect", "?") + " Range: " + a.getDoubleParam("radius", 5));
-            case BLIND, GLOW, LEVITATE -> lore.add("<gray>Duration: <white>" + a.getIntParam("duration", 5) + "s");
-            case CLEAR_EFFECTS -> lore.add("<gray>Clear all effects");
-            case SPAWN_MOB -> lore.add("<gray>Entity: <white>" + a.getStringParam("entity", "ZOMBIE") + " x" + a.getIntParam("count", 1));
-            case FREEZE -> lore.add("<gray>Freeze: <white>" + a.getIntParam("duration", 5) + "s");
+            case EXPLOSION -> lore.add("<gray>" + Messages.skillLabel("power", "Power") + ": <white>" + a.getDoubleParam("power", 3) + " " + Messages.skillLabel("fire", "Fire") + ": " + a.getBooleanParam("fire", false));
+            case AREA_DAMAGE -> lore.add("<gray>" + Messages.skillLabel("dmg", "DMG") + ": <white>" + a.getDoubleParam("amount", 5) + " " + Messages.skillLabel("radius", "Radius") + ": " + a.getDoubleParam("radius", 5));
+            case POTION_AREA -> lore.add("<gray>" + Messages.skillLabel("effect", "Effect") + ": <white>" + a.getStringParam("effect", "?") + " " + Messages.skillLabel("range", "Range") + ": " + a.getDoubleParam("radius", 5));
+            case BLIND, GLOW, LEVITATE -> lore.add("<gray>" + Messages.skillLabel("duration", "Duration") + ": <white>" + a.getIntParam("duration", 5) + "s");
+            case CLEAR_EFFECTS -> lore.add("<gray>" + Messages.skillText("clear-effects", "Clear all effects"));
+            case SPAWN_MOB -> lore.add("<gray>" + Messages.skillLabel("entity", "Entity") + ": <white>" + a.getStringParam("entity", "ZOMBIE") + " x" + a.getIntParam("count", 1));
+            case FREEZE -> lore.add("<gray>" + Messages.skillLabel("freeze", "Freeze") + ": <white>" + a.getIntParam("duration", 5) + "s");
         }
 
         lore.add("");
-        lore.add("<yellow>Left: Edit value");
-        lore.add("<red>Right: Delete");
+        lore.add(Messages.skillText("edit-hint", "<yellow>Left: Edit value"));
+        lore.add(Messages.skillText("delete-hint", "<red>Right: Delete"));
         return createItem(mat, name, lore);
     }
 
@@ -379,13 +416,13 @@ public class SkillEditorGui extends AbstractGui {
 
     private void saveAndRefresh() {
         plugin.getItemManager().registerItem(itemData);
-        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), itemData);
         refresh();
     }
 
     private void saveAndReopen() {
         plugin.getItemManager().registerItem(itemData);
-        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), itemData);
         reopen();
     }
 
@@ -463,25 +500,25 @@ public class SkillEditorGui extends AbstractGui {
         // Ask for the most important value first, before adding to skill
         // Only addAction when the user provides valid input
         switch (type) {
-            case MESSAGE -> promptForActionParamThenAdd(action, "text", "Enter message content (supports %player% %target%):");
-            case ACTION_BAR -> promptForActionParamThenAdd(action, "text", "Enter action bar text:");
-            case TITLE -> promptForActionParamThenAdd(action, "title", "Enter Title:");
-            case PLAY_SOUND -> promptForActionParamThenAdd(action, "sound", "Enter sound name (e.g. ENTITY_BLAZE_SHOOT):");
-            case SPAWN_PARTICLE -> promptForActionParamThenAdd(action, "particle", "Enter particle name (e.g. FLAME, HEART):");
-            case GIVE_POTION -> promptForActionParamThenAdd(action, "effect", "Enter potion effect (e.g. SPEED, STRENGTH):");
-            case SHOOT_PROJECTILE -> promptForActionParamThenAdd(action, "projectile", "Projectile (SMALL_FIREBALL / ARROW / WITHER_SKULL...):");
-            case CONSOLE_COMMAND, PLAYER_COMMAND -> promptForActionParamThenAdd(action, "command", "Enter command (supports %player% %target%):");
-            case LAUNCH -> promptForActionParamThenAdd(action, "y", "Enter launch Y power (e.g. 1.5):");
-            case TELEPORT -> promptForActionParamThenAdd(action, "y", "Enter teleport Y offset:");
-            case BLOCK_BREAK -> promptForActionParamThenAdd(action, "range", "Enter block break range (1-10). Radius=0 for single block; set later via edit or YAML:");
-            case EXPLOSION -> promptForActionParamThenAdd(action, "power", "Enter explosion power (0.1-10):");
-            case AREA_DAMAGE -> promptForActionParamThenAdd(action, "amount", "Enter area damage amount:");
-            case POTION_AREA -> promptForActionParamThenAdd(action, "effect", "Enter area potion effect (e.g. POISON, WITHER):");
-            case BLIND -> promptForActionParamThenAdd(action, "duration", "Enter blind duration (seconds):");
-            case GLOW -> promptForActionParamThenAdd(action, "duration", "Enter glow duration (seconds):");
-            case LEVITATE -> promptForActionParamThenAdd(action, "duration", "Enter levitate duration (seconds):");
-            case SPAWN_MOB -> promptForActionParamThenAdd(action, "entity", "Enter entity type (e.g. ZOMBIE, SKELETON, WOLF):");
-            case FREEZE -> promptForActionParamThenAdd(action, "duration", "Enter freeze duration (seconds):");
+            case MESSAGE -> promptForActionParamThenAdd(action, "text", Messages.skillPrompt("message", "Enter message content (supports %player% %target%):"));
+            case ACTION_BAR -> promptForActionParamThenAdd(action, "text", Messages.skillPrompt("action-bar", "Enter action bar text:"));
+            case TITLE -> promptForActionParamThenAdd(action, "title", Messages.skillPrompt("title", "Enter Title:"));
+            case PLAY_SOUND -> promptForActionParamThenAdd(action, "sound", Messages.skillPrompt("sound", "Enter sound name (e.g. ENTITY_BLAZE_SHOOT):"));
+            case SPAWN_PARTICLE -> promptForActionParamThenAdd(action, "particle", Messages.skillPrompt("particle", "Enter particle name (e.g. FLAME, HEART):"));
+            case GIVE_POTION -> promptForActionParamThenAdd(action, "effect", Messages.skillPrompt("potion-effect", "Enter potion effect (e.g. SPEED, STRENGTH):"));
+            case SHOOT_PROJECTILE -> promptForActionParamThenAdd(action, "projectile", Messages.skillPrompt("projectile", "Projectile (SMALL_FIREBALL / ARROW / WITHER_SKULL...):"));
+            case CONSOLE_COMMAND, PLAYER_COMMAND -> promptForActionParamThenAdd(action, "command", Messages.skillPrompt("command", "Enter command (supports %player% %target%):"));
+            case LAUNCH -> promptForActionParamThenAdd(action, "y", Messages.skillPrompt("launch-y", "Enter launch Y power (e.g. 1.5):"));
+            case TELEPORT -> promptForActionParamThenAdd(action, "y", Messages.skillPrompt("teleport-y", "Enter teleport Y offset:"));
+            case BLOCK_BREAK -> promptForActionParamThenAdd(action, "range", Messages.skillPrompt("block-break-range", "Enter block break range (1-10). Radius=0 for single block; set later via edit or YAML:"));
+            case EXPLOSION -> promptForActionParamThenAdd(action, "power", Messages.skillPrompt("explosion-power", "Enter explosion power (0.1-10):"));
+            case AREA_DAMAGE -> promptForActionParamThenAdd(action, "amount", Messages.skillPrompt("area-damage", "Enter area damage amount:"));
+            case POTION_AREA -> promptForActionParamThenAdd(action, "effect", Messages.skillPrompt("area-potion", "Enter area potion effect (e.g. POISON, WITHER):"));
+            case BLIND -> promptForActionParamThenAdd(action, "duration", Messages.skillPrompt("blind-duration", "Enter blind duration (seconds):"));
+            case GLOW -> promptForActionParamThenAdd(action, "duration", Messages.skillPrompt("glow-duration", "Enter glow duration (seconds):"));
+            case LEVITATE -> promptForActionParamThenAdd(action, "duration", Messages.skillPrompt("levitate-duration", "Enter levitate duration (seconds):"));
+            case SPAWN_MOB -> promptForActionParamThenAdd(action, "entity", Messages.skillPrompt("spawn-mob-entity", "Enter entity type (e.g. ZOMBIE, SKELETON, WOLF):"));
+            case FREEZE -> promptForActionParamThenAdd(action, "duration", Messages.skillPrompt("freeze-duration", "Enter freeze duration (seconds):"));
             default -> {
                 action.setParam("value", 1);
                 skill.addAction(action);
@@ -501,12 +538,12 @@ public class SkillEditorGui extends AbstractGui {
         String paramKey = "amount";
 
         switch (type) {
-            case HEAL -> { prompt = "Enter heal amount (e.g. 3.5):"; defaultValue = 3.0; }
-            case DAMAGE -> { prompt = "Enter damage amount (e.g. 5):"; defaultValue = 4.0; }
-            case FEED -> { prompt = "Enter food amount (1-20):"; defaultValue = 4; }
-            case SET_FIRE -> { prompt = "Enter fire duration (seconds):"; defaultValue = 4; paramKey = "seconds"; }
-            case CONSUME_DURABILITY -> { prompt = "Enter durability cost:"; defaultValue = 1; }
-            default -> prompt = "Enter value:";
+            case HEAL -> { prompt = Messages.skillPrompt("heal-amount", "Enter heal amount (e.g. 3.5):"); defaultValue = 3.0; }
+            case DAMAGE -> { prompt = Messages.skillPrompt("damage-amount", "Enter damage amount (e.g. 5):"); defaultValue = 4.0; }
+            case FEED -> { prompt = Messages.skillPrompt("feed-amount", "Enter food amount (1-20):"); defaultValue = 4; }
+            case SET_FIRE -> { prompt = Messages.skillPrompt("fire-duration", "Enter fire duration (seconds):"); defaultValue = 4; paramKey = "seconds"; }
+            case CONSUME_DURABILITY -> { prompt = Messages.skillPrompt("durability-cost", "Enter durability cost:"); defaultValue = 1; }
+            default -> prompt = Messages.skillPrompt("generic-value", "Enter value:");
         }
 
         SkillAction action = new SkillAction(type);
@@ -540,7 +577,7 @@ public class SkillEditorGui extends AbstractGui {
                 }
                 player.sendMessage(TextUtil.success(successMsg));
             } catch (Exception e) {
-                player.sendMessage(TextUtil.info("Added with default value (click the action again to edit)."));
+                player.sendMessage(TextUtil.info(Messages.skillText("added-default", "Added with default value (click the action again to edit).")));
             }
             saveAndReopen();
         }, this::reopen);
@@ -560,7 +597,7 @@ public class SkillEditorGui extends AbstractGui {
                     action.setParam(paramKey, val);
                 }
             } catch (Exception e) {
-                player.sendMessage(TextUtil.info("Using default value."));
+                player.sendMessage(TextUtil.info(Messages.skillText("using-default", "Using default value.")));
             }
             skill.addAction(action);
             player.sendMessage(TextUtil.success(Messages.skillAdded(action.getType().getDisplay())));
@@ -573,23 +610,23 @@ public class SkillEditorGui extends AbstractGui {
      */
     private void editActionMainValue(SkillAction action) {
         switch (action.getType()) {
-            case MESSAGE, ACTION_BAR -> promptForActionParam(action, "text", "Enter new content:", Messages.skillUpdated("content"));
-            case PLAY_SOUND -> promptForActionParam(action, "sound", "Enter new sound:", Messages.skillUpdated("sound"));
-            case GIVE_POTION -> promptForActionParam(action, "effect", "Enter new effect (e.g. STRENGTH):", Messages.skillUpdated("potion"));
-            case HEAL, DAMAGE, AREA_DAMAGE -> promptForActionParam(action, "amount", "Enter new value:", Messages.skillUpdated("value"));
-            case SHOOT_PROJECTILE -> promptForActionParam(action, "projectile", "Enter new projectile type:", Messages.skillUpdated("projectile"));
-            case CONSOLE_COMMAND, PLAYER_COMMAND -> promptForActionParam(action, "command", "Enter new command:", Messages.skillUpdated("command"));
-            case LAUNCH -> promptForActionParam(action, "y", "Enter new Y power:", Messages.skillUpdated("launch"));
-            case TELEPORT -> promptForActionParam(action, "y", "Enter new Y offset:", Messages.skillUpdated("teleport"));
-            case CONSUME_DURABILITY -> promptForActionParam(action, "amount", "Enter durability cost:", Messages.skillUpdated("durability"));
+            case MESSAGE, ACTION_BAR -> promptForActionParam(action, "text", Messages.skillPrompt("edit-content", "Enter new content:"), Messages.skillUpdated("content"));
+            case PLAY_SOUND -> promptForActionParam(action, "sound", Messages.skillPrompt("edit-sound", "Enter new sound:"), Messages.skillUpdated("sound"));
+            case GIVE_POTION -> promptForActionParam(action, "effect", Messages.skillPrompt("edit-potion-effect", "Enter new effect (e.g. STRENGTH):"), Messages.skillUpdated("potion"));
+            case HEAL, DAMAGE, AREA_DAMAGE -> promptForActionParam(action, "amount", Messages.skillPrompt("edit-value", "Enter new value:"), Messages.skillUpdated("value"));
+            case SHOOT_PROJECTILE -> promptForActionParam(action, "projectile", Messages.skillPrompt("edit-projectile", "Enter new projectile type:"), Messages.skillUpdated("projectile"));
+            case CONSOLE_COMMAND, PLAYER_COMMAND -> promptForActionParam(action, "command", Messages.skillPrompt("edit-command", "Enter new command:"), Messages.skillUpdated("command"));
+            case LAUNCH -> promptForActionParam(action, "y", Messages.skillPrompt("edit-launch-y", "Enter new Y power:"), Messages.skillUpdated("launch"));
+            case TELEPORT -> promptForActionParam(action, "y", Messages.skillPrompt("edit-teleport-y", "Enter new Y offset:"), Messages.skillUpdated("teleport"));
+            case CONSUME_DURABILITY -> promptForActionParam(action, "amount", Messages.skillPrompt("edit-durability", "Enter durability cost:"), Messages.skillUpdated("durability"));
             case BLOCK_BREAK -> {
                 // Chain: edit range, then immediately edit radius for convenience (3x3 support)
-                plugin.getChatInputManager().requestInput(player, "<yellow>Enter new range (1-10):", input -> {
+                plugin.getChatInputManager().requestInput(player, "<yellow>" + Messages.skillPrompt("edit-range", "Enter new range (1-10):"), input -> {
                     try {
                         action.setParam("range", Integer.parseInt(input.trim()));
                     } catch (Exception ignored) {}
                     // Now prompt radius right after
-                    plugin.getChatInputManager().requestInput(player, "<yellow>Enter radius for area (0=single, 1=3x3, 2=5x5...):", rinput -> {
+                    plugin.getChatInputManager().requestInput(player, "<yellow>" + Messages.skillPrompt("edit-radius", "Enter radius for area (0=single, 1=3x3, 2=5x5...):"), rinput -> {
                         try {
                             action.setParam("radius", Integer.parseInt(rinput.trim()));
                         } catch (Exception ignored) {}
@@ -598,12 +635,12 @@ public class SkillEditorGui extends AbstractGui {
                     }, this::reopen);
                 }, this::reopen);
             }
-            case EXPLOSION -> promptForActionParam(action, "power", "Enter new explosion power:", Messages.skillUpdated("power"));
-            case POTION_AREA -> promptForActionParam(action, "effect", "Enter new effect:", Messages.skillUpdated("effect"));
-            case BLIND, GLOW, LEVITATE, FREEZE -> promptForActionParam(action, "duration", "Enter new duration (seconds):", Messages.skillUpdated("duration"));
-            case SPAWN_MOB -> promptForActionParam(action, "entity", "Enter new entity type:", Messages.skillUpdated("entity"));
+            case EXPLOSION -> promptForActionParam(action, "power", Messages.skillPrompt("edit-explosion-power", "Enter new explosion power:"), Messages.skillUpdated("power"));
+            case POTION_AREA -> promptForActionParam(action, "effect", Messages.skillPrompt("edit-area-effect", "Enter new effect:"), Messages.skillUpdated("effect"));
+            case BLIND, GLOW, LEVITATE, FREEZE -> promptForActionParam(action, "duration", Messages.skillPrompt("edit-duration", "Enter new duration (seconds):"), Messages.skillUpdated("duration"));
+            case SPAWN_MOB -> promptForActionParam(action, "entity", Messages.skillPrompt("edit-entity", "Enter new entity type:"), Messages.skillUpdated("entity"));
             default -> {
-                player.sendMessage(TextUtil.info("This action mainly uses default values. You can delete and re-add it."));
+                player.sendMessage(TextUtil.info(Messages.skillText("edit-defaults-only", "This action mainly uses default values. You can delete and re-add it.")));
             }
         }
     }

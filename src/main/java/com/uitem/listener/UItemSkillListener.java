@@ -156,7 +156,9 @@ public class UItemSkillListener implements Listener {
         SkillTrigger trigger = isThrow ? SkillTrigger.THROW : SkillTrigger.DROP;
 
         boolean executed = executor.executeSkills(player, data.getId(), data.getSkills(), trigger, null);
-        if (executed && shouldCancelAny(data, trigger)) {
+        // Never cancel THROW: cancelling would prevent the item from actually leaving the player's
+        // hand, so the skill would "finish" and consume its cooldown while the throw never happens.
+        if (executed && trigger == SkillTrigger.DROP && shouldCancelAny(data, trigger)) {
             event.setCancelled(true);
         }
     }
@@ -174,14 +176,16 @@ public class UItemSkillListener implements Listener {
         UItemData data = getUItemData(bow);
         if (data == null || data.getSkills() == null || data.getSkills().isEmpty()) return;
 
-        boolean executed = executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.SHOOT, null);
-        if (executed && shouldCancelAny(data, SkillTrigger.SHOOT)) {
-            event.setCancelled(true);
-        }
+        // Never cancel SHOOT: cancelling the shoot event prevents the arrow from ever being
+        // created, so the skill "finishes" and consumes its cooldown while nothing actually fires.
+        executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.SHOOT, null);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onTridentOrProjectileThrow(ProjectileLaunchEvent event) {
+        // Arrows/spectral arrows fired from a bow or crossbow are already handled by
+        // onBowShoot(EntityShootBowEvent) - without this guard SHOOT would fire twice per shot.
+        if (event.getEntity() instanceof org.bukkit.entity.AbstractArrow) return;
         if (!(event.getEntity().getShooter() instanceof Player player)) return;
 
         // For trident throws (and potentially other projectile weapons), look at held items.
@@ -209,10 +213,8 @@ public class UItemSkillListener implements Listener {
 
         if (data == null || data.getSkills() == null || data.getSkills().isEmpty()) return;
 
-        boolean executed = executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.SHOOT, null);
-        if (executed && shouldCancelAny(data, SkillTrigger.SHOOT)) {
-            event.setCancelled(true);
-        }
+        // Never cancel SHOOT here either - same reasoning as onBowShoot above.
+        executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.SHOOT, null);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

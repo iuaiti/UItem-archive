@@ -72,6 +72,9 @@ public class StorageManager {
     private final AtomicReference<PendingSave> pendingRef = new AtomicReference<>();
     private final AtomicLong       lastDebounceSchedule  = new AtomicLong(0);
 
+    // ── Per-item debounced save state (does not touch other items' files) ────
+    private final Map<String, Long> lastItemDebounceSchedule = new java.util.concurrent.ConcurrentHashMap<>();
+
     public StorageManager(UItemPlugin plugin) {
         this.plugin    = plugin;
         this.legacyFile = new File(plugin.getDataFolder(), LEGACY_FILE);
@@ -505,6 +508,25 @@ public class StorageManager {
                 if (pendingRef.get() != null && asyncWorkerRunning.compareAndSet(false, true)) {
                     SchedulerUtil.runAsync(plugin, this::flushPendingSaves);
                 }
+            }
+        }, DEBOUNCE_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Debounced save for a SINGLE item — for UI-driven edits (skills, lore, flags, enchants...).
+     * Unlike {@link #saveAllDebounced}, this never touches any other item's file, so it can't
+     * clobber manual edits an admin made directly to another item's yml while this GUI was open.
+     */
+    public void saveItemDebounced(UItemManager manager, UItemData data) {
+        if (data == null || data.getId() == null) return;
+        String id = data.getId();
+        long now = System.currentTimeMillis();
+        lastItemDebounceSchedule.put(id, now);
+        SchedulerUtil.runDelayedAsync(plugin, () -> {
+            if (Objects.equals(lastItemDebounceSchedule.get(id), now)) {
+                lastItemDebounceSchedule.remove(id, now);
+                UItemData latest = manager.getItem(id);
+                saveItemIndividual(latest != null ? latest : data);
             }
         }, DEBOUNCE_MS, java.util.concurrent.TimeUnit.MILLISECONDS);
     }

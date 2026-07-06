@@ -4,10 +4,26 @@
 #   {recipes} - total loaded recipes
 #   {more}    - remaining recipes not shown in featured slots
 
+# Generic navigation buttons (used across all GUIs)
+back-button:
+  material: ARROW
+  name: "<yellow>\u2190 Back"
+  lore:
+    - "<gray>Click to go back"
+
+prev-page:
+  material: ARROW
+  name: "<yellow>\u25c0 Previous page"
+
+next-page:
+  material: ARROW
+  name: "<yellow>Next page \u25b6"
+
 crafting-home:
   title: "<gradient:#ff6b6b:#ffd93d><bold>UItem Crafting</bold></gradient>"
 
   header:
+    slot: 4
     material: CRAFTING_TABLE
     name: "<gradient:#ff6b6b:#ffd93d><bold>Custom Crafting Home</bold></gradient>"
     lore:
@@ -17,6 +33,7 @@ crafting-home:
 
   buttons:
     view-recipes:
+      slot: 37
       material: KNOWLEDGE_BOOK
       name: "<gold><bold>View Recipes</bold>"
       lore:
@@ -25,6 +42,7 @@ crafting-home:
         - ""
         - "<yellow>Click to open recipe list"
     crafting-table:
+      slot: 40
       material: CRAFTING_TABLE
       name: "<green><bold>Open Crafting Table</bold>"
       lore:
@@ -46,6 +64,7 @@ crafting-home:
       lore:
         - "<gray>Quick preview of the first recipes"
     no-recipes:
+      slot: 22
       material: BARRIER
       name: "<red>No Recipes Loaded"
       lore:
@@ -62,50 +81,61 @@ crafting-home:
       lore:
         - "<gray>Browse craftable weapons by type"
 
+  # Each category/weapon-type below accepts an optional "slot" (0-53) to
+  # reposition its button in the crafting-home GUI. Defaults match the
+  # original layout (top two rows = categories, next row = weapon types).
   categories:
     weapon:
+      slot: 10
       material: DIAMOND_SWORD
       name: "<red><bold>Weapons</bold>"
       lore:
         - "<gray>Recipes: <white>{count}"
         - "<yellow>Click to browse weapons"
     armor:
+      slot: 11
       material: DIAMOND_CHESTPLATE
       name: "<aqua><bold>Armor</bold>"
       lore:
         - "<gray>Recipes: <white>{count}"
         - "<yellow>Click to browse armor"
     tool:
+      slot: 12
       material: DIAMOND_PICKAXE
       name: "<green><bold>Tools</bold>"
       lore:
         - "<gray>Recipes: <white>{count}"
         - "<yellow>Click to browse tools"
     ranged:
+      slot: 13
       material: BOW
       name: "<gold><bold>Ranged</bold>"
       lore:
         - "<gray>Recipes: <white>{count}"
         - "<yellow>Click to browse ranged items"
     magic:
+      slot: 19
       material: BLAZE_ROD
       name: "<light_purple><bold>Magic</bold>"
       lore:
         - "<gray>Recipes: <white>{count}"
         - "<yellow>Click to browse magic items"
     consumable:
+      slot: 20
       material: GOLDEN_APPLE
       name: "<yellow><bold>Consumables</bold>"
       lore:
         - "<gray>Recipes: <white>{count}"
         - "<yellow>Click to browse consumables"
     material:
+      slot: 21
       material: DIAMOND
       name: "<white><bold>Materials</bold>"
       lore:
         - "<gray>Recipes: <white>{count}"
         - "<yellow>Click to browse materials"
     misc:
+      slot: 22
       material: CHEST
       name: "<gray><bold>Misc</bold>"
       lore:
@@ -114,36 +144,42 @@ crafting-home:
 
   weapon-types:
     sword:
+      slot: 28
       material: DIAMOND_SWORD
       name: "<red><bold>Swords</bold>"
       lore:
         - "<gray>Weapon recipes: <white>{count}"
         - "<yellow>Click to browse swords"
     axe:
+      slot: 29
       material: DIAMOND_AXE
       name: "<red><bold>Axes</bold>"
       lore:
         - "<gray>Weapon recipes: <white>{count}"
         - "<yellow>Click to browse axes"
     dagger:
+      slot: 30
       material: IRON_SWORD
       name: "<red><bold>Daggers</bold>"
       lore:
         - "<gray>Weapon recipes: <white>{count}"
         - "<yellow>Click to browse daggers"
     spear:
+      slot: 31
       material: TRIDENT
       name: "<red><bold>Spears</bold>"
       lore:
         - "<gray>Weapon recipes: <white>{count}"
         - "<yellow>Click to browse spears"
     hammer:
+      slot: 32
       material: MACE
       name: "<red><bold>Hammers</bold>"
       lore:
         - "<gray>Weapon recipes: <white>{count}"
         - "<yellow>Click to browse hammers"
     staff:
+      slot: 33
       material: BLAZE_ROD
       name: "<red><bold>Staves</bold>"
       lore:
@@ -155,14 +191,28 @@ crafting-table:
   border:
     primary: BROWN_STAINED_GLASS_PANE
     accent: ORANGE_STAINED_GLASS_PANE
+  # Positions of every functional slot in the crafting-table GUI (45 slots, 0-44).
+  # Change these to reposition the grid/result/home/recipes/amount buttons.
+  slots:
+    grid: [10, 11, 12, 19, 20, 21, 28, 29, 30]
+    result: 23
+    home: 41
+    recipes: 42
+    craft-1: 36
+    craft-8: 37
+    craft-64: 38
+    craft-max: 39
   labels:
     grid:
+      slot: 13
       material: CRAFTING_TABLE
       name: "<gold>Crafting Grid"
     arrow:
+      slot: 22
       material: ARROW
       name: "<yellow>→"
     result:
+      slot: 24
       material: KNOWLEDGE_BOOK
       name: "<gold>Result"
     home:

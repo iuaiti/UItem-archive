@@ -138,7 +138,7 @@ public class PotionPresetGui extends AbstractGui {
         skill.addAction(action);
 
         plugin.getItemManager().registerItem(itemData);
-        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), itemData);
 
         String msg = String.format("<green>✓ Added potion: %s (%ds, Amplifier %d)", 
             info.displayName, duration, amplifier + 1);

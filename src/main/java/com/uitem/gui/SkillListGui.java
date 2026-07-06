@@ -23,7 +23,7 @@ public class SkillListGui extends AbstractGui {
     private final UItemData data;
 
     public SkillListGui(UItemPlugin plugin, Player player, UItemData data) {
-        super(plugin, player, 54, "<light_purple><bold>Skills & Passives</bold> <dark_gray>- " + data.getId());
+        super(plugin, player, 54, Messages.skillListTitle(data.getId()));
         this.data = data;
     }
 
@@ -44,7 +44,7 @@ public class SkillListGui extends AbstractGui {
                 Messages.skillListHeader(data.getId()),
                 List.of(
                         Messages.skillListDesc(),
-                        "<yellow>Easy & Stable • Folia-safe",
+                        Messages.skillListFolia(),
                         Messages.skillListClickEdit() + " | " + Messages.skillListClickDelete()
                 )));
 
@@ -63,7 +63,7 @@ public class SkillListGui extends AbstractGui {
                         data.getSkills().remove(idx);
                         player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.6f, 1.0f);
                         plugin.getItemManager().registerItem(data);
-                        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+                        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
                         refresh();
                     }
                 } else {
@@ -77,15 +77,15 @@ public class SkillListGui extends AbstractGui {
         }
 
         if (current.isEmpty()) {
-            setItem(10, createItem(Material.BARRIER, "<gray><italic>" + Messages.skillEditorNoActions().replace("action", "skill") + "</italic>",
-                    List.of("<yellow>Click button below to add new skill")));
+            setItem(10, createItem(Material.BARRIER, Messages.skillListEmpty(),
+                    List.of(Messages.skillListEmptyHint())));
         }
 
         // Add new skill
         setItem(40, createItem(Material.EMERALD_BLOCK, Messages.skillListAdd(),
                 List.of(
                         Messages.skillListAddDesc(),
-                        "<yellow>Click to create"
+                        Messages.skillListAddClick()
                 )), ev -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             // Create an empty skill with a random ID
@@ -97,7 +97,7 @@ public class SkillListGui extends AbstractGui {
             data.getSkills().add(newSkill);
 
             plugin.getItemManager().registerItem(data);
-            plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+            plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
 
             new SkillEditorGui(plugin, player, data, newSkill).openAsChildOf(this);
         });
@@ -138,13 +138,13 @@ public class SkillListGui extends AbstractGui {
         };
 
         List<String> lore = new ArrayList<>();
-        lore.add("<gray>Trigger: <white>" + sk.getTrigger().getDisplayName());
-        lore.add("<gray>Cooldown: <white>" + sk.getCooldown() + "s");
-        if (sk.getChance() < 100) lore.add("<gray>Chance: <white>" + (int)sk.getChance() + "%");
-        lore.add("<gray>Actions: <white>" + sk.getActions().size());
+        lore.add("<gray>" + Messages.skillLabel("trigger", "Trigger") + ": <white>" + sk.getTrigger().getDisplayName());
+        lore.add("<gray>" + Messages.skillLabel("cooldown", "Cooldown") + ": <white>" + sk.getCooldown() + "s");
+        if (sk.getChance() < 100) lore.add("<gray>" + Messages.skillLabel("chance", "Chance") + ": <white>" + (int)sk.getChance() + "%");
+        lore.add("<gray>" + Messages.skillLabel("actions", "Actions") + ": <white>" + sk.getActions().size());
         lore.add("");
         lore.add(Messages.skillListClickEdit());
-        lore.add("<red>Shift + Right-click to delete");
+        lore.add(Messages.skillListShiftDelete());
         return createItem(mat, "<light_purple>" + sk.getId() + " <dark_gray>→ <white>" + sk.getTrigger().name(), lore);
     }
 
@@ -160,7 +160,7 @@ public class SkillListGui extends AbstractGui {
         data.getSkills().add(sk);
 
         plugin.getItemManager().registerItem(data);
-        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
         player.sendMessage(TextUtil.success(Messages.skillPresetAdded("Fireball")));
     }
 
@@ -175,7 +175,7 @@ public class SkillListGui extends AbstractGui {
         data.getSkills().add(sk);
 
         plugin.getItemManager().registerItem(data);
-        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
         player.sendMessage(TextUtil.success(Messages.skillPresetAdded("Lifesteal")));
     }
 
@@ -190,7 +190,7 @@ public class SkillListGui extends AbstractGui {
         data.getSkills().add(sk);
 
         plugin.getItemManager().registerItem(data);
-        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
         player.sendMessage(TextUtil.success(Messages.skillPresetAdded("Regen Aura")));
     }
 }

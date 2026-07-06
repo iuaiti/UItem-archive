@@ -40,7 +40,8 @@ public class CraftingHomeGui extends AbstractGui {
 
         int recipeCount = plugin.getRecipeManager().getAllRecipes().size();
         Map<String, String> placeholders = Map.of("recipes", String.valueOf(recipeCount));
-        setItem(4, createItem(
+        int headerSlot = GuiConfig.slot("crafting-home.header.slot", 4);
+        setItem(headerSlot, createItem(
                 GuiConfig.material("crafting-home.header.material", Material.CRAFTING_TABLE),
                 GuiConfig.text("crafting-home.header.name", "<gradient:#ff6b6b:#ffd93d><bold>Custom Crafting Hub</bold></gradient>", placeholders),
                 GuiConfig.lore("crafting-home.header.lore", List.of(
@@ -49,14 +50,16 @@ public class CraftingHomeGui extends AbstractGui {
                 ), placeholders)));
 
         if (recipeCount == 0) {
-            setItem(22, configuredItem("crafting-home.buttons.no-recipes", Material.BARRIER,
+            int noRecipesSlot = GuiConfig.slot("crafting-home.buttons.no-recipes.slot", 22);
+            setItem(noRecipesSlot, configuredItem("crafting-home.buttons.no-recipes", Material.BARRIER,
                     "<red>No Recipes Loaded", List.of("<gray>Create recipes in the editor or recipes/*.yml")));
             return;
         }
 
         renderCategoryButtons();
 
-        setItem(SLOT_RECIPES, configuredItem("crafting-home.buttons.view-recipes", Material.KNOWLEDGE_BOOK,
+        int recipesSlot = GuiConfig.slot("crafting-home.buttons.view-recipes.slot", SLOT_RECIPES);
+        setItem(recipesSlot, configuredItem("crafting-home.buttons.view-recipes", Material.KNOWLEDGE_BOOK,
                 "<gold><bold>All Recipes</bold>", List.of(
                         "<gray>Browse every UItem recipe",
                         "<gray>Click an item to inspect its ingredients",
@@ -67,7 +70,8 @@ public class CraftingHomeGui extends AbstractGui {
             new RecipeListGui(plugin, player).openAsChildOf(this);
         });
 
-        setItem(SLOT_CRAFT, configuredItem("crafting-home.buttons.crafting-table", Material.CRAFTING_TABLE,
+        int craftSlot = GuiConfig.slot("crafting-home.buttons.crafting-table.slot", SLOT_CRAFT);
+        setItem(craftSlot, configuredItem("crafting-home.buttons.crafting-table", Material.CRAFTING_TABLE,
                 "<green><bold>Open Crafting Table</bold>", List.of(
                         "<gray>Place materials or UItems in the 3x3 grid",
                         "<gray>The result preview appears on the right",
@@ -85,7 +89,9 @@ public class CraftingHomeGui extends AbstractGui {
         for (int i = 0; i < CATEGORIES.length; i++) {
             String category = CATEGORIES[i];
             int count = countRecipes(category, null);
-            setItem(CATEGORY_SLOTS[i], configuredItem("crafting-home.categories." + category.toLowerCase(), defaultCategoryIcon(category),
+            String path = "crafting-home.categories." + category.toLowerCase();
+            int slot = GuiConfig.slot(path + ".slot", CATEGORY_SLOTS[i]);
+            setItem(slot, configuredItem(path, defaultCategoryIcon(category),
                     "<aqua><bold>" + prettify(category) + "</bold>", List.of(
                             "<gray>Recipes: <white>{count}",
                             "<yellow>Click to browse"
@@ -100,7 +106,9 @@ public class CraftingHomeGui extends AbstractGui {
         for (int i = 0; i < WEAPON_TYPES.length; i++) {
             String type = WEAPON_TYPES[i];
             int count = countRecipes("WEAPON", type);
-            setItem(WEAPON_SLOTS[i], configuredItem("crafting-home.weapon-types." + type.toLowerCase(), defaultWeaponIcon(type),
+            String path = "crafting-home.weapon-types." + type.toLowerCase();
+            int slot = GuiConfig.slot(path + ".slot", WEAPON_SLOTS[i]);
+            setItem(slot, configuredItem(path, defaultWeaponIcon(type),
                     "<red><bold>" + prettify(type) + "</bold>", List.of(
                             "<gray>Weapon recipes: <white>{count}",
                             "<yellow>Click to browse"

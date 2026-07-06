@@ -1,7 +1,6 @@
 package com.uitem.gui;
 
 import com.uitem.UItemPlugin;
-import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -104,6 +103,10 @@ public abstract class AbstractGui implements InventoryHolder {
         return backAction != null;
     }
 
+    protected Runnable getBackAction() {
+        return backAction;
+    }
+
     public void goBack() {
         player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
         if (backAction != null) {
@@ -160,14 +163,21 @@ public abstract class AbstractGui implements InventoryHolder {
     }
 
     protected ItemStack createBackButton() {
-        return createItem(Material.ARROW, Messages.guiBack(), List.of(Messages.guiBackDesc()));
+        return createItem(
+                GuiConfig.material("back-button.material", Material.ARROW),
+                GuiConfig.text("back-button.name", "<yellow>\u2190 Back"),
+                GuiConfig.lore("back-button.lore", List.of("<gray>Click to go back")));
     }
 
     protected ItemStack createPreviousButton() {
-        return createItem(Material.ARROW, "<yellow>◄ Previous page");
+        return createItem(
+                GuiConfig.material("prev-page.material", Material.ARROW),
+                GuiConfig.text("prev-page.name", "<yellow>\u25c0 Previous page"));
     }
 
     protected ItemStack createNextButton() {
-        return createItem(Material.ARROW, "<yellow>Next page ►");
+        return createItem(
+                GuiConfig.material("next-page.material", Material.ARROW),
+                GuiConfig.text("next-page.name", "<yellow>Next page \u25b6"));
     }
 }

@@ -23,16 +23,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CraftingGui implements InventoryHolder {
 
-    private static final int[] CRAFT_SLOTS = {10, 11, 12, 19, 20, 21, 28, 29, 30};
-    private static final int RESULT_SLOT = 23;
     private static final int GUI_SIZE = 45;
 
-    private static final int CRAFT_1_SLOT = 36;
-    private static final int CRAFT_8_SLOT = 37;
-    private static final int CRAFT_64_SLOT = 38;
-    private static final int CRAFT_MAX_SLOT = 39;
-    private static final int HOME_SLOT = 41;
-    private static final int RECIPES_SLOT = 42;
+    private static final int[] DEFAULT_CRAFT_SLOTS = {10, 11, 12, 19, 20, 21, 28, 29, 30};
 
     private static final Set<UUID> openCraftingGuis = ConcurrentHashMap.newKeySet();
 
@@ -42,13 +35,46 @@ public class CraftingGui implements InventoryHolder {
     private Inventory inventory;
     private int craftUnits = 1;  // number of recipe units (each may produce >1 result items)
 
+    private final int[] craftSlots;
+    private final int resultSlot;
+    private final int craft1Slot;
+    private final int craft8Slot;
+    private final int craft64Slot;
+    private final int craftMaxSlot;
+    private final int homeSlot;
+    private final int recipesSlot;
+    private final int gridLabelSlot;
+    private final int arrowLabelSlot;
+    private final int resultLabelSlot;
+
     public CraftingGui(UItemPlugin plugin, Player player) {
         this.plugin = plugin;
         this.player = player;
         this.recipeManager = plugin.getRecipeManager();
+
+        this.craftSlots = resolveCraftSlots();
+        this.resultSlot = GuiConfig.slot("crafting-table.slots.result", 23);
+        this.craft1Slot = GuiConfig.slot("crafting-table.slots.craft-1", 36);
+        this.craft8Slot = GuiConfig.slot("crafting-table.slots.craft-8", 37);
+        this.craft64Slot = GuiConfig.slot("crafting-table.slots.craft-64", 38);
+        this.craftMaxSlot = GuiConfig.slot("crafting-table.slots.craft-max", 39);
+        this.homeSlot = GuiConfig.slot("crafting-table.slots.home", 41);
+        this.recipesSlot = GuiConfig.slot("crafting-table.slots.recipes", 42);
+        this.gridLabelSlot = GuiConfig.slot("crafting-table.labels.grid.slot", 13);
+        this.arrowLabelSlot = GuiConfig.slot("crafting-table.labels.arrow.slot", 22);
+        this.resultLabelSlot = GuiConfig.slot("crafting-table.labels.result.slot", 24);
+
         this.inventory = Bukkit.createInventory(this, GUI_SIZE,
                 TextUtil.parse(GuiConfig.text("crafting-table.title", "<gradient:#ff6b6b:#ffd93d>Crafting</gradient>")));
         initialize();
+    }
+
+    private static int[] resolveCraftSlots() {
+        List<Integer> configured = GuiConfig.slotList("crafting-table.slots.grid", null);
+        if (configured == null || configured.size() != 9) return DEFAULT_CRAFT_SLOTS.clone();
+        int[] out = new int[9];
+        for (int i = 0; i < 9; i++) out[i] = configured.get(i);
+        return out;
     }
 
     private void initialize() {
@@ -75,17 +101,17 @@ public class CraftingGui implements InventoryHolder {
             }
         }
 
-        for (int slot : CRAFT_SLOTS) {
+        for (int slot : craftSlots) {
             inventory.setItem(slot, null);
         }
-        inventory.setItem(RESULT_SLOT, null);
+        inventory.setItem(resultSlot, null);
 
-        inventory.setItem(13, createLabel("crafting-table.labels.grid", Material.CRAFTING_TABLE, "<gold>Crafting Grid"));
-        inventory.setItem(22, createLabel("crafting-table.labels.arrow", Material.ARROW, "<yellow>→"));
-        inventory.setItem(24, createLabel("crafting-table.labels.result", Material.KNOWLEDGE_BOOK, "<gold>Result"));
+        inventory.setItem(gridLabelSlot, createLabel("crafting-table.labels.grid", Material.CRAFTING_TABLE, "<gold>Crafting Grid"));
+        inventory.setItem(arrowLabelSlot, createLabel("crafting-table.labels.arrow", Material.ARROW, "<yellow>→"));
+        inventory.setItem(resultLabelSlot, createLabel("crafting-table.labels.result", Material.KNOWLEDGE_BOOK, "<gold>Result"));
 
-        inventory.setItem(HOME_SLOT, createLabel("crafting-table.labels.home", Material.OAK_DOOR, "<gold>Home"));
-        inventory.setItem(RECIPES_SLOT, createLabel("crafting-table.labels.recipes", Material.KNOWLEDGE_BOOK, "<yellow>Recipes"));
+        inventory.setItem(homeSlot, createLabel("crafting-table.labels.home", Material.OAK_DOOR, "<gold>Home"));
+        inventory.setItem(recipesSlot, createLabel("crafting-table.labels.recipes", Material.KNOWLEDGE_BOOK, "<yellow>Recipes"));
 
         updateCraftButtons();
     }
@@ -106,13 +132,13 @@ public class CraftingGui implements InventoryHolder {
         int maxU = maxCraftable(matrix);
         boolean hasRecipe = maxU > 0;
 
-        inventory.setItem(CRAFT_1_SLOT, createAmountButton("crafting-table.buttons.craft-1", "1",
+        inventory.setItem(craft1Slot, createAmountButton("crafting-table.buttons.craft-1", "1",
                 "<gray>Craft 1 unit", selected == 1));
-        inventory.setItem(CRAFT_8_SLOT, createAmountButton("crafting-table.buttons.craft-8", "8",
+        inventory.setItem(craft8Slot, createAmountButton("crafting-table.buttons.craft-8", "8",
                 "<gray>Craft 8 units", selected == 8));
-        inventory.setItem(CRAFT_64_SLOT, createAmountButton("crafting-table.buttons.craft-64", "64",
+        inventory.setItem(craft64Slot, createAmountButton("crafting-table.buttons.craft-64", "64",
                 "<gray>Craft 64 units", selected == 64));
-        inventory.setItem(CRAFT_MAX_SLOT, createAmountButton("crafting-table.buttons.craft-max", "MAX",
+        inventory.setItem(craftMaxSlot, createAmountButton("crafting-table.buttons.craft-max", "MAX",
                 hasRecipe
                         ? GuiConfig.text("crafting-table.buttons.max-with-recipe", "<gray>Craft as many as possible: x{count}", Map.of("count", String.valueOf(maxU)))
                         : GuiConfig.text("crafting-table.buttons.max-no-recipe", "<gray>No crafting recipe available"),
@@ -141,7 +167,7 @@ public class CraftingGui implements InventoryHolder {
     private ItemStack[] getMatrix() {
         ItemStack[] matrix = new ItemStack[9];
         for (int i = 0; i < 9; i++) {
-            matrix[i] = inventory.getItem(CRAFT_SLOTS[i]);
+            matrix[i] = inventory.getItem(craftSlots[i]);
         }
         return matrix;
     }
@@ -151,7 +177,7 @@ public class CraftingGui implements InventoryHolder {
         boolean empty = Arrays.stream(matrix).allMatch(
                 item -> item == null || item.getType().isAir());
         if (empty) {
-            inventory.setItem(RESULT_SLOT, null);
+            inventory.setItem(resultSlot, null);
             return;
         }
 
@@ -177,9 +203,9 @@ public class CraftingGui implements InventoryHolder {
                 pm.lore(lore);
                 preview.setItemMeta(pm);
             }
-            inventory.setItem(RESULT_SLOT, preview);
+            inventory.setItem(resultSlot, preview);
         } else {
-            inventory.setItem(RESULT_SLOT, null);
+            inventory.setItem(resultSlot, null);
         }
     }
 
@@ -250,11 +276,11 @@ public class CraftingGui implements InventoryHolder {
     }
 
     private void takeResult() {
-        ItemStack result = inventory.getItem(RESULT_SLOT);
+        ItemStack result = inventory.getItem(resultSlot);
         if (result == null || result.getType().isAir()) return;
 
         // Clear immediately to prevent double-click / race condition giving duplicate items
-        inventory.setItem(RESULT_SLOT, null);
+        inventory.setItem(resultSlot, null);
 
         int totalItemsWanted = result.getAmount();
 
@@ -282,12 +308,12 @@ public class CraftingGui implements InventoryHolder {
                     if (ch == ' ') continue;
                     UItemRecipe.Ingredient ing = recipe.getIngredientMap().get(ch);
                     if (ing == null) continue;
-                    ItemStack item = inventory.getItem(CRAFT_SLOTS[i]);
+                    ItemStack item = inventory.getItem(craftSlots[i]);
                     if (item != null && !item.getType().isAir()) {
                         int deduct = ing.getAmount();
                         item.setAmount(item.getAmount() - deduct);
                         if (item.getAmount() <= 0) {
-                            inventory.setItem(CRAFT_SLOTS[i], null);
+                            inventory.setItem(craftSlots[i], null);
                         }
                     }
                 }
@@ -295,12 +321,12 @@ public class CraftingGui implements InventoryHolder {
                 // Shapeless: re-match ings to current slots to deduct exact amounts
                 List<Integer> nonAirIdx = new ArrayList<>();
                 for (int i = 0; i < 9; i++) {
-                    ItemStack it = inventory.getItem(CRAFT_SLOTS[i]);
+                    ItemStack it = inventory.getItem(craftSlots[i]);
                     if (it != null && !it.getType().isAir()) nonAirIdx.add(i);
                 }
                 List<UItemRecipe.Ingredient> remaining = new ArrayList<>(recipe.getIngredients());
                 for (int idx : nonAirIdx) {
-                    ItemStack item = inventory.getItem(CRAFT_SLOTS[idx]);
+                    ItemStack item = inventory.getItem(craftSlots[idx]);
                     if (item == null || item.getType().isAir()) continue;
                     UItemRecipe.Ingredient matched = null;
                     for (UItemRecipe.Ingredient ing : remaining) {
@@ -314,7 +340,7 @@ public class CraftingGui implements InventoryHolder {
                         int deduct = matched.getAmount();
                         item.setAmount(item.getAmount() - deduct);
                         if (item.getAmount() <= 0) {
-                            inventory.setItem(CRAFT_SLOTS[idx], null);
+                            inventory.setItem(craftSlots[idx], null);
                         }
                     }
                 }
@@ -346,13 +372,13 @@ public class CraftingGui implements InventoryHolder {
     public void handleClick(InventoryClickEvent event) {
         int slot = event.getRawSlot();
 
-        if (slot == RESULT_SLOT) {
+        if (slot == resultSlot) {
             event.setCancelled(true);
             takeResult();
             return;
         }
 
-        if (slot == CRAFT_1_SLOT) {
+        if (slot == craft1Slot) {
             event.setCancelled(true);
             craftUnits = 1;
             updateCraftButtons();
@@ -361,7 +387,7 @@ public class CraftingGui implements InventoryHolder {
             return;
         }
 
-        if (slot == CRAFT_8_SLOT) {
+        if (slot == craft8Slot) {
             event.setCancelled(true);
             craftUnits = 8;
             updateCraftButtons();
@@ -370,7 +396,7 @@ public class CraftingGui implements InventoryHolder {
             return;
         }
 
-        if (slot == CRAFT_64_SLOT) {
+        if (slot == craft64Slot) {
             event.setCancelled(true);
             craftUnits = 64;
             updateCraftButtons();
@@ -379,7 +405,7 @@ public class CraftingGui implements InventoryHolder {
             return;
         }
 
-        if (slot == CRAFT_MAX_SLOT) {
+        if (slot == craftMaxSlot) {
             event.setCancelled(true);
             craftUnits = 999;
             updateCraftButtons();
@@ -388,14 +414,14 @@ public class CraftingGui implements InventoryHolder {
             return;
         }
 
-        if (slot == HOME_SLOT) {
+        if (slot == homeSlot) {
             event.setCancelled(true);
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             SchedulerUtil.runSync(plugin, () -> new CraftingHomeGui(plugin, player).open());
             return;
         }
 
-        if (slot == RECIPES_SLOT) {
+        if (slot == recipesSlot) {
             event.setCancelled(true);
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             SchedulerUtil.runSync(plugin, () -> new RecipeListGui(plugin, player).open());
@@ -404,7 +430,7 @@ public class CraftingGui implements InventoryHolder {
 
         if (slot >= 0 && slot < GUI_SIZE) {
             boolean isCraftSlot = false;
-            for (int cs : CRAFT_SLOTS) {
+            for (int cs : craftSlots) {
                 if (cs == slot) { isCraftSlot = true; break; }
             }
             if (isCraftSlot) {
@@ -431,7 +457,7 @@ public class CraftingGui implements InventoryHolder {
 
             // Fill ALL empty craft slots (not just the first one)
             int remaining = clicked.getAmount();
-            for (int cs : CRAFT_SLOTS) {
+            for (int cs : craftSlots) {
                 if (remaining <= 0) break;
                 ItemStack existing = inventory.getItem(cs);
                 if (existing == null || existing.getType().isAir()) {
@@ -462,13 +488,13 @@ public class CraftingGui implements InventoryHolder {
     public void handleDrag(InventoryDragEvent event) {
         for (int slot : event.getRawSlots()) {
             if (slot < GUI_SIZE) {
-                if (slot == RESULT_SLOT || slot == CRAFT_1_SLOT || slot == CRAFT_8_SLOT
-                        || slot == CRAFT_64_SLOT || slot == CRAFT_MAX_SLOT) {
+                if (slot == resultSlot || slot == craft1Slot || slot == craft8Slot
+                        || slot == craft64Slot || slot == craftMaxSlot) {
                     event.setCancelled(true);
                     return;
                 }
                 boolean isCraft = false;
-                for (int cs : CRAFT_SLOTS) {
+                for (int cs : craftSlots) {
                     if (cs == slot) { isCraft = true; break; }
                 }
                 if (!isCraft) {
@@ -490,12 +516,12 @@ public class CraftingGui implements InventoryHolder {
         // Bug fix: Only return items from craft input slots, NOT the result preview slot.
         // The result slot contains a preview of what would be crafted — it was never
         // actually crafted, so returning it would allow item duplication.
-        for (int slot : CRAFT_SLOTS) {
+        for (int slot : craftSlots) {
             returnItem(inventory.getItem(slot));
             inventory.setItem(slot, null);
         }
         // Clear result slot WITHOUT returning it to prevent item duplication
-        inventory.setItem(RESULT_SLOT, null);
+        inventory.setItem(resultSlot, null);
     }
 
     public void open() {

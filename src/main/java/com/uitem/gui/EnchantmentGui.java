@@ -129,7 +129,7 @@ public class EnchantmentGui extends AbstractGui {
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 0.8f);
                 }
                 plugin.getItemManager().registerItem(data);
-                plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+                plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
                 refresh();
             });
         }

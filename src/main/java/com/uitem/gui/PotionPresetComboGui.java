@@ -110,7 +110,7 @@ public class PotionPresetComboGui extends AbstractGui {
         PotionEffectHelper.addPresetToSkill(skill, preset);
 
         plugin.getItemManager().registerItem(itemData);
-        plugin.getStorageManager().saveAllDebounced(plugin.getItemManager());
+        plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), itemData);
 
         String msg = String.format("<green>✓ Added preset: %s (%d effects)",
             preset.name, preset.effects.size());
