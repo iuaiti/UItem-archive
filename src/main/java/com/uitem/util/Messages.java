@@ -365,6 +365,10 @@ public final class Messages {
     public static String skillEditorCondChance50Desc() { return t("skill-editor-cond-chance-50-desc", "<gray>Click to add 50% chance"); }
     public static String skillEditorParticlePicker() { return t("skill-editor-particle-picker", "<gold>✦ Particle Picker"); }
     public static String skillEditorParticlePickerDesc() { return t("skill-editor-particle-picker-desc", "<gray>Click to browse all particles and configure them"); }
+    public static String skillEditorPotionPresets() { return t("skill-editor-potion-presets", "<light_purple>⚡ Potion Presets"); }
+    public static String skillEditorPotionPresetsDesc() { return t("skill-editor-potion-presets-desc", "<gray>Click to view the potion list"); }
+    public static String skillEditorPotionCombos() { return t("skill-editor-potion-combos", "<light_purple>🍶 Potion Combos"); }
+    public static String skillEditorPotionCombosDesc() { return t("skill-editor-potion-combos-desc", "<gray>Click to view preset combos"); }
     public static String skillEditorPageNext(int page) { return t("skill-editor-page-next", "<yellow>Page {page} ►", "{page}", String.valueOf(page)); }
     public static String skillEditorPageNextDesc() { return t("skill-editor-page-next-desc", "<gray>Click to view more actions"); }
     public static String skillEditorPageFirst() { return t("skill-editor-page-first", "<yellow>◄ Page 1"); }

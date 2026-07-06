@@ -49,7 +49,7 @@ public class SkillEditorGui extends AbstractGui {
                     SkillAction.ActionType.ACTION_BAR,
                     SkillAction.ActionType.TITLE,
                     SkillAction.ActionType.PLAY_SOUND,
-                    SkillAction.ActionType.SPAWN_PARTICLE,
+                    SkillAction.ActionType.GIVE_POTION,
                     SkillAction.ActionType.HEAL,
                     SkillAction.ActionType.DAMAGE,
                     SkillAction.ActionType.SHOOT_PROJECTILE
@@ -89,7 +89,6 @@ public class SkillEditorGui extends AbstractGui {
         ACTION_MATERIALS.put(SkillAction.ActionType.ACTION_BAR, Material.NAME_TAG);
         ACTION_MATERIALS.put(SkillAction.ActionType.TITLE, Material.FILLED_MAP);
         ACTION_MATERIALS.put(SkillAction.ActionType.PLAY_SOUND, Material.NOTE_BLOCK);
-        ACTION_MATERIALS.put(SkillAction.ActionType.SPAWN_PARTICLE, Material.BLAZE_POWDER);
         ACTION_MATERIALS.put(SkillAction.ActionType.GIVE_POTION, Material.POTION);
         ACTION_MATERIALS.put(SkillAction.ActionType.HEAL, Material.GOLDEN_APPLE);
         ACTION_MATERIALS.put(SkillAction.ActionType.DAMAGE, Material.IRON_SWORD);
@@ -240,18 +239,32 @@ public class SkillEditorGui extends AbstractGui {
             new ParticlePickerGui(plugin, player, itemData, skill).openAsChildOf(this);
         });
 
+        // Potion presets (slots 20-21)
+        setItem(20, createItem(Material.REDSTONE, Messages.skillEditorPotionPresets(),
+                List.of(Messages.skillEditorPotionPresetsDesc())), ev -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+            new PotionPresetGui(plugin, player, itemData, skill).openAsChildOf(this);
+        });
+        setItem(21, createItem(Material.BREWING_STAND, Messages.skillEditorPotionCombos(),
+                List.of(Messages.skillEditorPotionCombosDesc())), ev -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+            new PotionPresetComboGui(plugin, player, itemData, skill).openAsChildOf(this);
+        });
+
         int[] actSlots = {22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
         List<SkillAction> acts = skill.getActions();
         if (acts.isEmpty()) {
             setItem(22, createItem(Material.WRITABLE_BOOK,
                     Messages.skillEditorActionsHeader(0),
-                    List.of(Messages.skillEditorActionsHint())));
+                    List.of(Messages.skillEditorActionsHint())),
+                    ev -> addActionByType(firstActionType()));
             setItem(23, createItem(Material.BARRIER, "<gray><italic>" + Messages.skillEditorNoActions() + "</italic>",
                     List.of(Messages.skillText("use-buttons-below", "<yellow>Use the action buttons below to add actions"))));
         } else {
             setItem(22, createItem(Material.WRITABLE_BOOK,
                     Messages.skillEditorActionsHeader(acts.size()),
-                    List.of(Messages.skillEditorActionsHint())));
+                    List.of(Messages.skillEditorActionsHint())),
+                    ev -> addActionByType(firstActionType()));
             for (int i = 0; i < Math.min(acts.size(), actSlots.length); i++) {
                 final int idx = i;
                 SkillAction a = acts.get(idx);
@@ -361,7 +374,7 @@ public class SkillEditorGui extends AbstractGui {
 
     private void addActionByType(SkillAction.ActionType type) {
         switch (type) {
-            case MESSAGE, ACTION_BAR, TITLE, PLAY_SOUND, SHOOT_PROJECTILE,
+            case MESSAGE, ACTION_BAR, TITLE, PLAY_SOUND, GIVE_POTION, SHOOT_PROJECTILE,
                  CONSOLE_COMMAND, PLAYER_COMMAND, SPAWN_PARTICLE ->
                 addActionWithPrompt(type);
             case HEAL, DAMAGE, FEED, SET_FIRE, CONSUME_DURABILITY ->
@@ -387,6 +400,12 @@ public class SkillEditorGui extends AbstractGui {
         plugin.getItemManager().registerItem(itemData);
         plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), itemData);
         reopen();
+    }
+
+    private SkillAction.ActionType firstActionType() {
+        List<SkillAction.ActionType> page = ACTION_PAGES.get(actionPage);
+        if (page != null && !page.isEmpty()) return page.get(0);
+        return SkillAction.ActionType.MESSAGE;
     }
 
     // ==================== Helpers for adding actions entirely via GUI ====================
@@ -440,6 +459,11 @@ public class SkillEditorGui extends AbstractGui {
                 action.setParam("amplifier", 0);
                 action.setParam("radius", 5.0);
             }
+            case GIVE_POTION -> {
+                action.setParam("effect", "SPEED");
+                action.setParam("duration", 10);
+                action.setParam("amplifier", 0);
+            }
             case SPAWN_PARTICLE -> {
                 action.setParam("particle", "FLAME");
                 action.setParam("count", 10);
@@ -475,6 +499,7 @@ public class SkillEditorGui extends AbstractGui {
             case EXPLOSION -> promptForActionParamThenAdd(action, "power", Messages.skillPrompt("explosion-power", "Enter explosion power (0.1-10):"));
             case AREA_DAMAGE -> promptForActionParamThenAdd(action, "amount", Messages.skillPrompt("area-damage", "Enter area damage amount:"));
             case POTION_AREA -> promptForActionParamThenAdd(action, "effect", Messages.skillPrompt("area-potion", "Enter area potion effect (e.g. POISON, WITHER):"));
+            case GIVE_POTION -> promptForActionParamThenAdd(action, "effect", Messages.skillPrompt("potion-effect", "Enter potion effect (e.g. SPEED, STRENGTH):"));
             case BLIND -> promptForActionParamThenAdd(action, "duration", Messages.skillPrompt("blind-duration", "Enter blind duration (seconds):"));
             case GLOW -> promptForActionParamThenAdd(action, "duration", Messages.skillPrompt("glow-duration", "Enter glow duration (seconds):"));
             case LEVITATE -> promptForActionParamThenAdd(action, "duration", Messages.skillPrompt("levitate-duration", "Enter levitate duration (seconds):"));
@@ -573,6 +598,7 @@ public class SkillEditorGui extends AbstractGui {
         switch (action.getType()) {
             case MESSAGE, ACTION_BAR -> promptForActionParam(action, "text", Messages.skillPrompt("edit-content", "Enter new content:"), Messages.skillUpdated("content"));
             case PLAY_SOUND -> promptForActionParam(action, "sound", Messages.skillPrompt("edit-sound", "Enter new sound:"), Messages.skillUpdated("sound"));
+            case GIVE_POTION -> promptForActionParam(action, "effect", Messages.skillPrompt("edit-potion-effect", "Enter new effect (e.g. STRENGTH):"), Messages.skillUpdated("potion"));
             case HEAL, DAMAGE, AREA_DAMAGE -> promptForActionParam(action, "amount", Messages.skillPrompt("edit-value", "Enter new value:"), Messages.skillUpdated("value"));
             case SHOOT_PROJECTILE -> promptForActionParam(action, "projectile", Messages.skillPrompt("edit-projectile", "Enter new projectile type:"), Messages.skillUpdated("projectile"));
             case CONSOLE_COMMAND, PLAYER_COMMAND -> promptForActionParam(action, "command", Messages.skillPrompt("edit-command", "Enter new command:"), Messages.skillUpdated("command"));
