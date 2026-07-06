@@ -279,14 +279,24 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
         if (iaNativeId == null || iaNativeId.isBlank()) return null;
 
         Object cs = getInstance.invoke(null, iaNativeId);
-        if (cs != null) return cs;
+        if (cs != null) {
+            Bukkit.getLogger().info("[UItem] IA resolve OK: \"" + storeId + "\" → \"" + iaNativeId + "\"");
+            return cs;
+        }
 
         if (iaNativeId.indexOf(':') < 0) {
             cs = getInstance.invoke(null, "itemsadder:" + iaNativeId);
-            if (cs != null) return cs;
+            if (cs != null) {
+                Bukkit.getLogger().info("[UItem] IA resolve OK (retry itemsadder:): \"" + storeId + "\"");
+                return cs;
+            }
             cs = getInstance.invoke(null, "ia:" + iaNativeId);
-            if (cs != null) return cs;
+            if (cs != null) {
+                Bukkit.getLogger().info("[UItem] IA resolve OK (retry ia:): \"" + storeId + "\"");
+                return cs;
+            }
         }
+        Bukkit.getLogger().warning("[UItem] IA resolve FAIL: \"" + storeId + "\" → \"" + iaNativeId + "\"");
         return null;
     }
 
@@ -338,14 +348,19 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
     @Override
     public List<String> listIds() {
         try {
-            return listIdsFn.apply(null);
+            List<String> result = listIdsFn.apply(null);
+            int show = Math.min(result.size(), 10);
+            Bukkit.getLogger().info("[UItem] IA listIds → " + result.size() + " items, first " + show + ": " + result.subList(0, show));
+            return result;
         } catch (Exception e) {
+            Bukkit.getLogger().warning("[UItem] IA listIds failed: " + e.getMessage());
             return List.of();
         }
     }
 
     @Override
     public ItemStack buildPreview(String id) {
+        Bukkit.getLogger().info("[UItem] IA buildPreview(\"" + id + "\")");
         return getItem(id);
     }
 }
