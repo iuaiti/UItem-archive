@@ -95,8 +95,8 @@ public class BrowseableItemPickerGui extends AbstractGui {
             String rawId = ids.get(idx);
             if (rawId == null) continue;
 
-            String localId = stripNamespace(rawId);
-            String source = provider.getNamespace() + ":" + localId;
+            String displayId = displayId(rawId);
+            String source = sourceId(rawId);
 
             ItemStack preview;
             try {
@@ -105,7 +105,7 @@ public class BrowseableItemPickerGui extends AbstractGui {
                 preview = null;
             }
             if (preview == null || preview.getType().isAir()) {
-                preview = createItem(Material.PAPER, "<white>" + localId,
+                preview = createItem(Material.PAPER, "<white>" + displayId,
                         List.of("<red>No preview available (provider returned null)",
                                 "<yellow>" + source,
                                 "<yellow>Click to select anyway"));
@@ -136,9 +136,17 @@ public class BrowseableItemPickerGui extends AbstractGui {
         setItem(45, createBackButton(), ev -> goBack());
     }
 
-    private static String stripNamespace(String full) {
-        if (full == null) return null;
-        int idx = full.indexOf(':');
+    private String sourceId(String rawId) {
+        if (rawId == null) return provider.getNamespace() + ":unknown";
+        if (provider.getNamespace().equals("ia") && rawId.contains(":")) {
+            return provider.getNamespace() + ":" + rawId;
+        }
+        return provider.getNamespace() + ":" + displayId(rawId);
+    }
+
+    private static String displayId(String full) {
+        if (full == null) return "unknown";
+        int idx = full.lastIndexOf(':');
         return idx < 0 ? full : full.substring(idx + 1);
     }
 }

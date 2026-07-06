@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.logging.Level;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
@@ -99,12 +97,12 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
                 Set<String> ids = new HashSet<>();
                 if (result instanceof Map<?, ?> map) {
                     for (Object k : map.keySet()) {
-                        if (k != null) ids.add(stripNamespace(k.toString()));
+                        if (k != null) ids.add(k.toString());
                     }
                 } else if (result instanceof Collection<?> col) {
                     for (Object o : col) {
                         if (o != null) {
-                            ids.add(stripNamespace(o.toString()));
+                            ids.add(o.toString());
                         }
                     }
                 }
