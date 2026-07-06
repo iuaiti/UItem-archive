@@ -15,6 +15,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
@@ -186,11 +187,8 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
                 // Each subfolder may have its own namespace
                 String subNs = readNamespaceFromConfig(entry);
                 collectItemIds(entry, nsToIds, subNs);
-            } else if (isItemDefinition(entry)) {
-                String name = stripExtension(entry.getName());
-                if (name != null && !name.isBlank()) {
-                    nsToIds.computeIfAbsent(folderNamespace, k -> new HashSet<>()).add(name);
-                }
+            } else {
+                collectItemKeys(entry, nsToIds, folderNamespace);
             }
         }
     }
@@ -202,12 +200,34 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
             if (f.isDirectory()) {
                 String subNs = readNamespaceFromConfig(f);
                 collectItemIds(f, nsToIds, subNs);
-            } else if (isItemDefinition(f)) {
-                String name = stripExtension(f.getName());
-                if (name != null && !name.isBlank()) {
-                    nsToIds.computeIfAbsent(ns, k -> new HashSet<>()).add(name);
+            } else {
+                collectItemKeys(f, nsToIds, ns);
+            }
+        }
+    }
+
+    /**
+     * Parse a YAML item definition file and collect item keys from the
+     * {@code items:} section that have a {@code display_name} or
+     * {@code resource} entry. Ignores config files (_{config,config}.yml).
+     */
+    private void collectItemKeys(File file, Map<String, Set<String>> nsToIds, String ns) {
+        String name = file.getName();
+        if (!name.endsWith(".yml") && !name.endsWith(".yaml")) return;
+        if (name.startsWith("_") || name.equals("config.yml") || name.equals("config.yaml")) return;
+        try {
+            YamlConfiguration yaml = new YamlConfiguration();
+            yaml.load(file);
+            ConfigurationSection items = yaml.getConfigurationSection("items");
+            if (items == null) return;
+            for (String key : items.getKeys(false)) {
+                ConfigurationSection entry = items.getConfigurationSection(key);
+                if (entry != null && (entry.contains("display_name") || entry.contains("resource"))) {
+                    nsToIds.computeIfAbsent(ns, k -> new HashSet<>()).add(key);
                 }
             }
+        } catch (Exception e) {
+            // not a valid item file, skip
         }
     }
 
@@ -235,19 +255,7 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
         return folder == null ? "itemsadder" : folder.getName();
     }
 
-    private boolean isItemDefinition(File file) {
-        String name = file.getName();
-        return (name.endsWith(".yml") || name.endsWith(".yaml"))
-                && !name.startsWith("_")
-                && !name.equals("config.yml")
-                && !name.equals("config.yaml");
-    }
 
-    private String stripExtension(String name) {
-        if (name == null) return null;
-        int idx = name.lastIndexOf('.');
-        return idx < 0 ? name : name.substring(0, idx);
-    }
 
     @Override public String getNamespace() { return NAMESPACE; }
     @Override public String getDisplayName() { return "ItemsAdder"; }
