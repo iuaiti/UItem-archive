@@ -120,11 +120,14 @@ public abstract class AbstractGui implements InventoryHolder {
         inventory.setItem(slot, item);
         if (handler != null) {
             clickHandlers.put(slot, handler);
+        } else {
+            clickHandlers.remove(slot);
         }
     }
 
     protected void setItem(int slot, ItemStack item) {
         inventory.setItem(slot, item);
+        clickHandlers.remove(slot);
     }
 
     protected void fillBorder(int rows) {

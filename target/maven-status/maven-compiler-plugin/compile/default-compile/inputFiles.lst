@@ -46,6 +46,10 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/SkillEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/SkillListGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/SubCategoryPickerGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/hook/AuraSkillsHook.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/hook/EcoSkillsHook.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/hook/SkillsHook.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/hook/SkillsHookManager.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/listener/UItemActionListener.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/listener/UItemSkillListener.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/provider/BrowseableProvider.java

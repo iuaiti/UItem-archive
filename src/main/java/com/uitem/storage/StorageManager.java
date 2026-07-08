@@ -385,6 +385,19 @@ public class StorageManager {
         data.setPermission(s.getString("permission", null));
         data.setRequiredLevel(s.getInt("required-level", 0));
 
+        // skill-requirements: levels in the hooked skills plugin (AuraSkills/EcoSkills)
+        //   skill-requirements:
+        //     mining: 30
+        ConfigurationSection reqSec = s.getConfigurationSection("skill-requirements");
+        if (reqSec != null) {
+            Map<String, Integer> reqs = new LinkedHashMap<>();
+            for (String key : reqSec.getKeys(false)) {
+                int lvl = reqSec.getInt(key, 0);
+                if (lvl > 0) reqs.put(key.toLowerCase(Locale.ROOT), lvl);
+            }
+            data.setSkillRequirements(reqs);
+        }
+
         // Legacy integration IDs (oraxen-id/itemsadder-id/executableitems-id) — ignored on load.
         // All moved to 'source' form namespace:id.
 
@@ -420,6 +433,7 @@ public class StorageManager {
                 sk.setCooldown(ss.getDouble("cooldown", 0.0));
                 sk.setCancelEvent(ss.getBoolean("cancel-event", true));
                 sk.setChance(ss.getDouble("chance", 100.0));
+                sk.setManaCost(ss.getDouble("mana-cost", 0.0));
                 sk.setPeriodTicks(ss.getInt("period-ticks", 20));
 
                 // conditions
@@ -624,6 +638,9 @@ public class StorageManager {
         if (d.getCooldown() >= 0) cfg.set(id + ".cooldown", d.getCooldown());
         if (d.getPermission() != null) cfg.set(id + ".permission", d.getPermission());
         if (d.getRequiredLevel() > 0) cfg.set(id + ".required-level", d.getRequiredLevel());
+        for (Map.Entry<String, Integer> req : d.getSkillRequirements().entrySet()) {
+            cfg.set(id + ".skill-requirements." + req.getKey(), req.getValue());
+        }
 
         if (d.getAttributes() != null && !d.getAttributes().isEmpty()) {
             for (int i = 0; i < d.getAttributes().size(); i++) {
@@ -647,6 +664,7 @@ public class StorageManager {
                 if (sk.getCooldown() > 0) cfg.set(sp + ".cooldown", sk.getCooldown());
                 cfg.set(sp + ".cancel-event", sk.isCancelEvent());
                 if (sk.getChance() < 100) cfg.set(sp + ".chance", sk.getChance());
+                if (sk.getManaCost() > 0) cfg.set(sp + ".mana-cost", sk.getManaCost());
                 if (sk.getPeriodTicks() != 20) cfg.set(sp + ".period-ticks", sk.getPeriodTicks());
 
                 // conditions
@@ -764,6 +782,9 @@ public class StorageManager {
             if (d.getCooldown() >= 0) config.set(path + ".cooldown", d.getCooldown());
             if (d.getPermission() != null) config.set(path + ".permission", d.getPermission());
             if (d.getRequiredLevel() > 0) config.set(path + ".required-level", d.getRequiredLevel());
+            for (Map.Entry<String, Integer> req : d.getSkillRequirements().entrySet()) {
+                config.set(path + ".skill-requirements." + req.getKey(), req.getValue());
+            }
 
             if (d.getAttributes() != null && !d.getAttributes().isEmpty()) {
                 for (int i = 0; i < d.getAttributes().size(); i++) {
@@ -802,6 +823,7 @@ public class StorageManager {
                     if (sk.getCooldown() > 0) config.set(sp + ".cooldown", sk.getCooldown());
                     config.set(sp + ".cancel-event", sk.isCancelEvent());
                     if (sk.getChance() < 100) config.set(sp + ".chance", sk.getChance());
+                    if (sk.getManaCost() > 0) config.set(sp + ".mana-cost", sk.getManaCost());
                     if (sk.getPeriodTicks() != 20) config.set(sp + ".period-ticks", sk.getPeriodTicks());
 
                     // conditions

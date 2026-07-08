@@ -59,7 +59,7 @@ public class RecipeDetailGui extends AbstractGui {
             setItem(22, createItem(
                     GuiConfig.material("recipe-detail.not-found.material", Material.BARRIER),
                     GuiConfig.text("recipe-detail.not-found.name", "<red>Not found")));
-            setItem(SLOT_BACK, createBackButton(), ev -> new RecipeListGui(plugin, player).open());
+            setItem(SLOT_BACK, createBackButton(), ev -> returnToRecipeList());
             return;
         }
 
@@ -105,10 +105,7 @@ public class RecipeDetailGui extends AbstractGui {
         result.setAmount(recipe.getResultAmount());
         setItem(SLOT_RESULT, result);
 
-        setItem(SLOT_BACK, createBackButton(), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new RecipeListGui(plugin, player, 0, backCategory, backSubCategory).open();
-        });
+        setItem(SLOT_BACK, createBackButton(), ev -> returnToRecipeList());
 
         setItem(SLOT_CRAFT, createItem(
                 GuiConfig.material("recipe-detail.craft-button.material", Material.CRAFTING_TABLE),
@@ -128,6 +125,16 @@ public class RecipeDetailGui extends AbstractGui {
             }
         }
         return formatMat(item.getType());
+    }
+
+    private void returnToRecipeList() {
+        if (hasBackAction()) {
+            goBack();
+            return;
+        }
+
+        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+        new RecipeListGui(plugin, player, 0, backCategory, backSubCategory).open();
     }
 
     private ItemStack addLore(ItemStack item, String line) {

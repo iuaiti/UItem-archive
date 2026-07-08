@@ -19,14 +19,22 @@ import java.util.Map;
 public class RarityListGui extends AbstractGui {
 
     private final int returnPage; // for going back to item list if opened from there
+    private int page;
+    private static final int[] RARITY_SLOTS = {10,11,12,13,14,15,16,17,19,20,21,22,23,24,25,26};
+    private static final int RARITIES_PER_PAGE = RARITY_SLOTS.length;
 
     public RarityListGui(UItemPlugin plugin, Player player) {
         this(plugin, player, 0);
     }
 
     public RarityListGui(UItemPlugin plugin, Player player, int returnPage) {
+        this(plugin, player, returnPage, 0);
+    }
+
+    public RarityListGui(UItemPlugin plugin, Player player, int returnPage, int page) {
         super(plugin, player, 54, "<gradient:#ff6b6b:#ffd93d><bold>Rarity Manager</bold></gradient>");
         this.returnPage = returnPage;
+        this.page = page;
     }
 
     @Override
@@ -42,23 +50,29 @@ public class RarityListGui extends AbstractGui {
     protected void setup() {
         fillBorder(6);
 
+        Map<String, RarityConfig.RarityEntry> all = RarityConfig.getAll();
+        List<String> keys = new ArrayList<>(all.keySet());
+        int totalPages = Math.max(1, (int) Math.ceil((double) keys.size() / RARITIES_PER_PAGE));
+        if (page >= totalPages) page = totalPages - 1;
+        if (page < 0) page = 0;
+
         setItem(4, createItem(Material.NETHER_STAR,
                 "<gold><bold>Rarity Manager</bold>",
                 List.of(
                         "<gray>Rarities are saved in <white>rarity.yml</white>",
                         "<yellow>Click to edit | Right-click to delete",
-                        "<gray>Easy copy-paste in the file"
+                        "<gray>Easy copy-paste in the file",
+                        "<gray>Page: <white>" + (page + 1) + "/" + totalPages
                 )));
 
-        Map<String, RarityConfig.RarityEntry> all = RarityConfig.getAll();
-        List<String> keys = new ArrayList<>(all.keySet());
-
-        int[] slots = {10,11,12,13,14,15,16,17,19,20,21,22,23,24,25,26};
-        for (int i = 0; i < Math.min(keys.size(), slots.length); i++) {
-            final String key = keys.get(i);
+        int startIndex = page * RARITIES_PER_PAGE;
+        for (int i = 0; i < RARITY_SLOTS.length; i++) {
+            int dataIndex = startIndex + i;
+            if (dataIndex >= keys.size()) break;
+            final String key = keys.get(dataIndex);
             RarityConfig.RarityEntry entry = all.get(key);
             ItemStack icon = buildRarityIcon(key, entry);
-            setItem(slots[i], icon, ev -> {
+            setItem(RARITY_SLOTS[i], icon, ev -> {
                 if (ev.isRightClick()) {
                     // Delete
                     RarityConfig.removeRarity(key);
@@ -85,7 +99,7 @@ public class RarityListGui extends AbstractGui {
                 String name = input.trim().toUpperCase();
                 if (name.isEmpty() || RarityConfig.getAll().containsKey(name)) {
                     player.sendMessage(TextUtil.error("Name invalid or already exists!"));
-                    new RarityListGui(plugin, player, returnPage).open();
+                    new RarityListGui(plugin, player, returnPage, page).open();
                     return;
                 }
                 RarityConfig.setRarity(name, "<white>", "", List.of());
@@ -93,6 +107,21 @@ public class RarityListGui extends AbstractGui {
                 new RarityEditorGui(plugin, player, name, RarityConfig.get(name), this).openAsChildOf(this);
             });
         });
+
+        if (page > 0) {
+            setItem(46, createPreviousButton(), ev -> {
+                page--;
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                refresh();
+            });
+        }
+        if (page < totalPages - 1) {
+            setItem(52, createNextButton(), ev -> {
+                page++;
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                refresh();
+            });
+        }
 
         // Back button
         setItem(53, createBackButton(), ev -> {

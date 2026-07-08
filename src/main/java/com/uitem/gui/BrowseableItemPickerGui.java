@@ -87,6 +87,8 @@ public class BrowseableItemPickerGui extends AbstractGui {
                 });
 
         int totalPages = Math.max(1, (int) Math.ceil((double) ids.size() / ITEMS_PER_PAGE));
+        if (page >= totalPages) page = totalPages - 1;
+        if (page < 0) page = 0;
         int startIndex = page * ITEMS_PER_PAGE;
 
         for (int i = 0; i < ITEM_SLOTS.length; i++) {

@@ -4,6 +4,7 @@ import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
 import com.uitem.skill.Skill;
 import com.uitem.skill.SkillAction;
+import com.uitem.skill.SkillExecutor;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Particle;
@@ -18,9 +19,19 @@ public class ParticlePickerGui extends AbstractGui {
     private final UItemData itemData;
     private final Skill skill;
     private int currentPage = 0;
-    private static final int ITEMS_PER_PAGE = 16;
+    private static final int[] PARTICLE_SLOTS = {
+            10, 11, 12, 13, 14, 15, 16,
+            19, 20, 21, 22, 23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
+    };
+    private static final int ITEMS_PER_PAGE = PARTICLE_SLOTS.length;
 
-    private static final List<Particle> ALL_PARTICLES = new ArrayList<>(List.of(Particle.values()));
+    // Only particles that need no extra data object (DUST, BLOCK, ITEM... require
+    // a data param that SPAWN_PARTICLE doesn't support and would throw at spawn time).
+    private static final List<Particle> ALL_PARTICLES = Arrays.stream(Particle.values())
+            .filter(p -> p.getDataType() == Void.class)
+            .toList();
 
     public ParticlePickerGui(UItemPlugin plugin, Player player, UItemData itemData, Skill skill) {
         super(plugin, player, 54, "<gold><bold>Particle Picker</bold>");
@@ -33,7 +44,9 @@ public class ParticlePickerGui extends AbstractGui {
         fillBorder(6);
 
         int total = ALL_PARTICLES.size();
-        int totalPages = (int) Math.ceil((double) total / ITEMS_PER_PAGE);
+        int totalPages = Math.max(1, (int) Math.ceil((double) total / ITEMS_PER_PAGE));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        if (currentPage < 0) currentPage = 0;
 
         setItem(4, createItem(Material.FIREWORK_STAR,
                 "<gold><bold>Particle Effects</bold>",
@@ -47,22 +60,13 @@ public class ParticlePickerGui extends AbstractGui {
         int startIdx = currentPage * ITEMS_PER_PAGE;
         int endIdx = Math.min(startIdx + ITEMS_PER_PAGE, total);
 
-        int slot = 10;
-        int slotsInRow = 0;
         for (int i = startIdx; i < endIdx; i++) {
-            if (slotsInRow == 7) {
-                slotsInRow = 0;
-                slot += 2;
-            }
-
             final Particle particle = ALL_PARTICLES.get(i);
+            int slot = PARTICLE_SLOTS[i - startIdx];
             setItem(slot, createParticleIcon(particle), ev -> {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                 promptParticleConfig(particle);
             });
-
-            slot++;
-            slotsInRow++;
         }
 
         if (currentPage > 0) {
@@ -132,10 +136,15 @@ public class ParticlePickerGui extends AbstractGui {
 
     private void promptCount(SkillAction action) {
         plugin.getChatInputManager().requestInput(player,
-                "<yellow>Enter particle count (example: 20):",
+                "<yellow>Enter particle count (1-" + SkillExecutor.PARTICLE_MAX_COUNT + ", example: 20):",
                 input -> {
                     try {
-                        action.setParam("count", Integer.parseInt(input.trim()));
+                        int count = Integer.parseInt(input.trim());
+                        int clamped = Math.max(1, Math.min(SkillExecutor.PARTICLE_MAX_COUNT, count));
+                        if (clamped != count) {
+                            player.sendMessage(TextUtil.info("Count clamped to " + clamped));
+                        }
+                        action.setParam("count", clamped);
                     } catch (NumberFormatException e) {
                         player.sendMessage(TextUtil.info("Using default count: 10"));
                     }
@@ -148,7 +157,7 @@ public class ParticlePickerGui extends AbstractGui {
                 "<yellow>Enter offset X (spread, example: 0.3):",
                 input -> {
                     try {
-                        action.setParam("offset-x", Double.parseDouble(input.trim()));
+                        action.setParam("offset-x", clampOffset(Double.parseDouble(input.trim())));
                     } catch (NumberFormatException e) {
                         player.sendMessage(TextUtil.info("Using default offset-x: 0.3"));
                     }
@@ -161,7 +170,7 @@ public class ParticlePickerGui extends AbstractGui {
                 "<yellow>Enter offset Y (spread, example: 0.3):",
                 input -> {
                     try {
-                        action.setParam("offset-y", Double.parseDouble(input.trim()));
+                        action.setParam("offset-y", clampOffset(Double.parseDouble(input.trim())));
                     } catch (NumberFormatException e) {
                         player.sendMessage(TextUtil.info("Using default offset-y: 0.3"));
                     }
@@ -174,7 +183,7 @@ public class ParticlePickerGui extends AbstractGui {
                 "<yellow>Enter offset Z (spread, example: 0.3):",
                 input -> {
                     try {
-                        action.setParam("offset-z", Double.parseDouble(input.trim()));
+                        action.setParam("offset-z", clampOffset(Double.parseDouble(input.trim())));
                     } catch (NumberFormatException e) {
                         player.sendMessage(TextUtil.info("Using default offset-z: 0.3"));
                     }
@@ -187,7 +196,8 @@ public class ParticlePickerGui extends AbstractGui {
                 "<yellow>Enter speed/extra (example: 0.02):",
                 input -> {
                     try {
-                        action.setParam("speed", Double.parseDouble(input.trim()));
+                        double speed = Double.parseDouble(input.trim());
+                        action.setParam("speed", Math.max(0, Math.min(SkillExecutor.PARTICLE_MAX_SPEED, speed)));
                     } catch (NumberFormatException e) {
                         player.sendMessage(TextUtil.info("Using default speed: 0.01"));
                     }
@@ -197,15 +207,21 @@ public class ParticlePickerGui extends AbstractGui {
 
     private void promptInterval(SkillAction action) {
         plugin.getChatInputManager().requestInput(player,
-                "<yellow>Enter interval between spawns in ticks (0 = spawn all at once, 1 tick = 1/20 second, example: 5):",
+                "<yellow>Enter interval between spawns in ticks (0 = spawn all at once, max "
+                        + SkillExecutor.PARTICLE_MAX_INTERVAL + ", example: 5):",
                 input -> {
                     try {
-                        action.setParam("interval", Integer.parseInt(input.trim()));
+                        int interval = Integer.parseInt(input.trim());
+                        action.setParam("interval", Math.max(0, Math.min(SkillExecutor.PARTICLE_MAX_INTERVAL, interval)));
                     } catch (NumberFormatException e) {
                         player.sendMessage(TextUtil.info("Using default interval: 0 (all at once)"));
                     }
                     finishParticle(action);
                 });
+    }
+
+    private static double clampOffset(double value) {
+        return Math.max(0, Math.min(SkillExecutor.PARTICLE_MAX_OFFSET, value));
     }
 
     private void finishParticle(SkillAction action) {

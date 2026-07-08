@@ -20,9 +20,11 @@ public class EffectEditorGui extends AbstractGui {
 
     private static final List<String> TRIGGERS = List.of("HIT", "DAMAGE", "DIE", "EQUIP", "FULL_SET");
     private static final List<String> TYPES = List.of("REFLECT", "EXTRA_DAMAGE");
+    private static final int[] CURRENT_EFFECT_SLOTS = {10, 11, 12, 13, 14, 15, 16, 17};
 
     private final UItemData data;
     private UItemData.ItemEffect pending;
+    private int effectPage;
 
     public EffectEditorGui(UItemPlugin plugin, Player player, UItemData data) {
         this(plugin, player, data, null);
@@ -71,12 +73,17 @@ public class EffectEditorGui extends AbstractGui {
                 List.of("<gray>Click an effect to delete", "<gray>Recommended max: 4-6 per item")));
 
         List<UItemData.ItemEffect> current = data.getEffects() != null ? new ArrayList<>(data.getEffects()) : new ArrayList<>();
-        int[] currentSlots = {10, 11, 12, 13, 14, 15, 16, 17};
-        for (int i = 0; i < Math.min(current.size(), currentSlots.length); i++) {
-            final int idx = i;
-            UItemData.ItemEffect e = current.get(i);
+        int totalEffectPages = Math.max(1, (int) Math.ceil((double) current.size() / CURRENT_EFFECT_SLOTS.length));
+        if (effectPage >= totalEffectPages) effectPage = totalEffectPages - 1;
+        if (effectPage < 0) effectPage = 0;
+        int startIndex = effectPage * CURRENT_EFFECT_SLOTS.length;
+        for (int i = 0; i < CURRENT_EFFECT_SLOTS.length; i++) {
+            int dataIndex = startIndex + i;
+            if (dataIndex >= current.size()) break;
+            final int idx = dataIndex;
+            UItemData.ItemEffect e = current.get(dataIndex);
             ItemStack icon = buildEffectIcon(e);
-            setItem(currentSlots[i], icon, ev -> {
+            setItem(CURRENT_EFFECT_SLOTS[i], icon, ev -> {
                 if (idx < data.getEffects().size()) {
                     data.getEffects().remove(idx);
                     player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
@@ -89,6 +96,20 @@ public class EffectEditorGui extends AbstractGui {
         if (current.isEmpty()) {
             setItem(10, createItem(Material.BARRIER, "<gray><italic>No effects yet</italic>",
                     List.of("<yellow>Use the builder below to add")));
+        }
+        if (effectPage > 0) {
+            setItem(19, createPreviousButton(), ev -> {
+                effectPage--;
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                refresh();
+            });
+        }
+        if (effectPage < totalEffectPages - 1) {
+            setItem(26, createNextButton(), ev -> {
+                effectPage++;
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                refresh();
+            });
         }
 
         // Clear all button

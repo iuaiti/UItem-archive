@@ -48,6 +48,9 @@ public class UItemData {
     private double cooldown = -1;
     // Minimum player level required to hold/use. 0 = no requirement.
     private int requiredLevel = 0;
+    // Requirements from a hooked skills plugin (AuraSkills/EcoSkills):
+    // key = skill id in that plugin (e.g. "mining"), value = minimum level.
+    private Map<String, Integer> skillRequirements = new LinkedHashMap<>();
 
     // General attachable effects (reflect, extra damage on hit/damage/equip/fullset/die)
     private List<ItemEffect> effects = new ArrayList<>();
@@ -206,6 +209,14 @@ public class UItemData {
         this.requiredLevel = Math.max(0, requiredLevel);
     }
 
+    public Map<String, Integer> getSkillRequirements() {
+        return skillRequirements;
+    }
+
+    public void setSkillRequirements(Map<String, Integer> skillRequirements) {
+        this.skillRequirements = skillRequirements != null ? skillRequirements : new LinkedHashMap<>();
+    }
+
     public List<ItemEffect> getEffects() {
         return effects;
     }
@@ -242,6 +253,7 @@ public class UItemData {
         clone.permission = this.permission;
         clone.cooldown = this.cooldown;
         clone.requiredLevel = this.requiredLevel;
+        clone.skillRequirements = new LinkedHashMap<>(this.skillRequirements);
         clone.effects = new ArrayList<>();
         for (ItemEffect e : this.effects) clone.effects.add(e.copy());
         clone.skills = new ArrayList<>();

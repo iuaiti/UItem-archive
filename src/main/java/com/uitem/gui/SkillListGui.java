@@ -21,10 +21,18 @@ import java.util.List;
 public class SkillListGui extends AbstractGui {
 
     private final UItemData data;
+    private int page;
+    private static final int[] SKILL_SLOTS = {10,11,12,13,14,15,16,17, 19,20,21,22,23,24,25,26};
+    private static final int SKILLS_PER_PAGE = SKILL_SLOTS.length;
 
     public SkillListGui(UItemPlugin plugin, Player player, UItemData data) {
+        this(plugin, player, data, 0);
+    }
+
+    public SkillListGui(UItemPlugin plugin, Player player, UItemData data, int page) {
         super(plugin, player, 54, Messages.skillListTitle(data.getId()));
         this.data = data;
+        this.page = page;
     }
 
     @Override
@@ -40,23 +48,29 @@ public class SkillListGui extends AbstractGui {
     protected void setup() {
         fillBorder(6);
 
+        List<Skill> current = data.getSkills() != null ? new ArrayList<>(data.getSkills()) : new ArrayList<>();
+        int totalPages = Math.max(1, (int) Math.ceil((double) current.size() / SKILLS_PER_PAGE));
+        if (page >= totalPages) page = totalPages - 1;
+        if (page < 0) page = 0;
+
         setItem(4, createItem(Material.ENCHANTED_BOOK,
                 Messages.skillListHeader(data.getId()),
                 List.of(
                         Messages.skillListDesc(),
                         Messages.skillListFolia(),
-                        Messages.skillListClickEdit() + " | " + Messages.skillListClickDelete()
+                        Messages.skillListClickEdit() + " | " + Messages.skillListClickDelete(),
+                        "<gray>Page: <white>" + (page + 1) + "/" + totalPages
                 )));
 
         // Current skills
-        List<Skill> current = data.getSkills() != null ? new ArrayList<>(data.getSkills()) : new ArrayList<>();
-        int[] slots = {10,11,12,13,14,15,16,17, 19,20,21,22,23,24,25,26};
-
-        for (int i = 0; i < Math.min(current.size(), slots.length); i++) {
-            final int idx = i;
-            Skill sk = current.get(i);
+        int startIndex = page * SKILLS_PER_PAGE;
+        for (int i = 0; i < SKILL_SLOTS.length; i++) {
+            int dataIndex = startIndex + i;
+            if (dataIndex >= current.size()) break;
+            final int idx = dataIndex;
+            Skill sk = current.get(dataIndex);
             ItemStack icon = buildSkillIcon(sk);
-            setItem(slots[i], icon, ev -> {
+            setItem(SKILL_SLOTS[i], icon, ev -> {
                 if (ev.isShiftClick() && ev.isRightClick()) {
                     // Shift + Right Click = Delete
                     if (idx < data.getSkills().size()) {
@@ -101,6 +115,21 @@ public class SkillListGui extends AbstractGui {
 
             new SkillEditorGui(plugin, player, data, newSkill).openAsChildOf(this);
         });
+
+        if (page > 0) {
+            setItem(46, createPreviousButton(), ev -> {
+                page--;
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                refresh();
+            });
+        }
+        if (page < totalPages - 1) {
+            setItem(52, createNextButton(), ev -> {
+                page++;
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                refresh();
+            });
+        }
 
         // Back
         setItem(53, createBackButton(), ev -> goBack());

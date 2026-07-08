@@ -60,6 +60,21 @@ public final class SkillExecutor {
             Material.LIGHT
     );
 
+    // Hard limits for SPAWN_PARTICLE — one skill activation must never be able to
+    // flood nearby clients, no matter what the YAML says.
+    public static final int PARTICLE_MAX_COUNT = 300;
+    public static final int PARTICLE_MAX_INTERVAL = 200;
+    public static final double PARTICLE_MAX_OFFSET = 10.0;
+    public static final double PARTICLE_MAX_SPEED = 5.0;
+
+    private static int clampInt(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static double clampDouble(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     public SkillExecutor(UItemPlugin plugin, CooldownManager cooldowns) {
         this.plugin = plugin;
         this.cooldowns = cooldowns;
@@ -81,6 +96,11 @@ public final class SkillExecutor {
                                  SkillTrigger trigger, LivingEntity target) {
         if (skills == null || skills.isEmpty()) return false;
 
+        // Item-wide requirements (permission / level / hooked skill levels).
+        // Only active triggers get a "denied" message — passives fail silently
+        // so WHILE_HOLDING/PERIODIC don't spam the action bar every tick.
+        if (!meetsRequirements(player, itemId, trigger.isActive())) return false;
+
         boolean anyExecuted = false;
 
         for (Skill skill : skills) {
@@ -89,6 +109,7 @@ public final class SkillExecutor {
             if (!checkChance(skill)) continue;
             if (!checkConditions(player, skill, target)) continue;
             if (!cooldowns.isReady(player, itemId, skill.getId(), skill.getCooldown())) continue;
+            if (!checkAndConsumeMana(player, skill, trigger.isActive())) continue;
 
             boolean ok = executeSkillActions(player, itemId, skill, target);
             if (ok) {
@@ -98,6 +119,70 @@ public final class SkillExecutor {
         }
 
         return anyExecuted;
+    }
+
+    /**
+     * Check the item-wide requirements on the UItemData: permission,
+     * vanilla XP level, and skill levels from the hooked skills plugin
+     * (AuraSkills/EcoSkills via {@link com.uitem.hook.SkillsHookManager}).
+     */
+    private boolean meetsRequirements(Player player, String itemId, boolean notify) {
+        com.uitem.UItemData data = plugin.getItemManager().getItem(itemId);
+        if (data == null) return true;
+
+        if (data.getPermission() != null && !player.hasPermission(data.getPermission())) {
+            if (notify) player.sendActionBar(mm.deserialize("<red>You don't have permission to use this item"));
+            return false;
+        }
+
+        if (data.getRequiredLevel() > 0 && player.getLevel() < data.getRequiredLevel()) {
+            if (notify) player.sendActionBar(mm.deserialize(
+                    "<red>Requires level <yellow>" + data.getRequiredLevel()));
+            return false;
+        }
+
+        if (!data.getSkillRequirements().isEmpty()) {
+            com.uitem.hook.SkillsHookManager hooks = plugin.getSkillsHookManager();
+            for (Map.Entry<String, Integer> req : data.getSkillRequirements().entrySet()) {
+                int level = hooks != null ? hooks.getSkillLevel(player, req.getKey()) : -1;
+                if (level < req.getValue()) {
+                    if (notify) {
+                        String skillName = req.getKey().substring(0, 1).toUpperCase(Locale.ROOT)
+                                + req.getKey().substring(1);
+                        player.sendActionBar(mm.deserialize(
+                                "<red>Requires <yellow>" + skillName + " " + req.getValue()));
+                    }
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Check and consume mana cost if the skill requires it.
+     * @param notify whether to send action bar when mana is insufficient
+     */
+    private boolean checkAndConsumeMana(Player player, Skill skill, boolean notify) {
+        if (skill.getManaCost() <= 0) return true;
+        com.uitem.hook.SkillsHookManager hooks = plugin.getSkillsHookManager();
+        if (hooks == null || !hooks.isActive()) return true; // no hook = no mana system, pass
+        com.uitem.hook.SkillsHook hook = hooks.getActive();
+        if (!hook.hasManaSupport()) return true;
+
+        double current = hook.getMana(player);
+        if (current < 0) return true; // lookup failed, pass to not break the item
+        if (current < skill.getManaCost()) {
+            if (notify) {
+                player.sendActionBar(mm.deserialize(
+                        "<red>Not enough mana: <yellow>" + String.format("%.1f", skill.getManaCost())
+                        + " <gray>(<white>" + String.format("%.1f", current) + "<gray>)"));
+            }
+            return false;
+        }
+        hook.consumeMana(player, skill.getManaCost());
+        return true;
     }
 
     private boolean checkChance(Skill skill) {
@@ -219,31 +304,35 @@ public final class SkillExecutor {
 
             case SPAWN_PARTICLE -> {
                 String p = action.getStringParam("particle", "FLAME");
-                int count = action.getIntParam("count", 10);
-                double offX = action.getDoubleParam("offset-x", action.getDoubleParam("offset", 0.3));
-                double offY = action.getDoubleParam("offset-y", action.getDoubleParam("offset", 0.3));
-                double offZ = action.getDoubleParam("offset-z", action.getDoubleParam("offset", 0.3));
-                double speed = action.getDoubleParam("speed", 0.01);
-                int interval = action.getIntParam("interval", 0);
+                // Clamp everything — params can come from hand-edited YAML, not just the GUI
+                int count = clampInt(action.getIntParam("count", 10), 1, PARTICLE_MAX_COUNT);
+                double offX = clampDouble(action.getDoubleParam("offset-x", action.getDoubleParam("offset", 0.3)), 0, PARTICLE_MAX_OFFSET);
+                double offY = clampDouble(action.getDoubleParam("offset-y", action.getDoubleParam("offset", 0.3)), 0, PARTICLE_MAX_OFFSET);
+                double offZ = clampDouble(action.getDoubleParam("offset-z", action.getDoubleParam("offset", 0.3)), 0, PARTICLE_MAX_OFFSET);
+                double speed = clampDouble(action.getDoubleParam("speed", 0.01), 0, PARTICLE_MAX_SPEED);
+                int interval = clampInt(action.getIntParam("interval", 0), 0, PARTICLE_MAX_INTERVAL);
                 try {
                     Particle particle = Particle.valueOf(p.toUpperCase(Locale.ROOT));
+                    if (particle.getDataType() != Void.class) {
+                        plugin.getLogger().warning("[Skill] SPAWN_PARTICLE: particle '" + p
+                                + "' requires extra data (" + particle.getDataType().getSimpleName()
+                                + ") and is not supported");
+                        return true;
+                    }
                     Location particleLoc = loc.clone().add(0, 1, 0);
                     if (interval > 0) {
                         int[] spawned = {0};
-                        new org.bukkit.scheduler.BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                if (spawned[0]++ >= count || !player.isOnline()) {
-                                    this.cancel();
-                                    return;
-                                }
-                                world.spawnParticle(particle, particleLoc, 1, offX, offY, offZ, speed);
+                        SchedulerUtil.runTimerAtLocation(plugin, particleLoc, interval, interval, () -> {
+                            if (spawned[0]++ >= count || !player.isOnline()) {
+                                return false;
                             }
-                        }.runTaskTimer(plugin, 0, interval);
+                            world.spawnParticle(particle, particleLoc, 1, offX, offY, offZ, speed);
+                            return true;
+                        });
                     } else {
                         world.spawnParticle(particle, particleLoc, count, offX, offY, offZ, speed);
                     }
-                } catch (Exception e) {
+                } catch (IllegalArgumentException e) {
                     plugin.getLogger().warning("[Skill] SPAWN_PARTICLE: invalid particle '" + p + "'");
                 }
                 return true;

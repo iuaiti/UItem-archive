@@ -52,29 +52,85 @@ public class CraftingGui implements InventoryHolder {
         this.player = player;
         this.recipeManager = plugin.getRecipeManager();
 
-        this.craftSlots = resolveCraftSlots();
-        this.resultSlot = GuiConfig.slot("crafting-table.slots.result", 23);
-        this.craft1Slot = GuiConfig.slot("crafting-table.slots.craft-1", 36);
-        this.craft8Slot = GuiConfig.slot("crafting-table.slots.craft-8", 37);
-        this.craft64Slot = GuiConfig.slot("crafting-table.slots.craft-64", 38);
-        this.craftMaxSlot = GuiConfig.slot("crafting-table.slots.craft-max", 39);
-        this.homeSlot = GuiConfig.slot("crafting-table.slots.home", 41);
-        this.recipesSlot = GuiConfig.slot("crafting-table.slots.recipes", 42);
-        this.gridLabelSlot = GuiConfig.slot("crafting-table.labels.grid.slot", 13);
-        this.arrowLabelSlot = GuiConfig.slot("crafting-table.labels.arrow.slot", 22);
-        this.resultLabelSlot = GuiConfig.slot("crafting-table.labels.result.slot", 24);
+        int configuredResultSlot = GuiConfig.slot("crafting-table.slots.result", 23, GUI_SIZE);
+        int configuredCraft1Slot = GuiConfig.slot("crafting-table.slots.craft-1", 36, GUI_SIZE);
+        int configuredCraft8Slot = GuiConfig.slot("crafting-table.slots.craft-8", 37, GUI_SIZE);
+        int configuredCraft64Slot = GuiConfig.slot("crafting-table.slots.craft-64", 38, GUI_SIZE);
+        int configuredCraftMaxSlot = GuiConfig.slot("crafting-table.slots.craft-max", 39, GUI_SIZE);
+        int configuredHomeSlot = GuiConfig.slot("crafting-table.slots.home", 41, GUI_SIZE);
+        int configuredRecipesSlot = GuiConfig.slot("crafting-table.slots.recipes", 42, GUI_SIZE);
+        int configuredGridLabelSlot = GuiConfig.slot("crafting-table.labels.grid.slot", 13, GUI_SIZE);
+        int configuredArrowLabelSlot = GuiConfig.slot("crafting-table.labels.arrow.slot", 22, GUI_SIZE);
+        int configuredResultLabelSlot = GuiConfig.slot("crafting-table.labels.result.slot", 24, GUI_SIZE);
+
+        Set<Integer> reservedSlots = reservedSlotSet(
+                configuredResultSlot, configuredCraft1Slot, configuredCraft8Slot, configuredCraft64Slot,
+                configuredCraftMaxSlot, configuredHomeSlot, configuredRecipesSlot, configuredGridLabelSlot,
+                configuredArrowLabelSlot, configuredResultLabelSlot);
+        if (reservedSlots.size() < 10 || hasDefaultCraftSlotConflict(reservedSlots)) {
+            configuredResultSlot = 23;
+            configuredCraft1Slot = 36;
+            configuredCraft8Slot = 37;
+            configuredCraft64Slot = 38;
+            configuredCraftMaxSlot = 39;
+            configuredHomeSlot = 41;
+            configuredRecipesSlot = 42;
+            configuredGridLabelSlot = 13;
+            configuredArrowLabelSlot = 22;
+            configuredResultLabelSlot = 24;
+            reservedSlots = reservedSlotSet(
+                    configuredResultSlot, configuredCraft1Slot, configuredCraft8Slot, configuredCraft64Slot,
+                    configuredCraftMaxSlot, configuredHomeSlot, configuredRecipesSlot, configuredGridLabelSlot,
+                    configuredArrowLabelSlot, configuredResultLabelSlot);
+        }
+
+        this.resultSlot = configuredResultSlot;
+        this.craft1Slot = configuredCraft1Slot;
+        this.craft8Slot = configuredCraft8Slot;
+        this.craft64Slot = configuredCraft64Slot;
+        this.craftMaxSlot = configuredCraftMaxSlot;
+        this.homeSlot = configuredHomeSlot;
+        this.recipesSlot = configuredRecipesSlot;
+        this.gridLabelSlot = configuredGridLabelSlot;
+        this.arrowLabelSlot = configuredArrowLabelSlot;
+        this.resultLabelSlot = configuredResultLabelSlot;
+        this.craftSlots = resolveCraftSlots(reservedSlots);
 
         this.inventory = Bukkit.createInventory(this, GUI_SIZE,
                 TextUtil.parse(GuiConfig.text("crafting-table.title", "<gradient:#ff6b6b:#ffd93d>Crafting</gradient>")));
         initialize();
     }
 
-    private static int[] resolveCraftSlots() {
+    private static int[] resolveCraftSlots(Set<Integer> reservedSlots) {
         List<Integer> configured = GuiConfig.slotList("crafting-table.slots.grid", null);
         if (configured == null || configured.size() != 9) return DEFAULT_CRAFT_SLOTS.clone();
         int[] out = new int[9];
-        for (int i = 0; i < 9; i++) out[i] = configured.get(i);
+        Set<Integer> seen = new HashSet<>();
+        for (int i = 0; i < 9; i++) {
+            int slot = configured.get(i);
+            if (slot < 0 || slot >= GUI_SIZE || !seen.add(slot) || reservedSlots.contains(slot)) {
+                return DEFAULT_CRAFT_SLOTS.clone();
+            }
+            out[i] = slot;
+        }
         return out;
+    }
+
+    private static Set<Integer> reservedSlotSet(int... slots) {
+        Set<Integer> reserved = new HashSet<>();
+        for (int slot : slots) {
+            reserved.add(slot);
+        }
+        return reserved;
+    }
+
+    private static boolean hasDefaultCraftSlotConflict(Set<Integer> reservedSlots) {
+        for (int slot : DEFAULT_CRAFT_SLOTS) {
+            if (reservedSlots.contains(slot)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void initialize() {
@@ -486,6 +542,7 @@ public class CraftingGui implements InventoryHolder {
     }
 
     public void handleDrag(InventoryDragEvent event) {
+        boolean touchedCraftSlot = false;
         for (int slot : event.getRawSlots()) {
             if (slot < GUI_SIZE) {
                 if (slot == resultSlot || slot == craft1Slot || slot == craft8Slot
@@ -501,7 +558,14 @@ public class CraftingGui implements InventoryHolder {
                     event.setCancelled(true);
                     return;
                 }
+                touchedCraftSlot = true;
             }
+        }
+        if (touchedCraftSlot) {
+            SchedulerUtil.runSync(plugin, () -> {
+                updateResult();
+                updateCraftButtons();
+            });
         }
     }
 

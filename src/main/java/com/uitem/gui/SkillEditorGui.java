@@ -28,6 +28,13 @@ public class SkillEditorGui extends AbstractGui {
     private final UItemData itemData;
     private final Skill skill;
     private int actionPage = 0;
+    private int actionListPage = 0;
+
+    private static final int[] ACTION_LIST_SLOTS = {
+            23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
+    };
 
     private static final List<SkillTrigger> ACTIVE_TRIGGERS = List.of(
             SkillTrigger.RIGHT_CLICK, SkillTrigger.LEFT_CLICK,
@@ -51,34 +58,36 @@ public class SkillEditorGui extends AbstractGui {
                     SkillAction.ActionType.PLAY_SOUND,
                     SkillAction.ActionType.GIVE_POTION,
                     SkillAction.ActionType.HEAL,
-                    SkillAction.ActionType.DAMAGE,
-                    SkillAction.ActionType.SHOOT_PROJECTILE
+                    SkillAction.ActionType.DAMAGE
             ),
             List.of( // Page 2: Commands + Movement
+                    SkillAction.ActionType.SHOOT_PROJECTILE,
                     SkillAction.ActionType.CONSOLE_COMMAND,
                     SkillAction.ActionType.PLAYER_COMMAND,
                     SkillAction.ActionType.LAUNCH,
                     SkillAction.ActionType.TELEPORT,
                     SkillAction.ActionType.STRIKE_LIGHTNING,
-                    SkillAction.ActionType.SET_FIRE,
+                    SkillAction.ActionType.SET_FIRE
+            ),
+            List.of( // Page 3: Utility
                     SkillAction.ActionType.FEED,
                     SkillAction.ActionType.CONSUME_DURABILITY,
-                    SkillAction.ActionType.CONSUME_ITEM
-            ),
-            List.of( // Page 3: Items + Effects
+                    SkillAction.ActionType.CONSUME_ITEM,
                     SkillAction.ActionType.GIVE_ITEM,
                     SkillAction.ActionType.REMOVE_POTION,
                     SkillAction.ActionType.BLOCK_BREAK,
-                    SkillAction.ActionType.EXPLOSION,
+                    SkillAction.ActionType.EXPLOSION
+            ),
+            List.of( // Page 4: Area + Effects
                     SkillAction.ActionType.AREA_DAMAGE,
                     SkillAction.ActionType.POTION_AREA,
                     SkillAction.ActionType.BLIND,
                     SkillAction.ActionType.GLOW,
-                    SkillAction.ActionType.CLEAR_EFFECTS
+                    SkillAction.ActionType.CLEAR_EFFECTS,
+                    SkillAction.ActionType.LEVITATE,
+                    SkillAction.ActionType.SPAWN_MOB
             ),
             List.of( // Page 4: Misc
-                    SkillAction.ActionType.LEVITATE,
-                    SkillAction.ActionType.SPAWN_MOB,
                     SkillAction.ActionType.FREEZE
             )
     );
@@ -136,13 +145,16 @@ public class SkillEditorGui extends AbstractGui {
         fillBorder(6);
 
         // Header
+        List<String> headerLore = new ArrayList<>();
+        headerLore.add(Messages.skillEditorHeaderCooldown(skill.getCooldown()));
+        headerLore.add(Messages.skillEditorHeaderChance((int) skill.getChance()));
+        if (skill.getManaCost() > 0) {
+            headerLore.add("<gray>Mana: <white>" + skill.getManaCost());
+        }
+        headerLore.add(Messages.skillEditorHeaderActions(skill.getActions().size()));
         setItem(4, createItem(Material.ENCHANTED_BOOK,
                 Messages.skillEditorHeaderTitle(skill.getId(), skill.getTrigger().getDisplayName()),
-                List.of(
-                        Messages.skillEditorHeaderCooldown(skill.getCooldown()),
-                        Messages.skillEditorHeaderChance((int) skill.getChance()),
-                        Messages.skillEditorHeaderActions(skill.getActions().size())
-                )));
+                headerLore));
 
         // === Settings Row (10-16) ===
         List<SkillTrigger> triggerOptions = new ArrayList<>();
@@ -226,11 +238,35 @@ public class SkillEditorGui extends AbstractGui {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
             saveAndRefresh();
         });
-        setItem(16, createItem(Material.REDSTONE, Messages.skillEditorCondChance50(), List.of(Messages.skillEditorCondChance50Desc())), ev -> {
-            skill.addCondition(com.uitem.skill.SkillCondition.chance(50));
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            saveAndRefresh();
-        });
+
+        // Slot 16: Mana Cost when the hooked skills plugin supports mana,
+        // otherwise the plain Chance 50% condition button.
+        boolean manaAvailable = plugin.getSkillsHookManager() != null
+                && plugin.getSkillsHookManager().isActive()
+                && plugin.getSkillsHookManager().getActive().hasManaSupport();
+        if (manaAvailable) {
+            setItem(16, createItem(Material.LAPIS_LAZULI,
+                    "<blue><bold>Mana Cost</bold> <gray>(" + (skill.getManaCost() > 0 ? String.valueOf(skill.getManaCost()) : "free") + ")",
+                    List.of(
+                            "<gray>Mana taken each time the skill casts",
+                            "<gray>Hook: <green>" + plugin.getSkillsHookManager().getActive().getName(),
+                            "",
+                            "<yellow>Click to set (0 = free)"
+                    )), ev -> {
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                plugin.getChatInputManager().requestInput(player,
+                        "<yellow>Enter mana cost (0 = free, example: 20):", input -> {
+                    try { skill.setManaCost(Double.parseDouble(input.trim())); } catch (Exception ignored) {}
+                    saveAndReopen();
+                }, this::reopen);
+            });
+        } else {
+            setItem(16, createItem(Material.REDSTONE, Messages.skillEditorCondChance50(), List.of(Messages.skillEditorCondChance50Desc())), ev -> {
+                skill.addCondition(com.uitem.skill.SkillCondition.chance(50));
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                saveAndRefresh();
+            });
+        }
 
         // === Particle Picker + Actions Row (19-25) ===
         setItem(19, createItem(Material.FIREWORK_STAR, Messages.skillEditorParticlePicker(),
@@ -251,8 +287,10 @@ public class SkillEditorGui extends AbstractGui {
             new PotionPresetComboGui(plugin, player, itemData, skill).openAsChildOf(this);
         });
 
-        int[] actSlots = {22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
         List<SkillAction> acts = skill.getActions();
+        int totalActionListPages = Math.max(1, (int) Math.ceil((double) acts.size() / ACTION_LIST_SLOTS.length));
+        if (actionListPage >= totalActionListPages) actionListPage = totalActionListPages - 1;
+        if (actionListPage < 0) actionListPage = 0;
         if (acts.isEmpty()) {
             setItem(22, createItem(Material.WRITABLE_BOOK,
                     Messages.skillEditorActionsHeader(0),
@@ -263,13 +301,19 @@ public class SkillEditorGui extends AbstractGui {
         } else {
             setItem(22, createItem(Material.WRITABLE_BOOK,
                     Messages.skillEditorActionsHeader(acts.size()),
-                    List.of(Messages.skillEditorActionsHint())),
+                    List.of(
+                            Messages.skillEditorActionsHint(),
+                            "<gray>Page: <white>" + (actionListPage + 1) + "/" + totalActionListPages
+                    )),
                     ev -> addActionByType(firstActionType()));
-            for (int i = 0; i < Math.min(acts.size(), actSlots.length); i++) {
-                final int idx = i;
-                SkillAction a = acts.get(idx);
+            int startIndex = actionListPage * ACTION_LIST_SLOTS.length;
+            for (int i = 0; i < ACTION_LIST_SLOTS.length; i++) {
+                int dataIndex = startIndex + i;
+                if (dataIndex >= acts.size()) break;
+                final int idx = dataIndex;
+                SkillAction a = acts.get(dataIndex);
                 ItemStack icon = buildActionIcon(a);
-                setItem(actSlots[i], icon, ev -> {
+                setItem(ACTION_LIST_SLOTS[i], icon, ev -> {
                     if (idx >= skill.getActions().size()) return;
                     if (ev.isRightClick()) {
                         skill.getActions().remove(idx);
@@ -278,6 +322,20 @@ public class SkillEditorGui extends AbstractGui {
                     } else {
                         editActionMainValue(a);
                     }
+                });
+            }
+            if (actionListPage > 0) {
+                setItem(35, createPreviousButton(), ev -> {
+                    actionListPage--;
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                    refresh();
+                });
+            }
+            if (actionListPage < totalActionListPages - 1) {
+                setItem(36, createNextButton(), ev -> {
+                    actionListPage++;
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                    refresh();
                 });
             }
         }

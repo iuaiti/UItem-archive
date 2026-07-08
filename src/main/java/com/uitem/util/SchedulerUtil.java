@@ -55,6 +55,25 @@ public final class SchedulerUtil {
         plugin.getServer().getRegionScheduler().execute(plugin, location, runnable);
     }
 
+    /**
+     * Repeating task bound to a location's region (Folia) or the main thread (Paper/Spigot).
+     * The task returns false to cancel itself.
+     */
+    public static void runTimerAtLocation(Plugin plugin, Location location, long delayTicks, long periodTicks,
+                                          java.util.function.BooleanSupplier task) {
+        long delay = Math.max(1, delayTicks);
+        long period = Math.max(1, periodTicks);
+        if (isFolia()) {
+            plugin.getServer().getRegionScheduler().runAtFixedRate(plugin, location, t -> {
+                if (!task.getAsBoolean()) t.cancel();
+            }, delay, period);
+        } else {
+            plugin.getServer().getScheduler().runTaskTimer(plugin, t -> {
+                if (!task.getAsBoolean()) t.cancel();
+            }, delay, period);
+        }
+    }
+
     public static void runForEntity(Plugin plugin, Entity entity, Runnable runnable) {
         entity.getScheduler().run(plugin, task -> runnable.run(), null);
     }

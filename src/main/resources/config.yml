@@ -41,6 +41,17 @@ wizard:
 #   - oraxen   (Oraxen, if installed)
 # To register additional providers, call ProviderManager.register() from code.
 
+# Skills plugin hook (AuraSkills / EcoSkills)
+# Used by item 'skill-requirements' (e.g. require Mining 30 to use an item).
+# ONLY ONE hook is ever active at a time.
+hooks:
+  skills:
+    # auto      = prefer AuraSkills, fall back to EcoSkills
+    # auraskills = only hook AuraSkills
+    # ecoskills  = only hook EcoSkills
+    # none      = disable the hook entirely
+    plugin: auto
+
 # Debug mode - log extra detailed info (useful when debugging provider reflection)
 debug: false
 

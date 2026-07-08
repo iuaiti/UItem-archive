@@ -54,6 +54,11 @@ public final class GuiConfig {
         return config.getInt(path, fallback);
     }
 
+    public static int slot(String path, int fallback, int inventorySize) {
+        int value = slot(path, fallback);
+        return value >= 0 && value < inventorySize ? value : fallback;
+    }
+
     public static List<Integer> slotList(String path, List<Integer> fallback) {
         if (config == null || !config.isSet(path)) return fallback;
         List<Integer> list = config.getIntegerList(path);

@@ -36,6 +36,7 @@ public final class UItemPlugin extends JavaPlugin {
     private GuiListener guiListener;
     private RecipeManager recipeManager;
     private com.uitem.search.SearchManager searchManager;
+    private com.uitem.hook.SkillsHookManager skillsHookManager;
 
     // Native Skill system
     private com.uitem.skill.CooldownManager skillCooldownManager;
@@ -76,6 +77,8 @@ public final class UItemPlugin extends JavaPlugin {
         this.searchManager = new com.uitem.search.SearchManager();
 
         providerManager.detect();
+        this.skillsHookManager = new com.uitem.hook.SkillsHookManager(this);
+        skillsHookManager.detect();
         storageManager.loadAll(itemManager);
 
         this.recipeManager = new RecipeManager(this, this.itemManager);
@@ -180,6 +183,10 @@ public final class UItemPlugin extends JavaPlugin {
                     providerManager.detect();
                     getLogger().info("[UItem] Providers: " + providerStatus());
                 }
+                if (name.equals("AuraSkills") || name.equals("EcoSkills")) {
+                    getLogger().info("[UItem] Detected " + name + " enabling — re-detecting skills hook...");
+                    skillsHookManager.detect();
+                }
             }
         }, this);
     }
@@ -222,6 +229,10 @@ public final class UItemPlugin extends JavaPlugin {
 
     public com.uitem.search.SearchManager getSearchManager() {
         return searchManager;
+    }
+
+    public com.uitem.hook.SkillsHookManager getSkillsHookManager() {
+        return skillsHookManager;
     }
 
     private void seedExampleConfigsIfNeeded(File itemsDir, File recipesDir) {

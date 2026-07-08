@@ -20,7 +20,13 @@ public class PotionPresetComboGui extends AbstractGui {
     private final UItemData itemData;
     private final Skill skill;
     private int currentPage = 0;
-    private static final int ITEMS_PER_PAGE = 16;
+    private static final int[] PRESET_SLOTS = {
+            10, 11, 12, 13, 14, 15, 16,
+            19, 20, 21, 22, 23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
+    };
+    private static final int ITEMS_PER_PAGE = PRESET_SLOTS.length;
 
     public PotionPresetComboGui(UItemPlugin plugin, Player player, UItemData itemData, Skill skill) {
         super(plugin, player, 54, "<light_purple><bold>Potion Preset Combos</bold>");
@@ -40,7 +46,9 @@ public class PotionPresetComboGui extends AbstractGui {
 
         // Header
         int totalPresets = PotionEffectHelper.getTotalPresets();
-        int totalPages = (int) Math.ceil((double) totalPresets / ITEMS_PER_PAGE);
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalPresets / ITEMS_PER_PAGE));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        if (currentPage < 0) currentPage = 0;
 
         setItem(4, createItem(Material.BREWING_STAND,
                 "<light_purple><bold>Potion Combos</bold>",
@@ -56,24 +64,15 @@ public class PotionPresetComboGui extends AbstractGui {
         int startIdx = currentPage * ITEMS_PER_PAGE;
         int endIdx = Math.min(startIdx + ITEMS_PER_PAGE, allPresets.size());
 
-        int slot = 10;
-        int slotsInRow = 0;
         for (int i = startIdx; i < endIdx; i++) {
-            if (slotsInRow == 7) {
-                slotsInRow = 0;
-                slot += 2;
-            }
-
             final PotionEffectHelper.PotionPreset preset = allPresets.get(i);
             ItemStack icon = createPresetIcon(preset);
+            int slot = PRESET_SLOTS[i - startIdx];
             
             setItem(slot, icon, ev -> {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                 confirmAddPreset(preset);
             });
-
-            slot++;
-            slotsInRow++;
         }
 
         // Navigation row

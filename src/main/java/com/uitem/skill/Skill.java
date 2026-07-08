@@ -34,6 +34,7 @@ public class Skill {
     private double cooldown = 0.0;        // seconds
     private boolean cancelEvent = true;   // whether to cancel the interact event (only applies to active)
     private double chance = 100.0;        // 0-100, % activation chance (handy for passive combat)
+    private double manaCost = 0.0;        // mana taken per cast via the hooked skills plugin; 0 = free
 
     private List<SkillCondition> conditions = new ArrayList<>();
     private List<SkillAction> actions = new ArrayList<>();
@@ -64,6 +65,9 @@ public class Skill {
 
     public double getChance() { return chance; }
     public void setChance(double chance) { this.chance = Math.max(0, Math.min(100, chance)); }
+
+    public double getManaCost() { return manaCost; }
+    public void setManaCost(double manaCost) { this.manaCost = Math.max(0, manaCost); }
 
     public List<SkillCondition> getConditions() { return conditions; }
     public void setConditions(List<SkillCondition> conditions) {
@@ -96,6 +100,7 @@ public class Skill {
         s.cooldown = this.cooldown;
         s.cancelEvent = this.cancelEvent;
         s.chance = this.chance;
+        s.manaCost = this.manaCost;
         s.periodTicks = this.periodTicks;
 
         s.conditions = new ArrayList<>();

@@ -24,9 +24,8 @@ public class MaterialPickerGui extends AbstractGui {
     private String category;
     private List<Material> materials;
 
-    private static final int ITEMS_PER_PAGE = 28;
+    private static final int ITEMS_PER_PAGE = 21;
     private static final int[] ITEM_SLOTS = {
-            10, 11, 12, 13, 14, 15, 16,
             19, 20, 21, 22, 23, 24, 25,
             28, 29, 30, 31, 32, 33, 34,
             37, 38, 39, 40, 41, 42, 43
@@ -111,17 +110,7 @@ public class MaterialPickerGui extends AbstractGui {
         String[] display = {"<white>All", "<red>Swords", "<gold>Tools", "<blue>Armor",
                 "<aqua>Ranged", "<light_purple>Magic", "<green>Consumable", "<yellow>Material",
                 "<green>Blocks", "<aqua>Items"};
-        int[] catSlots = {1, 2, 3, 4, 5, 6, 7, 8, 0, 8}; // simplified positioning
-        // Use bottom row border instead to avoid overlap: simpler approach
-        int start = 0;
-        for (int i = 0; i < cats.length; i++) {
-            String cat = cats[i];
-            boolean active = category.equals(cat);
-            String finalCat = cat;
-            int slot = 1 + i; // row 0 columns 1..8 won't work due to border; use 19..27 region
-        }
-        // Simpler: place categories on slot 19-22, 28-31 etc. To stay simple, iterate slot in row 2-3 free area.
-        int[] catSlotsFixed = new int[]{19, 20, 21, 22, 23, 24, 25, 28, 29, 30};
+        int[] catSlotsFixed = new int[]{1, 2, 3, 5, 6, 7, 10, 11, 15, 16};
         for (int i = 0; i < Math.min(cats.length, catSlotsFixed.length); i++) {
             String cat = cats[i];
             boolean active = category.equals(cat);
@@ -151,6 +140,8 @@ public class MaterialPickerGui extends AbstractGui {
                 });
 
         int totalPages = Math.max(1, (int) Math.ceil((double) materials.size() / ITEMS_PER_PAGE));
+        if (page >= totalPages) page = totalPages - 1;
+        if (page < 0) page = 0;
         int startIndex = page * ITEMS_PER_PAGE;
 
         for (int i = 0; i < ITEM_SLOTS.length; i++) {

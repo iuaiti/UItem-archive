@@ -64,6 +64,8 @@ public class LoreEditorGui extends AbstractGui {
 
         List<String> lore = data.getLore();
         int totalPages = Math.max(1, (int) Math.ceil((double) lore.size() / ITEMS_PER_PAGE));
+        if (page >= totalPages) page = totalPages - 1;
+        if (page < 0) page = 0;
 
         int startIndex = page * ITEMS_PER_PAGE;
 

@@ -379,6 +379,67 @@ public class ItemEditorGui extends AbstractGui {
                     });
         });
 
+        // Skill Requirements (slot 29) — only shown when an AuraSkills/EcoSkills hook is active
+        boolean hookActive = plugin.getSkillsHookManager() != null && plugin.getSkillsHookManager().isActive();
+        if (hookActive) {
+            String hookName = plugin.getSkillsHookManager().getActive().getName();
+            List<String> reqLore = new ArrayList<>();
+            if (data.getSkillRequirements().isEmpty()) {
+                reqLore.add("<gray>None");
+            } else {
+                for (java.util.Map.Entry<String, Integer> req : data.getSkillRequirements().entrySet()) {
+                    reqLore.add("<gray>• <white>" + req.getKey() + " <gray>≥ <yellow>" + req.getValue());
+                }
+            }
+            reqLore.add("");
+            reqLore.add("<gray>Hook: <green>" + hookName);
+            reqLore.add("<yellow>Left click: <white>Add requirement");
+            reqLore.add("<red>Right click: <white>Clear all");
+            setItem(29, createItem(Material.KNOWLEDGE_BOOK,
+                    "<dark_aqua><bold>Skill Requirements</bold>", reqLore), event -> {
+                if (event.isRightClick()) {
+                    if (!data.getSkillRequirements().isEmpty()) {
+                        data.getSkillRequirements().clear();
+                        player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
+                        saveAndReopen();
+                        player.sendMessage(TextUtil.success("Skill requirements cleared"));
+                    }
+                    return;
+                }
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
+                plugin.getChatInputManager().requestInput(player,
+                        "<yellow>Enter requirement as <white>skill_id:level</white> (example: mining:30), 'none' to cancel:",
+                        input -> {
+                            String in = input.trim();
+                            if (in.equalsIgnoreCase("none")) {
+                                new ItemEditorGui(plugin, player, data).open();
+                                return;
+                            }
+                            String[] parts = in.split(":");
+                            int level = -1;
+                            if (parts.length == 2) {
+                                try {
+                                    level = Integer.parseInt(parts[1].trim());
+                                } catch (NumberFormatException ignored) {}
+                            }
+                            if (parts.length != 2 || level <= 0) {
+                                player.sendMessage(TextUtil.error("Invalid format! Use skill_id:level (example: mining:30)"));
+                                new ItemEditorGui(plugin, player, data).open();
+                                return;
+                            }
+                            String skillId = parts[0].trim().toLowerCase(java.util.Locale.ROOT);
+                            // Warn (but still allow) when the active hook doesn't know this skill id
+                            if (!plugin.getSkillsHookManager().getActive().hasSkill(skillId)) {
+                                player.sendMessage(TextUtil.info("Warning: skill '" + skillId + "' not found in "
+                                        + plugin.getSkillsHookManager().getActive().getName() + " — saved anyway"));
+                            }
+                            data.getSkillRequirements().put(skillId, level);
+                            saveAndReopen();
+                            player.sendMessage(TextUtil.success("Requirement added: " + skillId + " ≥ " + level));
+                        });
+            });
+        }
+
         // Skills (slot 26)
         int skillCount = data.getSkills() != null ? data.getSkills().size() : 0;
         setItem(26, createItem(Material.ENCHANTED_BOOK,

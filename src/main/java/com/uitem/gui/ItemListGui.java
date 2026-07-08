@@ -81,7 +81,8 @@ public class ItemListGui extends AbstractGui {
         List<UItemData> allItems = new ArrayList<>(manager.getAllItems().values());
         allItems.sort(Comparator.comparing(UItemData::getId, String.CASE_INSENSITIVE_ORDER));
 
-        int itemsPerPage = plugin.getConfig().getInt("gui.items-per-page", DEFAULT_ITEMS_PER_PAGE);
+        int configuredItemsPerPage = plugin.getConfig().getInt("gui.items-per-page", DEFAULT_ITEMS_PER_PAGE);
+        int itemsPerPage = Math.max(1, Math.min(configuredItemsPerPage, ITEM_SLOTS.length));
 
         SearchManager searchMgr = plugin.getSearchManager();
         String query = searchMgr.getQuery(player);
@@ -99,7 +100,7 @@ public class ItemListGui extends AbstractGui {
         if (page < 0) page = 0;
 
         int startIndex = page * itemsPerPage;
-        for (int i = 0; i < ITEM_SLOTS.length; i++) {
+        for (int i = 0; i < itemsPerPage; i++) {
             int dataIndex = startIndex + i;
             if (dataIndex < allItems.size()) {
                 UItemData data = allItems.get(dataIndex);

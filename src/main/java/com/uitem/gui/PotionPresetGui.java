@@ -22,7 +22,13 @@ public class PotionPresetGui extends AbstractGui {
     private final UItemData itemData;
     private final Skill skill;
     private int currentPage = 0;
-    private static final int ITEMS_PER_PAGE = 16; // 4x4 grid (slot 10-26, skip borders)
+    private static final int[] EFFECT_SLOTS = {
+            10, 11, 12, 13, 14, 15, 16,
+            19, 20, 21, 22, 23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
+    };
+    private static final int ITEMS_PER_PAGE = EFFECT_SLOTS.length;
 
     public PotionPresetGui(UItemPlugin plugin, Player player, UItemData itemData, Skill skill) {
         super(plugin, player, 54, "<light_purple><bold>Choose Potion Effect</bold>");
@@ -42,7 +48,9 @@ public class PotionPresetGui extends AbstractGui {
 
         // Header
         int totalEffects = PotionEffectRegistry.getTotalEffects();
-        int totalPages = (int) Math.ceil((double) totalEffects / ITEMS_PER_PAGE);
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalEffects / ITEMS_PER_PAGE));
+        if (currentPage >= totalPages) currentPage = totalPages - 1;
+        if (currentPage < 0) currentPage = 0;
         
         setItem(4, createItem(Material.POTION,
                 "<light_purple><bold>Potion Effects</bold>",
@@ -58,24 +66,15 @@ public class PotionPresetGui extends AbstractGui {
         int startIdx = currentPage * ITEMS_PER_PAGE;
         int endIdx = Math.min(startIdx + ITEMS_PER_PAGE, allEffects.size());
 
-        int slot = 10;
-        int slotsInRow = 0;
         for (int i = startIdx; i < endIdx; i++) {
-            if (slotsInRow == 7) {
-                slotsInRow = 0;
-                slot += 2;
-            }
-
             final PotionEffectRegistry.PotionInfo info = allEffects.get(i);
             ItemStack icon = createPotionIcon(info);
+            int slot = EFFECT_SLOTS[i - startIdx];
             
             setItem(slot, icon, ev -> {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                 showPotionDurationPrompt(info);
             });
-
-            slot++;
-            slotsInRow++;
         }
 
         // Navigation row (always show prev/next when applicable, back always visible)
