@@ -194,7 +194,7 @@ public class ItemEditorGui extends AbstractGui {
                                     dur > 0 ? String.valueOf(dur) : (dur == 0 ? "No bar" : "Default"))));
                         } catch (NumberFormatException e) {
                             player.sendMessage(TextUtil.error("Invalid number!"));
-                            new ItemEditorGui(plugin, player, data).open();
+                            reopen();
                         }
                     });
         });
@@ -309,7 +309,7 @@ public class ItemEditorGui extends AbstractGui {
                             player.sendMessage(TextUtil.success("Cooldown = " + data.getCooldown() + "s"));
                         } catch (NumberFormatException e) {
                             player.sendMessage(TextUtil.error("Invalid number!"));
-                            new ItemEditorGui(plugin, player, data).open();
+                            reopen();
                         }
                     });
         });
@@ -351,7 +351,7 @@ public class ItemEditorGui extends AbstractGui {
                             player.sendMessage(TextUtil.success("Stack size = " + data.getStackSize()));
                         } catch (NumberFormatException e) {
                             player.sendMessage(TextUtil.error("Invalid number!"));
-                            new ItemEditorGui(plugin, player, data).open();
+                            reopen();
                         }
                     });
         });
@@ -374,7 +374,7 @@ public class ItemEditorGui extends AbstractGui {
                             player.sendMessage(TextUtil.success("Required level = " + data.getRequiredLevel()));
                         } catch (NumberFormatException e) {
                             player.sendMessage(TextUtil.error("Invalid number!"));
-                            new ItemEditorGui(plugin, player, data).open();
+                            reopen();
                         }
                     });
         });
@@ -412,7 +412,7 @@ public class ItemEditorGui extends AbstractGui {
                         input -> {
                             String in = input.trim();
                             if (in.equalsIgnoreCase("none")) {
-                                new ItemEditorGui(plugin, player, data).open();
+                                reopen();
                                 return;
                             }
                             String[] parts = in.split(":");
@@ -424,7 +424,7 @@ public class ItemEditorGui extends AbstractGui {
                             }
                             if (parts.length != 2 || level <= 0) {
                                 player.sendMessage(TextUtil.error("Invalid format! Use skill_id:level (example: mining:30)"));
-                                new ItemEditorGui(plugin, player, data).open();
+                                reopen();
                                 return;
                             }
                             String skillId = parts[0].trim().toLowerCase(java.util.Locale.ROOT);
@@ -496,12 +496,12 @@ public class ItemEditorGui extends AbstractGui {
                         String newId = input.toLowerCase().replaceAll("[^a-z0-9_]", "_");
                         if (newId.isEmpty()) {
                             player.sendMessage(TextUtil.error("Invalid ID!"));
-                            new ItemEditorGui(plugin, player, data).open();
+                            reopen();
                             return;
                         }
                         if (plugin.getItemManager().hasItem(newId)) {
                             player.sendMessage(TextUtil.error("Item '" + newId + "' already exists!"));
-                            new ItemEditorGui(plugin, player, data).open();
+                            reopen();
                             return;
                         }
                         UItemData clone = new UItemData(newId) {{
@@ -527,7 +527,10 @@ public class ItemEditorGui extends AbstractGui {
                         plugin.getItemManager().registerItem(clone);
                         plugin.getStorageManager().saveItem(plugin.getItemManager(), clone);
                         player.sendMessage(TextUtil.success("Duplicated '" + data.getId() + "' → '" + newId + "'!"));
-                        new ItemEditorGui(plugin, player, clone).open();
+                        Runnable back = getBackAction();
+                        ItemEditorGui newGui = new ItemEditorGui(plugin, player, clone);
+                        if (back != null) newGui.setBackAction(back);
+                        newGui.open();
                     });
         });
 
@@ -565,7 +568,7 @@ public class ItemEditorGui extends AbstractGui {
     private void saveAndReopen() {
         plugin.getItemManager().registerItem(data);
         plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
-        new ItemEditorGui(plugin, player, data).open();
+        reopen();
     }
 
     private void saveAndRefresh() {

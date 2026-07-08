@@ -103,7 +103,7 @@ public class LoreEditorGui extends AbstractGui {
                                     plugin.getItemManager().registerItem(data);
                                     plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
                                 }
-                                new LoreEditorGui(plugin, player, data).open();
+                                reopen();
                             });
                 } else if (event.getClick() == ClickType.RIGHT) {
                     // Delete line
@@ -140,7 +140,7 @@ public class LoreEditorGui extends AbstractGui {
                         data.getLore().add(input);
                         plugin.getItemManager().registerItem(data);
                         plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), data);
-                        new LoreEditorGui(plugin, player, data).open();
+                        reopen();
                     });
         });
 

@@ -154,13 +154,13 @@ public class AttributePresetGui extends AbstractGui {
                     "<gray>Type 'cancel' to abort:",
                     input -> {
                         if (input.equalsIgnoreCase("cancel") || input.equalsIgnoreCase("huy")) {
-                            new AttributePresetGui(plugin, player, data).openAsChildOf(null);
+                            reopen();
                             return;
                         }
                         String[] parts = input.trim().split("\\s+");
                         if (parts.length < 4) {
                             player.sendMessage(TextUtil.error("Format: attribute amount operation slot"));
-                            new AttributePresetGui(plugin, player, data).open();
+                            reopen();
                             return;
                         }
                         try {
@@ -175,7 +175,7 @@ public class AttributePresetGui extends AbstractGui {
                         } catch (Exception e) {
                             player.sendMessage(TextUtil.error("Error: " + e.getMessage()));
                         }
-                        new AttributePresetGui(plugin, player, data).open();
+                        reopen();
                     });
         });
 
@@ -218,7 +218,7 @@ public class AttributePresetGui extends AbstractGui {
                     plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
                     player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.5f, 1.2f);
                     player.sendMessage(TextUtil.success("Added: " + preset.name() + " +" + amount + " (" + slot + ")"));
-                    new AttributePresetGui(plugin, player, data).open();
+                    reopen();
                 });
     }
 }

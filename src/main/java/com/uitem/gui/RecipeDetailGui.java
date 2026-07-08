@@ -66,9 +66,12 @@ public class RecipeDetailGui extends AbstractGui {
         String type = recipe.isShaped()
                 ? GuiConfig.text("recipe-detail.type-shaped", "Shaped 3x3")
                 : GuiConfig.text("recipe-detail.type-shapeless", "Shapeless");
+        String headerName = (data.getDisplayName() != null)
+                ? data.getDisplayName()
+                : "<gold><bold>" + itemId + "</bold>";
         setItem(4, createItem(
                 GuiConfig.material("recipe-detail.header.material", Material.KNOWLEDGE_BOOK),
-                GuiConfig.text("recipe-detail.header.name", "<gold><bold>{id}</bold>", Map.of("id", itemId)),
+                headerName,
                 GuiConfig.lore("recipe-detail.header.lore", List.of(
                         "<gray>{type}",
                         "<gray>Output: x{amount}"
@@ -89,8 +92,15 @@ public class RecipeDetailGui extends AbstractGui {
             for (int i = 0; i < Math.min(ings.size(), 9); i++) {
                 ItemStack ing = ings.get(i).toItemStack();
                 if (ing != null && !ing.getType().isAir()) {
-                    String name = ings.get(i).getUitemId() != null ? ings.get(i).getUitemId()
-                            : formatMat(ing.getType());
+                    String name;
+                    if (ings.get(i).getUitemId() != null) {
+                        UItemData ingData = plugin.getItemManager().getItem(ings.get(i).getUitemId());
+                        name = (ingData != null && ingData.getDisplayName() != null)
+                                ? stripMiniMessage(ingData.getDisplayName())
+                                : ings.get(i).getUitemId();
+                    } else {
+                        name = formatMat(ing.getType());
+                    }
                     setItem(GRID[i], addLore(ing.clone(), "<gray>" + name));
                 }
             }
@@ -120,7 +130,13 @@ public class RecipeDetailGui extends AbstractGui {
         for (Map.Entry<Character, UItemRecipe.Ingredient> e : map.entrySet()) {
             if (e.getValue().matches(item)) {
                 UItemRecipe.Ingredient ing = e.getValue();
-                if (ing.getUitemId() != null) return ing.getUitemId();
+                if (ing.getUitemId() != null) {
+                    UItemData ingData = plugin.getItemManager().getItem(ing.getUitemId());
+                    if (ingData != null && ingData.getDisplayName() != null) {
+                        return stripMiniMessage(ingData.getDisplayName());
+                    }
+                    return ing.getUitemId();
+                }
                 if (ing.getMaterial() != null) return formatMat(ing.getMaterial());
             }
         }
@@ -158,5 +174,10 @@ public class RecipeDetailGui extends AbstractGui {
                 sb.append(Character.toUpperCase(x.charAt(0))).append(x.substring(1)).append(" ");
         }
         return sb.toString().trim();
+    }
+
+    private static String stripMiniMessage(String input) {
+        if (input == null || input.isEmpty()) return "";
+        return input.replaceAll("<[^>]+>", "").trim();
     }
 }

@@ -124,14 +124,7 @@ public class RarityListGui extends AbstractGui {
         }
 
         // Back button
-        setItem(53, createBackButton(), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            if (returnPage >= 0) {
-                new ItemListGui(plugin, player, returnPage).open();
-            } else {
-                player.closeInventory();
-            }
-        });
+        setItem(53, createBackButton(), ev -> goBack());
     }
 
     private ItemStack buildRarityIcon(String key, RarityConfig.RarityEntry entry) {

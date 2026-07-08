@@ -88,7 +88,8 @@ public class SkillEditorGui extends AbstractGui {
                     SkillAction.ActionType.SPAWN_MOB
             ),
             List.of( // Page 4: Misc
-                    SkillAction.ActionType.FREEZE
+                    SkillAction.ActionType.FREEZE,
+                    SkillAction.ActionType.BEAM_DAMAGE
             )
     );
 
@@ -123,6 +124,7 @@ public class SkillEditorGui extends AbstractGui {
         ACTION_MATERIALS.put(SkillAction.ActionType.LEVITATE, Material.FEATHER);
         ACTION_MATERIALS.put(SkillAction.ActionType.SPAWN_MOB, Material.EGG);
         ACTION_MATERIALS.put(SkillAction.ActionType.FREEZE, Material.ICE);
+        ACTION_MATERIALS.put(SkillAction.ActionType.BEAM_DAMAGE, Material.ENDER_EYE);
     }
 
     public SkillEditorGui(UItemPlugin plugin, Player player, UItemData itemData, Skill skill) {
@@ -413,6 +415,10 @@ public class SkillEditorGui extends AbstractGui {
             case CLEAR_EFFECTS -> lore.add("<gray>" + Messages.skillText("clear-effects", "Clear all effects"));
             case SPAWN_MOB -> lore.add("<gray>" + Messages.skillLabel("entity", "Entity") + ": <white>" + a.getStringParam("entity", "ZOMBIE") + " x" + a.getIntParam("count", 1));
             case FREEZE -> lore.add("<gray>" + Messages.skillLabel("freeze", "Freeze") + ": <white>" + a.getIntParam("duration", 5) + "s");
+            case BEAM_DAMAGE -> {
+                lore.add("<gray>" + Messages.skillLabel("damage", "DMG") + ": <white>" + a.getDoubleParam("amount", 6));
+                lore.add("<gray>" + Messages.skillLabel("range", "Range") + ": <white>" + a.getDoubleParam("range", 30));
+            }
         }
 
         lore.add("");
@@ -440,7 +446,7 @@ public class SkillEditorGui extends AbstractGui {
             case LAUNCH, TELEPORT ->
                 addActionWithPrompt(type);
             case BLOCK_BREAK, EXPLOSION, AREA_DAMAGE, POTION_AREA, BLIND,
-                 GLOW, LEVITATE, SPAWN_MOB, FREEZE ->
+                 GLOW, LEVITATE, SPAWN_MOB, FREEZE, BEAM_DAMAGE ->
                 addActionWithPrompt(type);
             case STRIKE_LIGHTNING, CLEAR_EFFECTS, CONSUME_ITEM, GIVE_ITEM,
                  REMOVE_POTION, NOTHING ->
@@ -535,6 +541,11 @@ public class SkillEditorGui extends AbstractGui {
                 action.setParam("duration", 5);
                 if (type == SkillAction.ActionType.LEVITATE) action.setParam("amplifier", 0);
             }
+            case BEAM_DAMAGE -> {
+                action.setParam("amount", 6.0);
+                action.setParam("range", 30);
+                action.setParam("particle", "ELECTRIC_SPARK");
+            }
             case SPAWN_MOB -> {
                 action.setParam("entity", "ZOMBIE");
                 action.setParam("count", 1);
@@ -563,6 +574,7 @@ public class SkillEditorGui extends AbstractGui {
             case LEVITATE -> promptForActionParamThenAdd(action, "duration", Messages.skillPrompt("levitate-duration", "Enter levitate duration (seconds):"));
             case SPAWN_MOB -> promptForActionParamThenAdd(action, "entity", Messages.skillPrompt("spawn-mob-entity", "Enter entity type (e.g. ZOMBIE, SKELETON, WOLF):"));
             case FREEZE -> promptForActionParamThenAdd(action, "duration", Messages.skillPrompt("freeze-duration", "Enter freeze duration (seconds):"));
+            case BEAM_DAMAGE -> promptForActionParamThenAdd(action, "amount", Messages.skillPrompt("beam-damage", "Enter beam damage amount (default 6):"));
             default -> {
                 action.setParam("value", 1);
                 skill.addAction(action);
@@ -682,6 +694,9 @@ public class SkillEditorGui extends AbstractGui {
             case EXPLOSION -> promptForActionParam(action, "power", Messages.skillPrompt("edit-explosion-power", "Enter new explosion power:"), Messages.skillUpdated("power"));
             case POTION_AREA -> promptForActionParam(action, "effect", Messages.skillPrompt("edit-area-effect", "Enter new effect:"), Messages.skillUpdated("effect"));
             case BLIND, GLOW, LEVITATE, FREEZE -> promptForActionParam(action, "duration", Messages.skillPrompt("edit-duration", "Enter new duration (seconds):"), Messages.skillUpdated("duration"));
+            case BEAM_DAMAGE -> {
+                promptForActionParam(action, "amount", Messages.skillPrompt("edit-beam-damage", "Enter new beam damage amount:"), Messages.skillUpdated("damage"));
+            }
             case SPAWN_MOB -> promptForActionParam(action, "entity", Messages.skillPrompt("edit-entity", "Enter new entity type:"), Messages.skillUpdated("entity"));
             default -> {
                 player.sendMessage(TextUtil.info(Messages.skillText("edit-defaults-only", "This action mainly uses default values. You can delete and re-add it.")));

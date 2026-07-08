@@ -75,14 +75,18 @@ public class BrowseableItemPickerGui extends AbstractGui {
 
         setItem(53, createItem(Material.OAK_SIGN,
                 "<gold><bold>Search</bold>",
-                List.of(filter != null ? "<gray>Filter: <white>" + filter : "<gray>Click to search by id")),
+                List.of(filter != null ? "<gray>Filtering: <white>" + filter : "<gray>Click to search by id")),
                 ev -> {
+                    Runnable savedBack = getBackAction();
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                     player.closeInventory();
                     plugin.getChatInputManager().requestInput(player,
                             "<yellow>Enter a keyword (Enter to clear filter):",
                             input -> {
                                 String f = input.trim().isEmpty() ? null : input.trim();
-                                new BrowseableItemPickerGui(plugin, player, provider, callback, 0, f).open();
+                                BrowseableItemPickerGui gui = new BrowseableItemPickerGui(plugin, player, provider, callback, 0, f);
+                                if (savedBack != null) gui.setBackAction(savedBack);
+                                gui.open();
                             });
                 });
 

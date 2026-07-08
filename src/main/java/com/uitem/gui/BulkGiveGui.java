@@ -170,21 +170,21 @@ public class BulkGiveGui extends AbstractGui {
                 player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 0.5f, 1.0f);
                 return;
             }
-            plugin.getChatInputManager().requestInput(player,
-                    "<yellow>Enter player name to give to (or 'cancel' to abort):",
-                    input -> {
-                        if (input.equalsIgnoreCase("cancel") || input.equalsIgnoreCase("huy")) {
-                            new BulkGiveGui(plugin, player).open();
-                            return;
-                        }
-                        Player target = Bukkit.getPlayerExact(input.trim());
-                        if (target == null) {
-                            player.sendMessage(TextUtil.error("Player '" + input + "' is not online!"));
-                            new BulkGiveGui(plugin, player).open();
-                            return;
-                        }
-                        giveItemsToPlayer(player, target);
-                    });
+                    plugin.getChatInputManager().requestInput(player,
+                            "<yellow>Enter player name to give to (or 'cancel' to abort):",
+                            input -> {
+                                if (input.equalsIgnoreCase("cancel") || input.equalsIgnoreCase("huy")) {
+                                    reopen();
+                                    return;
+                                }
+                                Player target = Bukkit.getPlayerExact(input.trim());
+                                if (target == null) {
+                                    player.sendMessage(TextUtil.error("Player '" + input + "' is not online!"));
+                                    reopen();
+                                    return;
+                                }
+                                giveItemsToPlayer(player, target);
+                            });
         });
 
         // Give to all online players

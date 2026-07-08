@@ -685,6 +685,46 @@ public final class SkillExecutor {
                 return true;
             }
 
+            case BEAM_DAMAGE -> {
+                double range = Math.min(action.getDoubleParam("range", 30), 100);
+                double amt = action.getDoubleParam("amount", 6.0);
+                String particleName = action.getStringParam("particle", "ELECTRIC_SPARK");
+
+                Location eyeLoc = player.getEyeLocation();
+                Vector dir = eyeLoc.getDirection();
+
+                // Ray trace for entities
+                Entity hit = null;
+                double hitDistance = range;
+                for (double d = 0; d <= range; d += 0.5) {
+                    Location point = eyeLoc.clone().add(dir.clone().multiply(d));
+                    Particle particle;
+                    try {
+                        particle = Particle.valueOf(particleName.toUpperCase(Locale.ROOT));
+                    } catch (IllegalArgumentException e) {
+                        particle = Particle.ELECTRIC_SPARK;
+                    }
+                    if (particle.getDataType() == Void.class) {
+                        world.spawnParticle(particle, point, 1, 0, 0, 0, 0);
+                    }
+                    // Check for entities at this point
+                    for (Entity e : world.getNearbyEntities(point, 1.0, 1.0, 1.0)) {
+                        if (e.equals(player)) continue;
+                        if (e instanceof LivingEntity le && le.isValid()) {
+                            hit = le;
+                            hitDistance = d;
+                            break;
+                        }
+                    }
+                    if (hit != null) break;
+                }
+
+                if (hit instanceof LivingEntity le) {
+                    le.damage(amt, player);
+                }
+                return true;
+            }
+
             default -> { return false; }
         }
     }

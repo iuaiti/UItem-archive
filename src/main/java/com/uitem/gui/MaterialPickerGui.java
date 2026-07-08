@@ -130,12 +130,16 @@ public class MaterialPickerGui extends AbstractGui {
                 "<gold><bold>Search</bold>",
                 List.of(filter != null ? "<gray>Filtering: <white>" + filter : "<gray>Click to search materials by name")),
                 ev -> {
+                    Runnable savedBack = getBackAction();
+                    player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
                     player.closeInventory();
                     plugin.getChatInputManager().requestInput(player,
                             "<yellow>Enter material name to search (Enter to clear filter):",
                             input -> {
                                 String f = input.trim().isEmpty() ? null : input.trim();
-                                new MaterialPickerGui(plugin, player, callback, 0, f, category).open();
+                                MaterialPickerGui gui = new MaterialPickerGui(plugin, player, callback, 0, f, category);
+                                if (savedBack != null) gui.setBackAction(savedBack);
+                                gui.open();
                             });
                 });
 

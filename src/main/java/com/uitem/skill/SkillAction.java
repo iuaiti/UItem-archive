@@ -65,7 +65,8 @@ public class SkillAction {
         CLEAR_EFFECTS("Clear all effects"),
         LEVITATE("Levitate"),
         SPAWN_MOB("Spawn mob"),
-        FREEZE("Freeze target");
+        FREEZE("Freeze target"),
+        BEAM_DAMAGE("Beam damage (ray)");
         
         private final String display;
 
@@ -285,6 +286,14 @@ public class SkillAction {
     public static SkillAction freeze(int duration) {
         SkillAction a = new SkillAction(ActionType.FREEZE);
         a.setParam("duration", duration);
+        return a;
+    }
+
+    public static SkillAction beamDamage(double amount, double range) {
+        SkillAction a = new SkillAction(ActionType.BEAM_DAMAGE);
+        a.setParam("amount", amount);
+        a.setParam("range", range);
+        a.setParam("particle", "ELECTRIC_SPARK");
         return a;
     }
 

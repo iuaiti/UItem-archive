@@ -110,7 +110,9 @@ public abstract class AbstractGui implements InventoryHolder {
     public void goBack() {
         player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
         if (backAction != null) {
-            backAction.run();
+            Runnable action = backAction;
+            backAction = null;
+            action.run();
         } else {
             player.closeInventory();
         }

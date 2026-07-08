@@ -118,7 +118,10 @@ public class CreateWizardGui extends AbstractGui {
             plugin.getItemManager().registerItem(existing);
             plugin.getStorageManager().saveItem(plugin.getItemManager(), existing);
             player.sendMessage(TextUtil.success("Changed source of '" + existing.getId() + "' to " + source));
-            new ItemEditorGui(plugin, player, existing).open();
+            Runnable savedBack = getBackAction();
+            ItemEditorGui gui = new ItemEditorGui(plugin, player, existing);
+            if (savedBack != null) gui.setBackAction(savedBack);
+            gui.open();
             return;
         }
         // Generate a default ID from source, create the item, and open the full editor directly.
@@ -135,7 +138,10 @@ public class CreateWizardGui extends AbstractGui {
         plugin.getItemManager().registerItem(data);
         plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
         player.sendMessage(TextUtil.success("Created UItem '" + data.getId() + "'! Now configure it in the editor."));
-        new ItemEditorGui(plugin, player, data).open();
+        Runnable savedBack = getBackAction();
+        ItemEditorGui gui = new ItemEditorGui(plugin, player, data);
+        if (savedBack != null) gui.setBackAction(savedBack);
+        gui.open();
     }
 
     /** State shared between the steps of the wizard. */

@@ -185,6 +185,13 @@ public class UItemActionListener implements Listener {
             @Nullable ItemStack newItem,
             boolean equipping) {
 
+        if (equipping && plugin.getSkillsHookManager() != null && plugin.getSkillsHookManager().isActive()) {
+            if (!checkEquipRequirements(player, data)) {
+                clickEvent.setCancelled(true);
+                return;
+            }
+        }
+
         // isEquipping() trong UItemEquipEvent được suy ra từ newItem có phải AIR không,
         // nên truyền AIR khi tháo ra để event tự detect đúng.
         ItemStack safeNew = (newItem == null || newItem.getType().isAir())
@@ -240,6 +247,32 @@ public class UItemActionListener implements Listener {
     private UItemData getUItemData(@Nullable ItemStack item) {
         if (!UItemAPI.isAvailable()) return null;
         return UItemAPI.get().getUItemData(item).orElse(null);
+    }
+
+    private boolean checkEquipRequirements(Player player, UItemData data) {
+        if (data.getPermission() != null && !player.hasPermission(data.getPermission())) {
+            player.sendActionBar(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize("<red>You don't have permission to use this item"));
+            return false;
+        }
+        if (data.getRequiredLevel() > 0 && player.getLevel() < data.getRequiredLevel()) {
+            player.sendActionBar(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                    "<red>Requires level <yellow>" + data.getRequiredLevel()));
+            return false;
+        }
+        if (!data.getSkillRequirements().isEmpty()) {
+            com.uitem.hook.SkillsHookManager hooks = plugin.getSkillsHookManager();
+            for (java.util.Map.Entry<String, Integer> req : data.getSkillRequirements().entrySet()) {
+                int level = hooks != null ? hooks.getSkillLevel(player, req.getKey()) : -1;
+                if (level < req.getValue()) {
+                    String skillName = req.getKey().substring(0, 1).toUpperCase(java.util.Locale.ROOT)
+                            + req.getKey().substring(1);
+                    player.sendActionBar(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                            "<red>Requires <yellow>" + skillName + " " + req.getValue()));
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     // ============================================================

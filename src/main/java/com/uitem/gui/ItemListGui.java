@@ -146,13 +146,15 @@ public class ItemListGui extends AbstractGui {
         if (page > 0) {
             setItem(46, createPreviousButton(), event -> {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                new ItemListGui(plugin, player, page - 1).open();
+                page--;
+                refresh();
             });
         }
         if (page < totalPages - 1) {
             setItem(52, createNextButton(), event -> {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                new ItemListGui(plugin, player, page + 1).open();
+                page++;
+                refresh();
             });
         }
     }

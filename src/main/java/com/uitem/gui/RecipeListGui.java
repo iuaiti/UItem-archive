@@ -2,9 +2,7 @@ package com.uitem.gui;
 
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
-import com.uitem.gui.CraftingHomeGui;
 import com.uitem.recipe.UItemRecipe;
-import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -114,10 +112,7 @@ public class RecipeListGui extends AbstractGui {
             });
         }
 
-        setItem(45, createBackButton(), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new CraftingHomeGui(plugin, player).open();
-        });
+        setItem(45, createBackButton(), ev -> goBack());
 
         setItem(49, createItem(
                 GuiConfig.material("recipe-list.craft-button.material", Material.CRAFTING_TABLE),
@@ -129,10 +124,10 @@ public class RecipeListGui extends AbstractGui {
 
         setItem(46, page > 0 ? createPreviousButton() : createItem(Material.GRAY_STAINED_GLASS_PANE, " "),
                 page > 0 ? ev -> { player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                    new RecipeListGui(plugin, player, page - 1, categoryFilter, subCategoryFilter).open(); } : null);
+                    page--; refresh(); } : null);
         setItem(52, page < totalPages - 1 ? createNextButton() : createItem(Material.GRAY_STAINED_GLASS_PANE, " "),
                 page < totalPages - 1 ? ev -> { player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                    new RecipeListGui(plugin, player, page + 1, categoryFilter, subCategoryFilter).open(); } : null);
+                    page++; refresh(); } : null);
     }
 
     private List<Map.Entry<String, UItemRecipe>> filteredRecipes() {
