@@ -27,7 +27,6 @@ public class SkillEditorGui extends AbstractGui {
 
     private final UItemData itemData;
     private final Skill skill;
-    private int actionPage = 0;
     private int actionListPage = 0;
 
     private static final int[] ACTION_LIST_SLOTS = {
@@ -49,83 +48,6 @@ public class SkillEditorGui extends AbstractGui {
             SkillTrigger.EQUIP, SkillTrigger.UNEQUIP,
             SkillTrigger.PERIODIC, SkillTrigger.WHILE_HOLDING, SkillTrigger.WHILE_WEARING
     );
-
-    private static final List<List<SkillAction.ActionType>> ACTION_PAGES = List.of(
-            List.of( // Page 1: Communication + Combat
-                    SkillAction.ActionType.MESSAGE,
-                    SkillAction.ActionType.ACTION_BAR,
-                    SkillAction.ActionType.TITLE,
-                    SkillAction.ActionType.PLAY_SOUND,
-                    SkillAction.ActionType.GIVE_POTION,
-                    SkillAction.ActionType.HEAL,
-                    SkillAction.ActionType.DAMAGE
-            ),
-            List.of( // Page 2: Commands + Movement
-                    SkillAction.ActionType.SHOOT_PROJECTILE,
-                    SkillAction.ActionType.CONSOLE_COMMAND,
-                    SkillAction.ActionType.PLAYER_COMMAND,
-                    SkillAction.ActionType.LAUNCH,
-                    SkillAction.ActionType.TELEPORT,
-                    SkillAction.ActionType.STRIKE_LIGHTNING,
-                    SkillAction.ActionType.SET_FIRE
-            ),
-            List.of( // Page 3: Utility
-                    SkillAction.ActionType.FEED,
-                    SkillAction.ActionType.CONSUME_DURABILITY,
-                    SkillAction.ActionType.CONSUME_ITEM,
-                    SkillAction.ActionType.GIVE_ITEM,
-                    SkillAction.ActionType.REMOVE_POTION,
-                    SkillAction.ActionType.BLOCK_BREAK,
-                    SkillAction.ActionType.EXPLOSION
-            ),
-            List.of( // Page 4: Area + Effects
-                    SkillAction.ActionType.AREA_DAMAGE,
-                    SkillAction.ActionType.POTION_AREA,
-                    SkillAction.ActionType.BLIND,
-                    SkillAction.ActionType.GLOW,
-                    SkillAction.ActionType.CLEAR_EFFECTS,
-                    SkillAction.ActionType.LEVITATE,
-                    SkillAction.ActionType.SPAWN_MOB
-            ),
-            List.of( // Page 4: Misc
-                    SkillAction.ActionType.FREEZE,
-                    SkillAction.ActionType.BEAM_DAMAGE
-            )
-    );
-
-    private static final java.util.Map<SkillAction.ActionType, Material> ACTION_MATERIALS = new java.util.LinkedHashMap<>();
-    static {
-        ACTION_MATERIALS.put(SkillAction.ActionType.MESSAGE, Material.PAPER);
-        ACTION_MATERIALS.put(SkillAction.ActionType.ACTION_BAR, Material.NAME_TAG);
-        ACTION_MATERIALS.put(SkillAction.ActionType.TITLE, Material.FILLED_MAP);
-        ACTION_MATERIALS.put(SkillAction.ActionType.PLAY_SOUND, Material.NOTE_BLOCK);
-        ACTION_MATERIALS.put(SkillAction.ActionType.GIVE_POTION, Material.POTION);
-        ACTION_MATERIALS.put(SkillAction.ActionType.HEAL, Material.GOLDEN_APPLE);
-        ACTION_MATERIALS.put(SkillAction.ActionType.DAMAGE, Material.IRON_SWORD);
-        ACTION_MATERIALS.put(SkillAction.ActionType.SHOOT_PROJECTILE, Material.BOW);
-        ACTION_MATERIALS.put(SkillAction.ActionType.CONSOLE_COMMAND, Material.COMMAND_BLOCK);
-        ACTION_MATERIALS.put(SkillAction.ActionType.PLAYER_COMMAND, Material.REPEATER);
-        ACTION_MATERIALS.put(SkillAction.ActionType.LAUNCH, Material.FIREWORK_ROCKET);
-        ACTION_MATERIALS.put(SkillAction.ActionType.TELEPORT, Material.ENDER_PEARL);
-        ACTION_MATERIALS.put(SkillAction.ActionType.STRIKE_LIGHTNING, Material.NETHER_STAR);
-        ACTION_MATERIALS.put(SkillAction.ActionType.SET_FIRE, Material.FLINT_AND_STEEL);
-        ACTION_MATERIALS.put(SkillAction.ActionType.FEED, Material.COOKED_BEEF);
-        ACTION_MATERIALS.put(SkillAction.ActionType.CONSUME_DURABILITY, Material.ANVIL);
-        ACTION_MATERIALS.put(SkillAction.ActionType.CONSUME_ITEM, Material.ITEM_FRAME);
-        ACTION_MATERIALS.put(SkillAction.ActionType.GIVE_ITEM, Material.CHEST);
-        ACTION_MATERIALS.put(SkillAction.ActionType.REMOVE_POTION, Material.GLASS_BOTTLE);
-        ACTION_MATERIALS.put(SkillAction.ActionType.BLOCK_BREAK, Material.DIAMOND_PICKAXE);
-        ACTION_MATERIALS.put(SkillAction.ActionType.EXPLOSION, Material.TNT);
-        ACTION_MATERIALS.put(SkillAction.ActionType.AREA_DAMAGE, Material.DRAGON_BREATH);
-        ACTION_MATERIALS.put(SkillAction.ActionType.POTION_AREA, Material.LINGERING_POTION);
-        ACTION_MATERIALS.put(SkillAction.ActionType.BLIND, Material.INK_SAC);
-        ACTION_MATERIALS.put(SkillAction.ActionType.GLOW, Material.GLOWSTONE_DUST);
-        ACTION_MATERIALS.put(SkillAction.ActionType.CLEAR_EFFECTS, Material.MILK_BUCKET);
-        ACTION_MATERIALS.put(SkillAction.ActionType.LEVITATE, Material.FEATHER);
-        ACTION_MATERIALS.put(SkillAction.ActionType.SPAWN_MOB, Material.EGG);
-        ACTION_MATERIALS.put(SkillAction.ActionType.FREEZE, Material.ICE);
-        ACTION_MATERIALS.put(SkillAction.ActionType.BEAM_DAMAGE, Material.ENDER_EYE);
-    }
 
     public SkillEditorGui(UItemPlugin plugin, Player player, UItemData itemData, Skill skill) {
         super(plugin, player, 54, Messages.skillEditorTitle(skill.getId()));
@@ -297,17 +219,18 @@ public class SkillEditorGui extends AbstractGui {
             setItem(22, createItem(Material.WRITABLE_BOOK,
                     Messages.skillEditorActionsHeader(0),
                     List.of(Messages.skillEditorActionsHint())),
-                    ev -> addActionByType(firstActionType()));
+                    ev -> new ActionPickerGui(plugin, player, itemData, skill, this::addActionByType).openAsChildOf(this));
             setItem(23, createItem(Material.BARRIER, "<gray><italic>" + Messages.skillEditorNoActions() + "</italic>",
-                    List.of(Messages.skillText("use-buttons-below", "<yellow>Use the action buttons below to add actions"))));
+                    List.of(Messages.skillText("click-book-above", "<yellow>Click the book above to browse all actions"))));
         } else {
             setItem(22, createItem(Material.WRITABLE_BOOK,
                     Messages.skillEditorActionsHeader(acts.size()),
                     List.of(
                             Messages.skillEditorActionsHint(),
-                            "<gray>Page: <white>" + (actionListPage + 1) + "/" + totalActionListPages
+                            "<gray>Page: <white>" + (actionListPage + 1) + "/" + totalActionListPages,
+                            "<yellow>" + Messages.skillText("click-to-browse", "Click to browse all actions")
                     )),
-                    ev -> addActionByType(firstActionType()));
+                    ev -> new ActionPickerGui(plugin, player, itemData, skill, this::addActionByType).openAsChildOf(this));
             int startIndex = actionListPage * ACTION_LIST_SLOTS.length;
             for (int i = 0; i < ACTION_LIST_SLOTS.length; i++) {
                 int dataIndex = startIndex + i;
@@ -345,33 +268,13 @@ public class SkillEditorGui extends AbstractGui {
         // Back
         setItem(44, createBackButton(), ev -> goBack());
 
-        // === Action type buttons (46-53) ===
-        List<SkillAction.ActionType> pageActions = ACTION_PAGES.get(actionPage);
-        int actionSlot = 46;
-        for (SkillAction.ActionType at : pageActions) {
-            if (actionSlot >= 53) break;
-            Material mat = ACTION_MATERIALS.getOrDefault(at, Material.PAPER);
-            addActionTypeButton(actionSlot++, mat, at, () -> addActionByType(at));
-        }
-        for (int i = actionSlot; i < 53; i++) {
-            setItem(i, createItem(Material.GRAY_STAINED_GLASS_PANE, " "));
-        }
-        int totalPages = ACTION_PAGES.size();
-        if (actionPage < totalPages - 1) {
-            setItem(53, createItem(Material.ARROW, Messages.skillEditorPageNext(actionPage + 2),
-                    List.of(Messages.skillEditorPageNextDesc())), ev -> {
-                actionPage++;
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
-                refresh();
-            });
-        } else {
-            setItem(53, createItem(Material.ARROW, Messages.skillEditorPageFirst(),
-                    List.of(Messages.skillEditorPageFirstDesc())), ev -> {
-                actionPage = 0;
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
-                refresh();
-            });
-        }
+        // === Browse All Actions picker ===
+        setItem(49, createItem(Material.KNOWLEDGE_BOOK,
+                "<green><bold>" + Messages.skillEditorBrowseActions() + "</bold>",
+                List.of(Messages.skillEditorBrowseActionsDesc())), ev -> {
+            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+            new ActionPickerGui(plugin, player, itemData, skill, this::addActionByType).openAsChildOf(this);
+        });
     }
 
     private ItemStack buildActionIcon(SkillAction a) {
@@ -427,15 +330,6 @@ public class SkillEditorGui extends AbstractGui {
         return createItem(mat, name, lore);
     }
 
-    /** Add quick action type button (bilingual) */
-    private void addActionTypeButton(int slot, Material mat, SkillAction.ActionType type, Runnable onClick) {
-        String display = Messages.skillActionDisplay(type);
-        setItem(slot, createItem(mat, "<green>+ " + display, List.of("<gray>" + type.getDisplay())), ev -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
-            onClick.run();
-        });
-    }
-
     private void addActionByType(SkillAction.ActionType type) {
         switch (type) {
             case MESSAGE, ACTION_BAR, TITLE, PLAY_SOUND, GIVE_POTION, SHOOT_PROJECTILE,
@@ -464,12 +358,6 @@ public class SkillEditorGui extends AbstractGui {
         plugin.getItemManager().registerItem(itemData);
         plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), itemData);
         reopen();
-    }
-
-    private SkillAction.ActionType firstActionType() {
-        List<SkillAction.ActionType> page = ACTION_PAGES.get(actionPage);
-        if (page != null && !page.isEmpty()) return page.get(0);
-        return SkillAction.ActionType.MESSAGE;
     }
 
     // ==================== Helpers for adding actions entirely via GUI ====================

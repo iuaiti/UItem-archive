@@ -30,8 +30,8 @@ import java.util.logging.Level;
  *
  * <p><b>Same rules as StorageManager:</b>
  * <ul>
- *   <li>If the {@code recipes/} folder exists → scan ALL .yml files (recursively).</li>
- *   <li>Otherwise → read {@code recipes.yml}.</li>
+ *   <li>If {@code recipes/} has YAML files → scan all of them recursively.</li>
+ *   <li>Otherwise → read legacy {@code recipes.yml}, if present.</li>
  *   <li>Reload re-reads from disk, no caching.</li>
  *   <li>Saves from GUI always write to {@code recipes.yml}.</li>
  *   <li>Does not overwrite user files. Does not crash on bad config.</li>
@@ -59,7 +59,6 @@ public class RecipeManager {
         this.itemManager = itemManager;
         this.legacyFile  = new File(plugin.getDataFolder(), LEGACY_FILE);
         this.recipesDir  = new File(plugin.getDataFolder(), RECIPES_DIR);
-        this.recipesDir.mkdirs();
         this.recipesFile = new File(this.recipesDir, "recipe.yml");
         loadRecipes();
     }
@@ -119,7 +118,7 @@ public class RecipeManager {
     public void loadRecipes() {
         recipes.clear();
 
-        if (recipesDir.exists() && recipesDir.isDirectory()) {
+        if (!collectYamlFiles(recipesDir).isEmpty()) {
             loadFromDirectory();
         } else if (legacyFile.exists()) {
             loadFromLegacyFile();
@@ -258,7 +257,7 @@ public class RecipeManager {
     }
 
     public void saveRecipeIndividual(String resultItemId, UItemRecipe recipe) {
-        if (resultItemId == null || recipe == null) return;
+        if (!UItemData.isValidId(resultItemId) || recipe == null) return;
         File target = new File(recipesDir, resultItemId + ".yml");
         YamlConfiguration cfg = new YamlConfiguration();
         cfg.options().setHeader(List.of(
@@ -271,6 +270,7 @@ public class RecipeManager {
         recipe.save(recipeSection);
 
         try {
+            recipesDir.mkdirs();
             cfg.save(target);
             recipes.put(normalise(resultItemId), recipe);
         } catch (IOException e) {
@@ -290,7 +290,10 @@ public class RecipeManager {
         }
         YamlConfiguration cfg = buildConfig();
         SchedulerUtil.runAsync(plugin, () -> {
-            try { cfg.save(recipesFile); }
+            try {
+                recipesDir.mkdirs();
+                cfg.save(recipesFile);
+            }
             catch (IOException e) {
                 plugin.getLogger().log(Level.SEVERE, "[UItem] Could not save " + recipesFile.getName(), e);
             }
@@ -317,7 +320,10 @@ public class RecipeManager {
             }
             return;
         }
-        try { buildConfig().save(recipesFile); }
+        try {
+            recipesDir.mkdirs();
+            buildConfig().save(recipesFile);
+        }
         catch (IOException e) {
             plugin.getLogger().log(Level.SEVERE, "[UItem] Could not save " + recipesFile.getName(), e);
         }

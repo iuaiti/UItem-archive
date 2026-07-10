@@ -41,7 +41,7 @@ import java.util.Optional;
  *
  * // 4. Register a new item from code
  * UItemData data = new UItemData("my_item");
- * data.setMaterial(Material.DIAMOND);
+ * data.setSource("vanilla:diamond");
  * data.setDisplayName("<aqua>My Item");
  * api.registerItem(data, null); // null = no sender
  * }</pre>
@@ -225,6 +225,10 @@ public final class UItemAPI {
      * @return true if the item was registered successfully (not cancelled)
      */
     public boolean registerItem(@NotNull UItemData data, @Nullable CommandSender creator) {
+        if (!UItemData.isValidId(data.getId())) {
+            plugin.getLogger().warning("[UItem] Refused to register invalid item ID: '" + data.getId() + "'");
+            return false;
+        }
         boolean isNew = !plugin.getItemManager().hasItem(data.getId());
 
         if (isNew) {

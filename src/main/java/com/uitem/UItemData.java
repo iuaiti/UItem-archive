@@ -17,6 +17,9 @@ import java.util.Set;
  */
 public class UItemData {
 
+    /** IDs are used as YAML keys and filenames, so they must stay path-safe. */
+    private static final java.util.regex.Pattern VALID_ID = java.util.regex.Pattern.compile("[A-Za-z0-9_]+");
+
     private final String id;
 
     /** Source string in "namespace:id" form, e.g., "vanilla:diamond_sword", "ia:ruby_sword". */
@@ -72,6 +75,11 @@ public class UItemData {
         this.attributes = new ArrayList<>();
         this.effects = new ArrayList<>();
         this.skills = new ArrayList<>();
+    }
+
+    /** Returns whether an ID is safe for use in config keys and filenames. */
+    public static boolean isValidId(String id) {
+        return id != null && VALID_ID.matcher(id).matches();
     }
 
     // === Getters & Setters ===

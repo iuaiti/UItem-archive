@@ -54,15 +54,30 @@ public final class UItemPlugin extends JavaPlugin {
 
         File itemsDir = new File(getDataFolder(), "items");
         File recipesDir = new File(getDataFolder(), "recipes");
-        itemsDir.mkdirs();
-        recipesDir.mkdirs();
 
-        seedExampleConfigsIfNeeded(itemsDir, recipesDir);
+        // Keep installations from older UItem versions working: do not create
+        // folders (or example files) before managers have a chance to read
+        // legacy items.yml / recipes.yml files.
+        File legacyItemsFile = new File(getDataFolder(), "items.yml");
+        File legacyRecipesFile = new File(getDataFolder(), "recipes.yml");
+        boolean useLegacyItems = legacyItemsFile.isFile() && !containsYamlFile(itemsDir);
+        boolean useLegacyRecipes = legacyRecipesFile.isFile() && !containsYamlFile(recipesDir);
+        if (!useLegacyItems) {
+            itemsDir.mkdirs();
+        } else {
+            getLogger().info("[UItem] Using legacy items.yml; it will be migrated to items/ on the next save.");
+        }
+        if (!useLegacyRecipes) {
+            recipesDir.mkdirs();
+        } else {
+            getLogger().info("[UItem] Using legacy recipes.yml; it will be migrated to recipes/ on the next save.");
+        }
+        seedExampleConfigsIfNeeded(itemsDir, !useLegacyItems, recipesDir, !useLegacyRecipes);
 
         boolean useConsolidated = getConfig().getBoolean("storage.use-consolidated-files", false);
         if (useConsolidated) {
-            createMainExternalConfigIfNeeded(itemsDir, "item.yml", "items");
-            createMainExternalConfigIfNeeded(recipesDir, "recipe.yml", "recipes");
+            if (!useLegacyItems) createMainExternalConfigIfNeeded(itemsDir, "item.yml", "items");
+            if (!useLegacyRecipes) createMainExternalConfigIfNeeded(recipesDir, "recipe.yml", "recipes");
         }
 
         saveDefaultConfig();
@@ -235,11 +250,21 @@ public final class UItemPlugin extends JavaPlugin {
         return skillsHookManager;
     }
 
-    private void seedExampleConfigsIfNeeded(File itemsDir, File recipesDir) {
+    /** Returns whether this directory contains at least one item YAML file. */
+    private static boolean containsYamlFile(File directory) {
+        if (directory == null || !directory.isDirectory()) return false;
+        File[] children = directory.listFiles();
+        if (children == null) return false;
+        for (File child : children) {
+            if (child.isDirectory() && containsYamlFile(child)) return true;
+            if (child.isFile() && child.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".yml")) return true;
+        }
+        return false;
+    }
+
+    private void seedExampleConfigsIfNeeded(File itemsDir, boolean seedItems, File recipesDir, boolean seedRecipes) {
         try {
-            boolean hasItemYml = false;
-            File[] itemFiles = itemsDir.listFiles((d, name) -> name.toLowerCase().endsWith(".yml"));
-            if (itemFiles != null) hasItemYml = itemFiles.length > 0;
+            boolean hasItemYml = !seedItems || containsYamlFile(itemsDir);
 
             if (!hasItemYml) {
                 File exampleItems = new File(itemsDir, "examples.yml");
@@ -281,9 +306,7 @@ public final class UItemPlugin extends JavaPlugin {
                 }
             }
 
-            boolean hasRecipeYml = false;
-            File[] recipeFiles = recipesDir.listFiles((d, name) -> name.toLowerCase().endsWith(".yml"));
-            if (recipeFiles != null) hasRecipeYml = recipeFiles.length > 0;
+            boolean hasRecipeYml = !seedRecipes || containsYamlFile(recipesDir);
 
             if (!hasRecipeYml) {
                 File exampleRecipes = new File(recipesDir, "examples.yml");

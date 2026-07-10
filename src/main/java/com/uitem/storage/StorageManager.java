@@ -35,10 +35,10 @@ import java.util.logging.Level;
  *
  * <p><b>Rules:</b>
  * <ul>
- *   <li>If {@code items/} folder exists → scan ALL .yml files inside (recursively).</li>
- *   <li>Otherwise → read {@code items.yml} as before.</li>
+ *   <li>If {@code items/} has YAML files → scan all of them recursively.</li>
+ *   <li>Otherwise → read legacy {@code items.yml}, if present.</li>
  *   <li>Reload re-reads from disk, no caching.</li>
- *   <li>Saves from GUI/commands only write to {@code items.yml} (or the item's original file if tracked).</li>
+ *   <li>GUI and command saves write one dedicated file per item under {@code items/}.</li>
  *   <li>Does not overwrite user files on reload.</li>
  *   <li>All config errors are logged clearly — never silently ignored.</li>
  * </ul>
@@ -79,7 +79,6 @@ public class StorageManager {
         this.plugin    = plugin;
         this.legacyFile = new File(plugin.getDataFolder(), LEGACY_FILE);
         this.itemsDir   = new File(plugin.getDataFolder(), ITEMS_DIR);
-        this.itemsDir.mkdirs();
         this.itemsFile = new File(this.itemsDir, "item.yml");
     }
 
@@ -101,7 +100,7 @@ public class StorageManager {
         minAllowedWriteId.set(requestCounter.incrementAndGet());
         pendingRef.set(null);
 
-        if (itemsDir.exists() && itemsDir.isDirectory()) {
+        if (!collectYamlFiles(itemsDir).isEmpty()) {
             loadFromDirectory(manager);
         } else {
             loadFromLegacyFile(manager);
@@ -156,9 +155,24 @@ public class StorageManager {
     //  Load: items.yml (legacy / fallback)
     // ─────────────────────────────────────────────────────────────────────────
 
+    /**
+     * ┌──────────────────────────────────────────────────────────────┐
+     * │         UItem - items.yml (legacy)                           │
+     * │                                                              │
+     * │  RECOMMENDED: Use external folder config                     │
+     * │  for easy copy-paste of items!                               │
+     * │                                                              │
+     * │  Drop your item configs into:                                │
+     * │    plugins/UItem/items/                                      │
+     * │                                                              │
+     * │  Multiple files supported (weapons.yml,                      │
+     * │  armor.yml, boss/mythic.yml ...).                            │
+     * └──────────────────────────────────────────────────────────────┘
+     */
     private void loadFromLegacyFile(UItemManager manager) {
         if (!legacyFile.exists()) {
-            createDefaultLegacyFile();
+            plugin.getLogger().info("[UItem] " + LEGACY_FILE + " not found — use plugins/UItem/items/ for item configs.");
+            return;
         }
         FileLoadResult r = loadSingleYamlFile(legacyFile, LEGACY_FILE, manager);
         plugin.getLogger().info(String.format(
@@ -234,9 +248,9 @@ public class StorageManager {
 
     private LoadResult parseItem(String id, ConfigurationSection itemsSection, String fileName) {
 
-        // ── ID must not be blank ──────────────────────────────────────────────
-        if (id == null || id.isBlank()) {
-            logError("[%s] Blank item key — skipped.", fileName);
+        // ── ID must be path-safe ──────────────────────────────────────────────
+        if (!UItemData.isValidId(id)) {
+            logError("[%s] Invalid item ID '%s' (use only letters, digits, underscores) — skipped.", fileName, id);
             return LoadResult.SKIP;
         }
 
@@ -567,52 +581,66 @@ public class StorageManager {
      */
     public void deleteItemFile(String id) {
         if (id == null || id.isBlank()) return;
-        // Primary location used by saveItemIndividual
-        File primary = new File(itemsDir, id + ".yml");
-        if (primary.exists() && primary.delete()) {
-            plugin.getLogger().info("[UItem] Deleted item file for '" + id + "': " + primary.getName());
-        }
-        // Also clean any copies that may exist in subfolders (user-organized split files)
-        deleteItemFilesRecursive(itemsDir, id);
-    }
-
-    private void deleteItemFilesRecursive(File dir, String targetId) {
-        File[] children = dir.listFiles();
-        if (children == null) return;
-        for (File f : children) {
-            if (f.isDirectory()) {
-                deleteItemFilesRecursive(f, targetId);
-            } else if (f.isFile() && f.getName().endsWith(".yml")) {
-                // Peek to see if this file defines the target item id (flat or under "items:")
-                try {
-                    YamlConfiguration peek = new YamlConfiguration();
-                    peek.load(f);
-                    ConfigurationSection root = peek.isConfigurationSection(ITEMS_SECTION)
-                            ? peek.getConfigurationSection(ITEMS_SECTION)
-                            : peek;
-                    if (root != null && root.isConfigurationSection(targetId)) {
-                        ConfigurationSection itemSec = root.getConfigurationSection(targetId);
-                        if (itemSec != null && (itemSec.contains("source") || itemSec.contains("material"))) {
-                            if (f.delete()) {
-                                plugin.getLogger().info("[UItem] Deleted split item file for '" + targetId + "': " + relativeToDataFolder(f));
-                            }
-                        }
-                    }
-                } catch (Exception ignored) {
-                    // ignore bad yml during delete scan
-                }
-            }
+        synchronized (fileLock) {
+            removeItemFromFilesRecursive(itemsDir, id);
         }
     }
 
     /**
-     * Save a single item as its own file: items/<id>.yml (flat style, copy-paste friendly).
-     * This avoids constantly recreating/overwriting a big item.yml.
+     * Remove one item definition from all split files without deleting other
+     * definitions that share the same YAML file.
+     */
+    private int removeItemFromFilesRecursive(File dir, String targetId) {
+        File[] children = dir.listFiles();
+        if (children == null) return 0;
+        int removed = 0;
+        for (File f : children) {
+            if (f.isDirectory()) {
+                removed += removeItemFromFilesRecursive(f, targetId);
+            } else if (f.isFile() && f.getName().endsWith(".yml")) {
+                try {
+                    YamlConfiguration config = new YamlConfiguration();
+                    config.load(f);
+                    boolean wrapped = config.isConfigurationSection(ITEMS_SECTION);
+                    ConfigurationSection root = wrapped
+                            ? config.getConfigurationSection(ITEMS_SECTION)
+                            : config;
+                    if (root != null && root.isConfigurationSection(targetId)) {
+                        ConfigurationSection itemSec = root.getConfigurationSection(targetId);
+                        if (itemSec != null && (itemSec.contains("source") || itemSec.contains("material"))) {
+                            config.set((wrapped ? ITEMS_SECTION + "." : "") + targetId, null);
+                            if (config.getKeys(false).isEmpty()) {
+                                if (f.delete()) {
+                                    plugin.getLogger().info("[UItem] Deleted empty item file for '" + targetId + "': " + relativeToDataFolder(f));
+                                    removed++;
+                                }
+                            } else {
+                                config.save(f);
+                                plugin.getLogger().info("[UItem] Removed item '" + targetId + "' from " + relativeToDataFolder(f));
+                                removed++;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    plugin.getLogger().warning("[UItem] Could not update " + relativeToDataFolder(f)
+                            + " while removing item '" + targetId + "': " + e.getMessage());
+                }
+            }
+        }
+        return removed;
+    }
+
+    /**
+     * Save a single item as its own file: items/&lt;category&gt;/&lt;id&gt;.yml (flat style, copy-paste friendly).
      */
     public void saveItemIndividual(UItemData d) {
-        if (d == null) return;
+        if (d == null || !UItemData.isValidId(d.getId())) {
+            if (d != null) plugin.getLogger().warning("[UItem] Refused to save invalid item ID: '" + d.getId() + "'");
+            return;
+        }
         String id = d.getId();
-        File target = new File(itemsDir, id + ".yml");
+
+        File target = resolveItemFile(d);
 
         YamlConfiguration cfg = new YamlConfiguration();
         cfg.options().setHeader(List.of(
@@ -715,6 +743,13 @@ public class StorageManager {
 
         synchronized (fileLock) {
             try {
+                // Remove only this item from its old file(s). Shared YAML files
+                // keep every other item definition intact.
+                int removed = removeItemFromFilesRecursive(itemsDir, id);
+                if (removed > 1) {
+                    plugin.getLogger().warning("[UItem] Removed " + removed + " duplicate definitions for item '" + id + "'");
+                }
+                target.getParentFile().mkdirs();
                 cfg.save(target);
             } catch (IOException e) {
                 plugin.getLogger().warning("[UItem] Failed to save individual item file " + target.getName() + ": " + e.getMessage());
@@ -860,6 +895,7 @@ public class StorageManager {
         synchronized (fileLock) {
             if (writeId < minAllowedWriteId.get()) return;
             try {
+                itemsDir.mkdirs();
                 config.save(itemsFile);
             } catch (IOException e) {
                 plugin.getLogger().log(Level.SEVERE,
@@ -868,64 +904,53 @@ public class StorageManager {
         }
     }
 
-    // ═════════════════════════════════════════════════════════════════════════
-    //  Default file (only created when it does not yet exist)
-    // ═════════════════════════════════════════════════════════════════════════
+    /**
+     * Resolve the target file for an item based on its category.
+     * Category is treated as a relative path (e.g. {@code weapons/swords})
+     * so items can be organized into subfolders naturally.
+     */
+    private File resolveItemFile(UItemData d) {
+        String id = d.getId();
+        String category = d.getCategory();
 
-    private void createDefaultLegacyFile() {
-        YamlConfiguration cfg = new YamlConfiguration();
-        cfg.options().setHeader(java.util.Arrays.asList(
-                "╔══════════════════════════════════════════╗",
-                "║         UItem - items.yml (legacy)       ║",
-                "║                                          ║",
-                "║  RECOMMENDED: Use external folder config ║",
-                "║  for easy copy-paste of items!           ║",
-                "║                                          ║",
-                "║  Drop your item configs into:            ║",
-                "║    plugins/UItem/items/                  ║",
-                "║                                          ║",
-                "║  You can use either style:               ║",
-                "║    - Wrapped: items: { id: {..} }        ║",
-                "║    - Flat (easy copy-paste):             ║",
-                "║        my_item:                          ║",
-                "║          material: DIAMOND_SWORD         ║",
-                "║          ...                             ║",
-                "║                                          ║",
-                "║  Multiple files supported (weapons.yml,  ║",
-                "║  armor.yml, boss/mythic.yml ...).        ║",
-                "╚══════════════════════════════════════════╝"
-        ));
-
-        cfg.set("items.ruby_sword.material", "DIAMOND_SWORD");
-        cfg.set("items.ruby_sword.display-name",
-                "<gradient:#ff0000:#ff6600><bold>Ruby Sword</bold></gradient>");
-        cfg.set("items.ruby_sword.lore", List.of(
-                "<gray>A legendary sword",
-                "<gray>forged from pure <red>Ruby"));
-        cfg.set("items.ruby_sword.enchantments.sharpness",  5);
-        cfg.set("items.ruby_sword.enchantments.unbreaking", 3);
-        cfg.set("items.ruby_sword.flags", List.of("HIDE_ENCHANTS", "HIDE_ATTRIBUTES"));
-        // custom-model-data removed — provider manages texture/model.
-        cfg.set("items.ruby_sword.unbreakable", true);
-        cfg.set("items.ruby_sword.glowing", false);
-
-        cfg.set("items.magic_apple.material", "GOLDEN_APPLE");
-        cfg.set("items.magic_apple.display-name",
-                "<light_purple><bold>Magic Apple</bold></light_purple>");
-        cfg.set("items.magic_apple.lore", List.of("<gray>A magical apple",
-                "<green>Restores all HP"));
-        cfg.set("items.magic_apple.unbreakable", false);
-        cfg.set("items.magic_apple.glowing", true);
-
-        synchronized (fileLock) {
-            try {
-                cfg.save(legacyFile);
-                plugin.getLogger().info("[UItem] Created sample " + LEGACY_FILE + ".");
-            } catch (IOException e) {
-                plugin.getLogger().log(Level.SEVERE,
-                        "[UItem] Could not create " + LEGACY_FILE + ": " + e.getMessage(), e);
-            }
+        if (category == null || category.isBlank()) {
+            return new File(itemsDir, id + ".yml");
         }
+
+        String sanitized = sanitizeCategory(category);
+        if (sanitized == null) {
+            plugin.getLogger().warning("[UItem] Invalid category '" + category + "' for item '" + id + "' — saving to root");
+            return new File(itemsDir, id + ".yml");
+        }
+
+        return new File(new File(itemsDir, sanitized), id + ".yml");
+    }
+
+    /**
+     * Validate and clean a category string for use as a relative file path.
+     * Returns {@code null} if the value is dangerous or unusable.
+     */
+    private static String sanitizeCategory(String category) {
+        if (category == null || category.isBlank()) return null;
+
+        String normal = category.trim();
+
+        // Reject path traversal
+        if (normal.contains("..")) return null;
+
+        // Reject absolute paths
+        if (normal.startsWith("/") || normal.startsWith("\\")) return null;
+
+        // Reject null character
+        if (normal.indexOf('\0') >= 0) return null;
+
+        // Reject Windows reserved names
+        if (normal.matches("(?i)^(con|prn|aux|nul|com\\d|lpt\\d)(\\..*)?$")) return null;
+
+        // Reject characters forbidden in paths across platforms
+        if (normal.matches(".*[<>:\"|?*\\\\].*")) return null;
+
+        return normal;
     }
 
     // ═════════════════════════════════════════════════════════════════════════

@@ -9,7 +9,7 @@ softdepend: [Oraxen, ItemsAdder, AuraSkills, EcoSkills]
 commands:
   uitem:
     description: UItem main command
-    usage: /uitem|ui <give|editor|import|reload|list|craft|check>
+    usage: /uitem|ui <give|editor|reload|list|craft|check>
     aliases: [ui]
     permission: uitem.admin
   crafting:
@@ -23,7 +23,6 @@ permissions:
     children:
       uitem.give: true
       uitem.editor: true
-      uitem.import: true
       uitem.reload: true
       uitem.craft: true
       uitem.search: true
@@ -34,9 +33,6 @@ permissions:
     default: op
   uitem.editor:
     description: Allow opening item editor
-    default: op
-  uitem.import:
-    description: Allow creating a UItem from the held item
     default: op
   uitem.reload:
     description: Allow reloading plugin

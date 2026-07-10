@@ -345,6 +345,10 @@ public final class Messages {
     public static String skillEditorChooseAction() { return t("skill-editor-choose-action", "<green><bold>CHOOSE ACTION TYPE (Click to add)</bold>"); }
     public static String skillEditorNoActions() { return t("skill-editor-no-actions", "<gray><italic>No actions yet</italic>"); }
 
+    public static String skillEditorBrowseActions() { return t("skill-editor-browse-actions", "Browse All Actions"); }
+
+    public static String skillEditorBrowseActionsDesc() { return t("skill-editor-browse-actions-desc", "<gray>Open the full action picker with all action types"); }
+
     public static String skillEditorTriggerField() { return t("skill-editor-trigger-field", "<gold><bold>⚡ Trigger</bold>"); }
 
     public static String skillEditorHeaderTitle(String id, String triggerDisplay) {

@@ -11,6 +11,7 @@ com/uitem/gui/CraftingHomeGui.class
 com/uitem/gui/GuiStack.class
 com/uitem/skill/SkillExecutor.class
 com/uitem/gui/ItemEditorGui.class
+com/uitem/gui/ActionPickerGui$1.class
 com/uitem/skill/PotionEffectHelper$PotionEffectCombo.class
 com/uitem/listener/UItemSkillListener.class
 com/uitem/gui/BulkGiveGui.class
@@ -47,6 +48,7 @@ com/uitem/api/events/UItemInteractEvent.class
 com/uitem/listener/UItemActionListener$1.class
 com/uitem/skill/SkillActionBar.class
 com/uitem/hook/SkillsHookManager.class
+com/uitem/gui/ActionPickerGui.class
 com/uitem/skill/SkillCondition$ConditionType.class
 com/uitem/gui/FlagGui$1.class
 com/uitem/gui/MaterialPickerGui.class

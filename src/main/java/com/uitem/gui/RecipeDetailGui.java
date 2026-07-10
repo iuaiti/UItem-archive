@@ -17,8 +17,7 @@ import java.util.Map;
 public class RecipeDetailGui extends AbstractGui {
 
     private static final int[] GRID = {10, 11, 12, 19, 20, 21, 28, 29, 30};
-    private static final int SLOT_ARROW1 = 14;
-    private static final int SLOT_ARROW2 = 15;
+    private static final int SLOT_ARROW = 22;
     private static final int SLOT_RESULT = 23;
     private static final int SLOT_BACK = 36;
     private static final int SLOT_CRAFT = 44;
@@ -107,8 +106,7 @@ public class RecipeDetailGui extends AbstractGui {
         }
 
         String arrowName = GuiConfig.text("recipe-detail.arrow", "<yellow>→");
-        setItem(SLOT_ARROW1, createItem(Material.ARROW, arrowName));
-        setItem(SLOT_ARROW2, createItem(Material.ARROW, arrowName));
+        setItem(SLOT_ARROW, createItem(Material.ARROW, arrowName));
 
         boolean showId = player.isOp() || player.hasPermission("uitem.id");
         ItemStack result = plugin.getItemManager().buildPreviewItemStack(data, showId);

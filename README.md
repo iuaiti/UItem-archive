@@ -16,7 +16,6 @@
 **Phụ thuộc tùy chọn** (nếu có sẽ tự động hook):
 - [Oraxen](https://www.spigotmc.org/resources/72448/)
 - [ItemsAdder](https://www.spigotmc.org/resources/73355/)
-- [ExecutableItems](https://www.spigotmc.org/resources/77578/)
 
 ---
 
@@ -30,10 +29,6 @@
 | `/uitem editor` | Mở GUI editor | `uitem.editor` |
 | `/uitem list` | Danh sách item trong chat | `uitem.editor` |
 | `/uitem reload` | Reload plugin | `uitem.reload` |
-| `/uitem rp generate` | Tạo resource pack | `uitem.reload` |
-| `/uitem rp export` | Export resource pack zip | `uitem.reload` |
-| `/uitem rp apply` | Apply pack cho player | `uitem.reload` |
-| `/uitem rp status` | Xem trạng thái RP | `uitem.reload` |
 | `/uitem craft` | Mở bàn chế tạo | * |
 | `/uitem check` | Kiểm tra item đang cầm | * |
 | `/uitem help` | Xem hướng dẫn | * |
@@ -54,7 +49,7 @@
 | `uitem.admin` | op | Toàn quyền (bao gồm các quyền con) |
 | `uitem.give` | op | Give item |
 | `uitem.editor` | op | Mở GUI editor |
-| `uitem.reload` | op | Reload + quản lý resource pack |
+| `uitem.reload` | op | Reload plugin |
 | `uitem.search` | op | Tìm kiếm item trong GUI |
 | `uitem.craft` | op | Mở bàn chế tạo |
 
@@ -65,30 +60,18 @@
 ### Item Properties
 
 Mỗi custom item có thể có:
-- **Material** — chất liệu gốc (VD: DIAMOND_SWORD)
+- **Source** — item gốc (`vanilla:diamond_sword`, `ia:namespace:item`, `oraxen:item`)
 - **Display Name** — tên hiển thị (hỗ trợ MiniMessage)
 - **Lore** — mô tả (MiniMessage)
 - **Enchantments** — 38 loại enchant
 - **Item Flags** — 8 loại flag
-- **Custom Model Data** — cho texture pack
 - **Unbreakable** — vĩnh viễn
 - **Glowing** — hiệu ứng phát sáng
 - **Max Durability** — độ bền tối đa
 - **Attributes** — chỉ số (damage, armor, speed...)
 - **Rarity** — độ hiếm (COMMON → ULTRA)
-- **oraxen-id** — tích hợp Oraxen
-- **itemsadder-id** — tích hợp ItemsAdder
-- **executableitems-id** — tích hợp ExecutableItems (tùy chọn)
 - **skills** — hệ thống **Skill & Passive native** (giống ExecutableItems nhưng dễ và ổn định hơn)
 - **Recipe** — công thức chế tạo (shaped/shapeless)
-
-### Resource Pack tự động
-
-- Tự động sinh model JSON + texture
-- Gán CustomModelData tự động
-- Host HTTP server tích hợp sẵn
-- Export ZIP + SHA-1 hash
-- Auto-apply cho player khi join
 
 ### Hệ thống Recipe
 
@@ -163,42 +146,6 @@ Các action hỗ trợ sẵn: MESSAGE, ACTION_BAR, PLAY_SOUND, GIVE_POTION, HEAL
 
 ---
 
-## ⚡ ExecutableItems Integration
-
-Khi có `executableitems-id` trong item:
-
-```yaml
-items:
-  ruby_sword:
-    material: DIAMOND_SWORD
-    display-name: "<red>Ruby Sword"
-    executableitems-id: "Excalibur"
-```
-
-- Khi build item, UItem sẽ gọi EI API để lấy ItemStack gốc
-- EI tự xử lý toàn bộ activators / skills / passives
-- UItem chỉ quản lý item, không can thiệp vào skill
-
-### API cho developer
-
-```java
-UItemAPI api = UItemAPI.get();
-
-// Check EI có available không
-boolean hasEI = api.hasExecutableItems();
-
-// Lấy EI ID từ UItem ID
-String eiId = api.getExecutableItemsIdByUItemId("ruby_sword");
-
-// Build ItemStack từ EI
-Optional<ItemStack> item = api.buildExecutableItemsItem("ruby_sword");
-
-// Lấy EI ID từ ItemStack đang cầm
-String id = api.getExecutableItemsId(player.getItemInHand());
-```
-
----
-
 ## 📝 Public API (cho developer)
 
 ### Lấy API instance
@@ -269,21 +216,6 @@ public void onUItemEquip(UItemEquipEvent event) { }
 
 ## ⚙️ Cấu hình (config.yml)
 
-### Resource Pack
-
-```yaml
-resourcepack:
-  auto-generate: true       # Tự sinh RP khi start
-  auto-apply: true          # Tự apply cho player
-  auto-host: true           # Tự host HTTP server
-  server-port: 9732         # Cổng HTTP server
-  kick-on-fail: true        # Kick nếu không tải được RP
-  url: ""                   # URL RP tùy chỉnh
-  pack-format: 34           # Format số (34 = MC 1.21)
-  namespace: "uitem"        # Namespace
-  output-zip: "UItem-ResourcePack.zip"
-```
-
 ### Rarity
 
 ```yaml
@@ -334,7 +266,6 @@ items:
     flags:
       - HIDE_ENCHANTS
       - HIDE_ATTRIBUTES
-    custom-model-data: 10001
     unbreakable: true
     glowing: false
     max-durability: -1
@@ -345,9 +276,7 @@ items:
         operation: ADD_NUMBER
         slot: HAND
     rarity: EPIC
-    oraxen-id: ""
-    itemsadder-id: ""
-    executableitems-id: ""
+    source: "vanilla:diamond_sword"
 ```
 
 ---
@@ -365,10 +294,9 @@ Dùng `/ui editor` để mở GUI quản lý item.
 
 ### ItemEditorGui
 Chỉnh sửa tất cả thuộc tính của 1 item:
-- Material, Name, Lore, Enchant, Flags
-- CMD, Unbreakable, Glowing, Durability
+- Source, Name, Lore, Enchant, Flags
+- Unbreakable, Glowing, Durability
 - Attributes, Rarity
-- Oraxen/ItemsAdder/ExecutableItems ID
 - Crafting Recipe
 
 ---
@@ -377,4 +305,4 @@ Chỉnh sửa tất cả thuộc tính của 1 item:
 
 - **Server:** Paper 1.21.4+ (hoặc Spigot, Folia)
 - **Java:** 21
-- **Plugin phụ thuộc (optional):** Oraxen, ItemsAdder, ExecutableItems
+- **Plugin phụ thuộc (optional):** Oraxen, ItemsAdder

@@ -126,10 +126,6 @@ public class UItemSkillListener implements Listener {
         UItemData data = event.getItemData();
         if (data == null || data.getSkills() == null || data.getSkills().isEmpty()) return;
 
-        if (plugin.getSkillsHookManager().isActive()) {
-            return;
-        }
-
         org.bukkit.event.block.Action bukkitAction = event.getAction();
         boolean sneaking = player.isSneaking();
 
@@ -269,10 +265,6 @@ public class UItemSkillListener implements Listener {
         if (inDamageProcessing) return;
         inDamageProcessing = true;
         try {
-            // When a skills hook (AuraSkills/EcoSkills) is active, skip native combat triggers
-            // so the hook handles HIT/TAKE_DAMAGE exclusively.
-            if (plugin.getSkillsHookManager().isActive()) return;
-
             // HIT: damager dùng UItem
             if (event.getDamager() instanceof Player damager) {
                 ItemStack weapon = damager.getInventory().getItemInMainHand();
@@ -326,10 +318,6 @@ public class UItemSkillListener implements Listener {
         Player p = event.getPlayer();
         UItemData data = event.getItemData();
         if (data == null || data.getSkills() == null) return;
-
-        if (plugin.getSkillsHookManager().isActive()) {
-            return;
-        }
 
         SkillTrigger trig = event.isEquipping() ? SkillTrigger.EQUIP : SkillTrigger.UNEQUIP;
         executor.executeSkills(p, data.getId(), data.getSkills(), trig, null);

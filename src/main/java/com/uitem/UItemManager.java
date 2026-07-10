@@ -50,7 +50,7 @@ public class UItemManager {
      * Add or update a custom item.
      */
     public void registerItem(UItemData data) {
-        if (data == null || data.getId() == null || data.getId().isBlank()) {
+        if (data == null || !UItemData.isValidId(data.getId())) {
             return;
         }
         items.put(data.getId().toLowerCase(Locale.ROOT), data);
