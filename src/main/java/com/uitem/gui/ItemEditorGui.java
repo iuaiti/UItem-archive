@@ -214,18 +214,20 @@ public class ItemEditorGui extends AbstractGui {
             saveAndRefresh();
         });
 
-        // Attributes (slot 20)
-        setItem(20, createItem(Material.IRON_SWORD,
-                "<gold><bold>Attributes</bold>",
+        // Stats (attributes + virtual stats merged into a single picker) — slot 20
+        int statCount = data.getAttributes().size() + data.getStats().size();
+        setItem(20, createItem(Material.NETHER_STAR,
+                "<gold><bold>Stats</bold>",
                 List.of(
-                        "<gray>Attributes: <white>" + data.getAttributes().size(),
+                        "<gray>Stats: <white>" + statCount,
                         "",
                         attributeSummary(),
+                        statSummary(),
                         "",
-                        "<yellow>Click to open the attribute picker GUI"
+                        "<yellow>Click to open the stat picker GUI"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new AttributePresetGui(plugin, player, data).openAsChildOf(this);
+            new StatSystemGui(plugin, player, data).openAsChildOf(this);
         });
 
         // Rarity (slot 21)
@@ -588,6 +590,22 @@ public class ItemEditorGui extends AbstractGui {
             }
             if (count > 0) sb.append("<gray>, ");
             sb.append("<white>").append(attr.getAttribute().replace("generic_", "")).append(" +").append(attr.getAmount());
+            count++;
+        }
+        return sb.toString();
+    }
+
+    private String statSummary() {
+        if (data.getStats().isEmpty()) return "<gray>No stats";
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        for (UItemData.StatData stat : data.getStats()) {
+            if (count >= 2) {
+                sb.append("<gray> (+").append(data.getStats().size() - 2).append(" more)");
+                break;
+            }
+            if (count > 0) sb.append("<gray>, ");
+            sb.append("<white>").append(stat.getStat()).append(" +").append(stat.getAmount()).append("%");
             count++;
         }
         return sb.toString();

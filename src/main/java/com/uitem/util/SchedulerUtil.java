@@ -74,6 +74,21 @@ public final class SchedulerUtil {
         }
     }
 
+    /**
+     * Repeating task on the global region (Folia) or the main thread (Paper/Spigot).
+     * Use for work that doesn't belong to one location, e.g. iterating all online
+     * players and re-dispatching each to their own entity scheduler.
+     */
+    public static void runGlobalTimer(Plugin plugin, long delayTicks, long periodTicks, Runnable runnable) {
+        long delay = Math.max(1, delayTicks);
+        long period = Math.max(1, periodTicks);
+        if (isFolia()) {
+            plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(plugin, task -> runnable.run(), delay, period);
+        } else {
+            plugin.getServer().getScheduler().runTaskTimer(plugin, runnable, delay, period);
+        }
+    }
+
     public static void runForEntity(Plugin plugin, Entity entity, Runnable runnable) {
         entity.getScheduler().run(plugin, task -> runnable.run(), null);
     }

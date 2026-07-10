@@ -1,0 +1,46 @@
+# Tooltip settings for UItem.
+# Controls how Attributes and Stats are shown in item lore.
+# Attributes (vanilla, e.g. generic_attack_damage) are NOT shown by Minecraft's
+# built-in tooltip once UItem overrides lore, and virtual Stats (crit, defense,
+# cooldown reduction, fortune bonus...) have no vanilla display at all — both
+# need to be rendered here as lore lines.
+#
+# Placeholders: %name% %amount% %slot% %suffix%
+
+attributes:
+  enabled: true
+  header: "<dark_gray>──────── <gray>Attributes <dark_gray>────────"
+  line: "<gray>%name%: <white>+%amount% <gray>(%slot%)"
+  footer: ""
+
+stats:
+  enabled: true
+  header: "<dark_gray>──────── <gray>Stats <dark_gray>────────"
+  line: "<gray>%name%: <white>+%amount%%suffix% <gray>(%slot%)"
+  footer: ""
+
+# Friendly display names for attribute keys (fallback = key with underscores replaced by spaces)
+attribute-names:
+  generic_attack_damage: "Attack Damage"
+  generic_attack_speed: "Attack Speed"
+  generic_attack_knockback: "Attack Knockback"
+  generic_armor: "Armor"
+  generic_armor_toughness: "Armor Toughness"
+  generic_knockback_resistance: "Knockback Resistance"
+  generic_movement_speed: "Movement Speed"
+  generic_water_movement_efficiency: "Swimming Speed"
+  generic_max_health: "Max Health"
+  generic_max_absorption: "Absorption"
+  generic_luck: "Luck"
+  generic_gravity: "Gravity"
+  generic_scale: "Scale"
+  generic_mining_efficiency: "Mining Efficiency"
+  generic_block_interaction_range: "Block Interaction Range"
+
+# Friendly display names for Stat enum keys (fallback = Stat.getDisplay())
+stat-names:
+  CRIT_CHANCE: "Crit Chance"
+  CRIT_DAMAGE: "Crit Damage"
+  DEFENSE: "Defense"
+  COOLDOWN_REDUCTION: "Cooldown Reduction"
+  FORTUNE_BONUS: "Fortune Bonus"

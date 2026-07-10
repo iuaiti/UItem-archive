@@ -108,7 +108,9 @@ public final class SkillExecutor {
 
             if (!checkChance(skill)) continue;
             if (!checkConditions(player, skill, target)) continue;
-            if (!cooldowns.isReady(player, itemId, skill.getId(), skill.getCooldown())) continue;
+            double cdr = Math.max(0, Math.min(90, plugin.getStatManager().getStat(player, com.uitem.stat.Stat.COOLDOWN_REDUCTION)));
+            double effectiveCooldown = skill.getCooldown() * (1 - cdr / 100.0);
+            if (!cooldowns.isReady(player, itemId, skill.getId(), effectiveCooldown)) continue;
             if (!checkAndConsumeMana(player, skill, trigger.isActive())) continue;
 
             boolean ok = executeSkillActions(player, itemId, skill, target);

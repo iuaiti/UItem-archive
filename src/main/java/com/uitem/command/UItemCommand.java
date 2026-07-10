@@ -146,6 +146,7 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         com.uitem.gui.GuiConfig.reload(plugin);
         Messages.reload();
         com.uitem.rarity.RarityConfig.reloadFromFile();
+        com.uitem.tooltip.TooltipConfig.reload();
         // Do NOT saveAllNow() before loadAll(): that would flush the stale in-memory snapshot to
         // disk first, overwriting any manual edits made directly to the item config files.
         // Disk is the source of truth on reload - just re-read it.

@@ -34,6 +34,7 @@ com/uitem/recipe/UItemRecipe.class
 com/uitem/api/package-info.class
 com/uitem/util/TextUtil.class
 com/uitem/api/events/UItemEquipEvent.class
+com/uitem/UItemData$StatData.class
 com/uitem/api/events/UItemGiveEvent.class
 com/uitem/gui/CategoryPickerGui.class
 com/uitem/gui/CraftingGui.class
@@ -50,12 +51,12 @@ com/uitem/skill/SkillActionBar.class
 com/uitem/hook/SkillsHookManager.class
 com/uitem/gui/ActionPickerGui.class
 com/uitem/skill/SkillCondition$ConditionType.class
+com/uitem/listener/UItemStatListener.class
 com/uitem/gui/FlagGui$1.class
 com/uitem/gui/MaterialPickerGui.class
 com/uitem/command/CraftingCommand.class
 com/uitem/command/UItemCommand.class
 com/uitem/gui/CreateWizardGui.class
-com/uitem/gui/AttributePresetGui$AttrPreset.class
 com/uitem/util/PotionEffectRegistry.class
 com/uitem/rarity/RarityConfig.class
 com/uitem/api/UItemAPI.class
@@ -70,11 +71,12 @@ com/uitem/skill/SkillExecutor$1.class
 com/uitem/gui/LoreEditorGui.class
 com/uitem/chat/ChatInputManager.class
 com/uitem/api/events/UItemCancellableEvent.class
+com/uitem/stat/StatManager.class
 com/uitem/gui/FlagGui.class
+com/uitem/tooltip/TooltipConfig.class
 com/uitem/skill/Skill.class
 com/uitem/gui/RecipeDetailGui.class
 com/uitem/UItemData.class
-com/uitem/gui/AttributePresetGui.class
 com/uitem/gui/RecipeListGui.class
 com/uitem/skill/PotionAuraManager$AuraPresets.class
 com/uitem/provider/ProviderManager$ProviderFactory.class
@@ -82,6 +84,7 @@ com/uitem/provider/ProviderManager.class
 com/uitem/gui/BrowseableItemPickerGui.class
 com/uitem/util/SchedulerUtil.class
 com/uitem/gui/ItemEditorGui$1.class
+com/uitem/gui/StatSystemGui.class
 com/uitem/gui/PotionPresetGui.class
 com/uitem/gui/RarityEditorGui.class
 com/uitem/search/SearchManager.class
@@ -101,7 +104,9 @@ com/uitem/listener/UItemActionListener.class
 com/uitem/provider/VanillaProvider.class
 com/uitem/storage/StorageManager.class
 com/uitem/provider/BrowseableProvider.class
+com/uitem/gui/StatSystemGui$Preset.class
 com/uitem/UItemPlugin.class
+com/uitem/stat/Stat.class
 com/uitem/gui/SetupItemStepGui.class
 com/uitem/gui/ItemListGui.class
 com/uitem/gui/ParticlePickerGui.class

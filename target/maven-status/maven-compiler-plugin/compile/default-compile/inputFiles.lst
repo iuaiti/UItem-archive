@@ -16,7 +16,6 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/command/UItemCommand.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/AbstractGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/ActionPickerGui.java
-/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/AttributePresetGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/BrowseableItemPickerGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/BulkGiveGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/CategoryPickerGui.java
@@ -46,6 +45,7 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/SetupItemStepGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/SkillEditorGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/SkillListGui.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/gui/StatSystemGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/gui/SubCategoryPickerGui.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/hook/AuraSkillsHook.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/hook/EcoSkillsHook.java
@@ -53,6 +53,7 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/hook/SkillsHookManager.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/listener/UItemActionListener.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/listener/UItemSkillListener.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/listener/UItemStatListener.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/provider/BrowseableProvider.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/provider/ItemProvider.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/provider/ItemsAdderProvider.java
@@ -72,7 +73,10 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillCondition.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillExecutor.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/skill/SkillTrigger.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/stat/Stat.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/stat/StatManager.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/storage/StorageManager.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/tooltip/TooltipConfig.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/util/Messages.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/util/PotionEffectRegistry.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/util/SchedulerUtil.java

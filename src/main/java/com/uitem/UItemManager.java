@@ -3,6 +3,7 @@ package com.uitem;
 import com.uitem.provider.ItemProvider;
 import com.uitem.provider.ProviderManager;
 import com.uitem.rarity.RarityConfig;
+import com.uitem.tooltip.TooltipConfig;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
@@ -163,6 +164,12 @@ public class UItemManager {
                 loreComponents.add(safeDeserialize(line, data.getId()));
             }
         }
+
+        // Attributes & Stats have no vanilla tooltip once lore is overridden above —
+        // render them as lore lines per tooltip.yml so they're actually visible.
+        appendAttributeLore(loreComponents, data);
+        appendStatLore(loreComponents, data);
+
         if (!loreComponents.isEmpty()) {
             meta.lore(loreComponents);
         }
@@ -235,14 +242,71 @@ public class UItemManager {
             }
         }
 
-        // Stack size
-        itemStack.setAmount(Math.max(1, Math.min(64, data.getStackSize())));
+        // Stack size = MAX stack size of the item (1 = never stacks).
+        // Must be set on the meta component — setAmount() only changes the count,
+        // it does not stop identical items from merging.
+        int stackSize = Math.max(1, Math.min(64, data.getStackSize()));
+        meta.setMaxStackSize(stackSize);
 
         // Tag the item with the PersistentDataContainer
         meta.getPersistentDataContainer().set(uitemKey, PersistentDataType.STRING, data.getId());
 
         itemStack.setItemMeta(meta);
         return itemStack;
+    }
+
+    /** Renders data.getAttributes() as lore lines per tooltip.yml's "attributes" section. */
+    private void appendAttributeLore(List<Component> loreComponents, UItemData data) {
+        if (!TooltipConfig.isAttributesEnabled()) return;
+        if (data.getAttributes() == null || data.getAttributes().isEmpty()) return;
+
+        if (!TooltipConfig.getAttributesHeader().isEmpty()) {
+            loreComponents.add(safeDeserialize(TooltipConfig.getAttributesHeader(), data.getId()));
+        }
+        for (UItemData.AttributeData attr : data.getAttributes()) {
+            String line = TooltipConfig.getAttributesLine()
+                    .replace("%name%", TooltipConfig.getAttributeDisplayName(attr.getAttribute()))
+                    .replace("%amount%", formatAmount(attr.getAmount()))
+                    .replace("%slot%", attr.getSlot() == null ? "ANY" : attr.getSlot());
+            loreComponents.add(safeDeserialize(line, data.getId()));
+        }
+        if (!TooltipConfig.getAttributesFooter().isEmpty()) {
+            loreComponents.add(safeDeserialize(TooltipConfig.getAttributesFooter(), data.getId()));
+        }
+    }
+
+    /** Renders data.getStats() as lore lines per tooltip.yml's "stats" section. */
+    private void appendStatLore(List<Component> loreComponents, UItemData data) {
+        if (!TooltipConfig.isStatsEnabled()) return;
+        if (data.getStats() == null || data.getStats().isEmpty()) return;
+
+        if (!TooltipConfig.getStatsHeader().isEmpty()) {
+            loreComponents.add(safeDeserialize(TooltipConfig.getStatsHeader(), data.getId()));
+        }
+        for (UItemData.StatData stat : data.getStats()) {
+            String suffix = "%";
+            try {
+                suffix = com.uitem.stat.Stat.valueOf(stat.getStat().toUpperCase(Locale.ROOT)).getSuffix();
+            } catch (IllegalArgumentException ignored) {
+            }
+            String line = TooltipConfig.getStatsLine()
+                    .replace("%name%", TooltipConfig.getStatDisplayName(stat.getStat()))
+                    .replace("%amount%", formatAmount(stat.getAmount()))
+                    .replace("%suffix%", suffix)
+                    .replace("%slot%", stat.getSlot() == null ? "ANY" : stat.getSlot());
+            loreComponents.add(safeDeserialize(line, data.getId()));
+        }
+        if (!TooltipConfig.getStatsFooter().isEmpty()) {
+            loreComponents.add(safeDeserialize(TooltipConfig.getStatsFooter(), data.getId()));
+        }
+    }
+
+    /** Formats a double without a trailing ".0" for whole numbers. */
+    private String formatAmount(double amount) {
+        if (amount == Math.floor(amount) && !Double.isInfinite(amount)) {
+            return String.valueOf((long) amount);
+        }
+        return String.valueOf(amount);
     }
 
     /**

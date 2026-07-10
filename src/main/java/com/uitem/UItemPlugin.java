@@ -37,6 +37,7 @@ public final class UItemPlugin extends JavaPlugin {
     private RecipeManager recipeManager;
     private com.uitem.search.SearchManager searchManager;
     private com.uitem.hook.SkillsHookManager skillsHookManager;
+    private com.uitem.stat.StatManager statManager;
 
     // Native Skill system
     private com.uitem.skill.CooldownManager skillCooldownManager;
@@ -94,6 +95,7 @@ public final class UItemPlugin extends JavaPlugin {
         providerManager.detect();
         this.skillsHookManager = new com.uitem.hook.SkillsHookManager(this);
         skillsHookManager.detect();
+        this.statManager = new com.uitem.stat.StatManager(this);
         storageManager.loadAll(itemManager);
 
         this.recipeManager = new RecipeManager(this, this.itemManager);
@@ -105,6 +107,7 @@ public final class UItemPlugin extends JavaPlugin {
         this.skillActionBar.start();
 
         RarityConfig.load(this);
+        com.uitem.tooltip.TooltipConfig.load(this);
         Messages.init(this);
 
         UItemAPI.init(this);
@@ -113,6 +116,9 @@ public final class UItemPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(chatInputManager, this);
         getServer().getPluginManager().registerEvents(new UItemActionListener(this), this);
         getServer().getPluginManager().registerEvents(skillListener, this);
+        com.uitem.listener.UItemStatListener statListener = new com.uitem.listener.UItemStatListener(this, this.statManager);
+        getServer().getPluginManager().registerEvents(statListener, this);
+        statListener.startRegenTask();
 
         UItemCommand command = new UItemCommand(this);
         Objects.requireNonNull(getCommand("uitem")).setExecutor(command);
@@ -248,6 +254,10 @@ public final class UItemPlugin extends JavaPlugin {
 
     public com.uitem.hook.SkillsHookManager getSkillsHookManager() {
         return skillsHookManager;
+    }
+
+    public com.uitem.stat.StatManager getStatManager() {
+        return statManager;
     }
 
     /** Returns whether this directory contains at least one item YAML file. */

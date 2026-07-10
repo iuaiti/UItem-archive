@@ -505,7 +505,9 @@ public class SkillEditorGui extends AbstractGui {
         SkillAction action = new SkillAction(type);
         skill.addAction(action);
         player.sendMessage(TextUtil.success(Messages.skillAdded(type.getDisplay())));
-        saveAndRefresh();
+        // Reopen (not refresh): the player may be looking at the ActionPickerGui,
+        // refresh() would only repaint this editor's hidden inventory.
+        saveAndReopen();
     }
 
     /** Ask for a param value, then save + refresh (the action already exists in the skill) */

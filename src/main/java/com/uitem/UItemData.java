@@ -45,6 +45,10 @@ public class UItemData {
 
     private List<AttributeData> attributes;
 
+    // Virtual stats (crit chance/damage, defense, cooldown reduction...) not backed
+    // by vanilla Attribute — computed on demand by StatManager from equipped items.
+    private List<StatData> stats;
+
     // Permission required to use/hold the item (server-admin may set null = unlimited)
     private String permission;
     // Item-wide cooldown (seconds) — used for skill/use actions. -1 = none.
@@ -73,6 +77,7 @@ public class UItemData {
         this.maxDurability = -1;
         this.stackSize = 1;
         this.attributes = new ArrayList<>();
+        this.stats = new ArrayList<>();
         this.effects = new ArrayList<>();
         this.skills = new ArrayList<>();
     }
@@ -193,6 +198,14 @@ public class UItemData {
         this.attributes = attributes != null ? attributes : new ArrayList<>();
     }
 
+    public List<StatData> getStats() {
+        return stats;
+    }
+
+    public void setStats(List<StatData> stats) {
+        this.stats = stats != null ? stats : new ArrayList<>();
+    }
+
     public String getPermission() {
         return permission;
     }
@@ -258,6 +271,8 @@ public class UItemData {
         clone.stackSize = this.stackSize;
         clone.attributes = new ArrayList<>();
         for (AttributeData a : this.attributes) clone.attributes.add(a.copy());
+        clone.stats = new ArrayList<>();
+        for (StatData s : this.stats) clone.stats.add(s.copy());
         clone.permission = this.permission;
         clone.cooldown = this.cooldown;
         clone.requiredLevel = this.requiredLevel;
@@ -336,5 +351,29 @@ public class UItemData {
         public void setSlot(String slot) { this.slot = slot; }
 
         public AttributeData copy() { return new AttributeData(attribute, amount, operation, slot); }
+    }
+
+    /** Virtual stat modifier (crit chance/damage, defense, cooldown reduction...). Always additive. */
+    public static class StatData {
+        private String stat;      // one of com.uitem.stat.Stat names
+        private double amount;
+        private String slot;      // HAND | OFF_HAND | HEAD | CHEST | LEGS | FEET | ANY
+
+        public StatData(String stat, double amount, String slot) {
+            this.stat = stat;
+            this.amount = amount;
+            this.slot = slot;
+        }
+
+        public String getStat() { return stat; }
+        public void setStat(String stat) { this.stat = stat; }
+
+        public double getAmount() { return amount; }
+        public void setAmount(double amount) { this.amount = amount; }
+
+        public String getSlot() { return slot; }
+        public void setSlot(String slot) { this.slot = slot; }
+
+        public StatData copy() { return new StatData(stat, amount, slot); }
     }
 }

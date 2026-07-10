@@ -51,7 +51,17 @@ public class ChatInputManager implements Listener {
      * @param onCancel runs when the user types 'cancel' (usually reopens the GUI)
      */
     public void requestInput(Player player, String prompt, Consumer<String> callback, Runnable onCancel) {
-        pendingInputs.put(player.getUniqueId(), new ChatInputRequest(callback, onCancel));
+        // Default cancel action: reopen whatever UItem GUI was open when the
+        // prompt started, so 'cancel' always takes the player back instead of
+        // leaving them staring at chat.
+        Runnable cancelAction = onCancel;
+        if (cancelAction == null) {
+            var holder = player.getOpenInventory().getTopInventory().getHolder();
+            if (holder instanceof com.uitem.gui.AbstractGui gui) {
+                cancelAction = gui::reopen;
+            }
+        }
+        pendingInputs.put(player.getUniqueId(), new ChatInputRequest(callback, cancelAction));
 
         player.closeInventory();
         player.sendMessage(TextUtil.prefixed(prompt));
@@ -85,8 +95,9 @@ public class ChatInputManager implements Listener {
         // Get the plain text
         String input = PlainTextComponentSerializer.plainText().serialize(event.message());
 
-        // Run again on the global scheduler so it's safe to reopen the GUI.
-        SchedulerUtil.runSync(plugin, () -> {
+        // Run on the player's entity scheduler — on Folia, opening an inventory
+        // from the global region thread throws.
+        SchedulerUtil.runForEntity(plugin, player, () -> {
             if (!player.isOnline()) {
                 return;
             }

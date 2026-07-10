@@ -381,6 +381,30 @@ public class StorageManager {
             data.setAttributes(attrs);
         }
 
+        // ── stats (virtual: crit chance/damage, defense, cooldown reduction) ───
+        ConfigurationSection statSection = s.getConfigurationSection("stats");
+        if (statSection != null) {
+            List<UItemData.StatData> stats = new ArrayList<>();
+            for (String statKey : statSection.getKeys(false)) {
+                ConfigurationSection st = statSection.getConfigurationSection(statKey);
+                if (st == null) {
+                    logError("[%s] Item '%s': stat '%s' is not a mapping — skipped.", fileName, id, statKey);
+                    hasWarning = true;
+                    continue;
+                }
+                String statName = st.getString("stat");
+                if (statName == null || statName.isBlank()) {
+                    logError("[%s] Item '%s': stat '%s' missing 'stat' field — skipped.",
+                            fileName, id, statKey);
+                    hasWarning = true;
+                    continue;
+                }
+                stats.add(new UItemData.StatData(statName, st.getDouble("amount", 0),
+                        st.getString("slot", "ANY")));
+            }
+            data.setStats(stats);
+        }
+
         // ── rarity ────────────────────────────────────────────────────────────
         String rarity = s.getString("rarity", null);
         if (rarity != null && !rarity.isBlank()) {
@@ -681,6 +705,16 @@ public class StorageManager {
             }
         }
 
+        if (d.getStats() != null && !d.getStats().isEmpty()) {
+            for (int i = 0; i < d.getStats().size(); i++) {
+                UItemData.StatData st = d.getStats().get(i);
+                String sp = id + ".stats.stat_" + i;
+                cfg.set(sp + ".stat", st.getStat());
+                cfg.set(sp + ".amount", st.getAmount());
+                cfg.set(sp + ".slot", st.getSlot());
+            }
+        }
+
         // Skills (native skill/passive system) - full copy of serialization logic for individual files
         if (d.getSkills() != null && !d.getSkills().isEmpty()) {
             for (int i = 0; i < d.getSkills().size(); i++) {
@@ -829,6 +863,16 @@ public class StorageManager {
                     config.set(ap + ".amount",    a.getAmount());
                     config.set(ap + ".operation", a.getOperation());
                     config.set(ap + ".slot",      a.getSlot());
+                }
+            }
+
+            if (d.getStats() != null && !d.getStats().isEmpty()) {
+                for (int i = 0; i < d.getStats().size(); i++) {
+                    UItemData.StatData st = d.getStats().get(i);
+                    String sp = path + ".stats.stat_" + i;
+                    config.set(sp + ".stat",   st.getStat());
+                    config.set(sp + ".amount", st.getAmount());
+                    config.set(sp + ".slot",   st.getSlot());
                 }
             }
 

@@ -97,8 +97,10 @@ public class ActionPickerGui extends AbstractGui {
             int slot = SLOTS[i - startIdx];
             setItem(slot, createActionIcon(type), ev -> {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.2f);
+                // Do NOT goBack() here: prompt-based actions close this GUI and wait
+                // for chat input — reopening a GUI on top would block the chat prompt.
+                // The callback flow (SkillEditorGui) reopens the editor itself when done.
                 callback.accept(type);
-                goBack();
             });
         }
 
