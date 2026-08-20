@@ -33,6 +33,7 @@ public class ProviderManager {
 
     private final UItemPlugin plugin;
     private final Map<String, ItemProvider> providers = new LinkedHashMap<>();
+    private IaRegistryService iaRegistry;
 
     public ProviderManager(UItemPlugin plugin) {
         this.plugin = plugin;
@@ -41,13 +42,28 @@ public class ProviderManager {
     /** Re-detect installed providers. Safe to call multiple times (e.g. after a softdepend loads). */
     public void detect() {
         providers.clear();
+        if (iaRegistry != null) {
+            iaRegistry.unregister();
+            iaRegistry = null;
+        }
         // Vanilla always first
         register(new VanillaProvider());
 
         // Optional hooks — silently skipped if missing
-        tryRegister("ItemsAdder", ItemsAdderProvider::new, "ItemsAdder");
+        tryRegister("ItemsAdder", () -> {
+            iaRegistry = new IaRegistryService(plugin);
+            return new ItemsAdderProvider(iaRegistry);
+        }, "ItemsAdder");
         tryRegister("Oraxen", OraxenProvider::new, "Oraxen");
         // Future providers plug in here without touching callers (Open/Closed).
+    }
+
+    /** Detach registry event listeners. Call from onDisable. */
+    public void shutdown() {
+        if (iaRegistry != null) {
+            iaRegistry.unregister();
+            iaRegistry = null;
+        }
     }
 
     private void tryRegister(String pluginName, ProviderFactory factory, String displayNameForLog) {

@@ -145,6 +145,7 @@ public final class UItemPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (providerManager != null) providerManager.shutdown();
         for (Player player : Bukkit.getOnlinePlayers()) {
             try {
                 var topInv = player.getOpenInventory().getTopInventory();

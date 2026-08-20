@@ -1,6 +1,7 @@
 com/uitem/gui/RarityListGui.class
 com/uitem/hook/EcoSkillsHook.class
 com/uitem/command/UItemCommand$GiveTarget.class
+com/uitem/provider/IaRegistryService$YamlMetadata.class
 com/uitem/skill/PotionEffectHelper.class
 com/uitem/storage/StorageManager$LoadResult.class
 com/uitem/skill/SkillTrigger.class
@@ -62,6 +63,7 @@ com/uitem/rarity/RarityConfig.class
 com/uitem/api/UItemAPI.class
 com/uitem/gui/RecipeEditorGui.class
 com/uitem/gui/SkillEditorGui$1.class
+com/uitem/provider/ExternalItemRegistry.class
 com/uitem/listener/UItemSkillListener$1.class
 com/uitem/gui/EffectEditorGui.class
 com/uitem/gui/CreateWizardGui$WizardState.class
@@ -86,6 +88,7 @@ com/uitem/util/SchedulerUtil.class
 com/uitem/gui/ItemEditorGui$1.class
 com/uitem/gui/StatSystemGui.class
 com/uitem/gui/PotionPresetGui.class
+com/uitem/provider/ItemEntry.class
 com/uitem/gui/RarityEditorGui.class
 com/uitem/search/SearchManager.class
 com/uitem/util/PotionEffectRegistry$PotionInfo.class
@@ -98,6 +101,7 @@ com/uitem/gui/SkillListGui.class
 com/uitem/hook/AuraSkillsHook.class
 com/uitem/storage/StorageManager$FileLoadResult.class
 com/uitem/gui/ConfirmDeleteGui.class
+com/uitem/provider/IaRegistryService.class
 com/uitem/gui/GuiListener.class
 com/uitem/api/events/UItemEvent.class
 com/uitem/listener/UItemActionListener.class

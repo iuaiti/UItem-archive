@@ -3,41 +3,39 @@ package com.uitem.provider;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.ItemStack;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 
 /**
  * ItemsAdder provider. Uses reflection so the project compiles without ItemsAdder on the
  * classpath. Optional hook — fails quietly when ItemsAdder is missing.
+ * <p>
+ * Enumeration comes from the injected {@link IaRegistryService} cache (built from
+ * ItemsAdder's own registry after {@code ItemsAdderLoadDataEvent}); this class only
+ * resolves individual items via {@code CustomStack}.
  */
 public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
 
     public static final String NAMESPACE = "ia";
 
-    private final Class<?> customStackClass;
+    private static boolean debug = false;
+
+    public static void setDebug(boolean v) { debug = v; }
+    public static boolean isDebug() { return debug; }
+
+    private final IaRegistryService registry;
     private final Method getInstance;
     private final Method getItemStack;
-    private final Method getName;
     private final Function<ItemStack, String> idFromStack;
-    private final Function<Void, List<String>> listIdsFn;
 
-    public ItemsAdderProvider() throws Exception {
-        this.customStackClass = Class.forName("dev.lone.itemsadder.api.CustomStack");
+    public ItemsAdderProvider(IaRegistryService registry) throws Exception {
+        this.registry = registry;
+        Class<?> customStackClass = Class.forName("dev.lone.itemsadder.api.CustomStack");
         this.getInstance = customStackClass.getMethod("getInstance", String.class);
         this.getItemStack = customStackClass.getMethod("getItemStack");
-        this.getName = tryMethodOpt(customStackClass, "getName").orElse(null);
 
         // Extractor from ItemStack
         Function<ItemStack, String> extractor;
@@ -46,7 +44,8 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
             Method getByItemStack = getByItemStackOpt.get();
             Method namespacedIdGetter = tryMethodOpt(customStackClass, "getNamespacedID")
                     .or(() -> tryMethodOpt(customStackClass, "getId"))
-                    .orElse(getName);
+                    .or(() -> tryMethodOpt(customStackClass, "getName"))
+                    .orElse(null);
             extractor = stack -> {
                 try {
                     Object cs = getByItemStack.invoke(null, stack);
@@ -61,193 +60,13 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
             extractor = stack -> null;
         }
         this.idFromStack = extractor;
-        this.listIdsFn = buildListIdsFn();
     }
 
-    private java.util.Optional<Method> tryMethodOpt(Class<?> c, String name) {
-        try { return java.util.Optional.of(c.getMethod(name)); } catch (NoSuchMethodException e) {
+    private java.util.Optional<Method> tryMethodOpt(Class<?> c, String name, Class<?>... params) {
+        try { return java.util.Optional.of(c.getMethod(name, params)); } catch (NoSuchMethodException e) {
             return java.util.Optional.empty();
         }
     }
-    private java.util.Optional<Method> tryMethodOpt(Class<?> c, String name, Class<?> param) {
-        try { return java.util.Optional.of(c.getMethod(name, param)); } catch (NoSuchMethodException e) {
-            return java.util.Optional.empty();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private Function<Void, List<String>> buildListIdsFn() {
-        Function<Void, List<String>> fileFallback = buildFileFallback();
-        if (fileFallback != null) {
-            return v -> {
-                List<String> raw = fileFallback.apply(null);
-                List<String> out = new ArrayList<>();
-                for (String id : raw) {
-                    try {
-                        if (getInstance.invoke(null, id) != null) out.add(id);
-                    } catch (Exception e) {
-                        // skip unresolvable
-                    }
-                }
-                return out;
-            };
-        }
-        return v -> List.of();
-    }
-
-    private Function<Void, List<String>> buildListFn(Method m) {
-        final String methodName = m.getName();
-        return v -> {
-            try {
-                Object result = m.invoke(null);
-                if (result == null) return List.of();
-                Set<String> ids = new HashSet<>();
-                if (result instanceof Map<?, ?> map) {
-                    for (Object k : map.keySet()) {
-                        if (k != null) {
-                            String s = k.toString();
-                            if (!s.isBlank()) ids.add(s);
-                        }
-                    }
-                } else if (result instanceof Collection<?> col) {
-                    for (Object o : col) {
-                        if (o != null) {
-                            String s = o.toString();
-                            if (!s.isBlank()) ids.add(s);
-                        }
-                    }
-                }
-                List<String> out = new ArrayList<>(ids);
-                out.removeIf(String::isBlank);
-                Collections.sort(out);
-                return out;
-            } catch (Exception e) {
-                return List.of();
-            }
-        };
-    }
-
-    /**
-     * Fallback: scan ItemsAdder's content/data directories for item definitions.
-     * IA stores items in YAML files under plugins/ItemsAdder/contents/.
-     * <p>
-     * Changed: Previously it stripped file names to only the local id; now it
-     * keeps the full namespace:id pair so that {@code getItem()} can use the correct
-     * namespace when calling {@code CustomStack.getInstance}.
-     */
-    private Function<Void, List<String>> buildFileFallback() {
-        File pluginsDir = Bukkit.getPluginManager().getPlugin("ItemsAdder").getDataFolder();
-        if (pluginsDir == null || !pluginsDir.isDirectory()) return null;
-        File[] searchDirs = {
-            new File(pluginsDir, "contents"),
-            new File(pluginsDir, "data" + File.separator + "items"),
-            new File(pluginsDir, "items")
-        };
-        // Map of namespace (folder / config) → set of local id
-        Map<String, Set<String>> nsToIds = new LinkedHashMap<>();
-        for (File dir : searchDirs) {
-            if (dir.isDirectory()) {
-                scanNamespaceDir(dir, nsToIds);
-            }
-        }
-        if (nsToIds.isEmpty()) return null;
-
-        // Flatten to string "namespace:localId"
-        List<String> ids = new ArrayList<>();
-        for (Map.Entry<String, Set<String>> entry : nsToIds.entrySet()) {
-            String ns = entry.getKey();
-            for (String local : entry.getValue()) {
-                ids.add(ns + ":" + local);
-            }
-        }
-        Collections.sort(ids);
-        return v -> ids;
-    }
-
-    /**
-     * Walk a contents directory to collect item YAML files.
-     * For each file we check the parent-folder's info namespace (from an
-     * adjacent _config.yml or config.yml) so items are resolved with the
-     * correct namespace. Fallback namespace = the subfolder name.
-     */
-    private void scanNamespaceDir(File dir, Map<String, Set<String>> nsToIds) {
-        File[] entries = dir.listFiles();
-        if (entries == null) return;
-        String folderNamespace = readNamespaceFromConfig(dir);
-        for (File entry : entries) {
-            if (entry.isDirectory()) {
-                // Each subfolder may have its own namespace
-                String subNs = readNamespaceFromConfig(entry);
-                collectItemIds(entry, nsToIds, subNs);
-            } else {
-                collectItemKeys(entry, nsToIds, folderNamespace);
-            }
-        }
-    }
-
-    private void collectItemIds(File dir, Map<String, Set<String>> nsToIds, String ns) {
-        File[] files = dir.listFiles();
-        if (files == null) return;
-        for (File f : files) {
-            if (f.isDirectory()) {
-                String subNs = readNamespaceFromConfig(f);
-                collectItemIds(f, nsToIds, subNs);
-            } else {
-                collectItemKeys(f, nsToIds, ns);
-            }
-        }
-    }
-
-    /**
-     * Parse a YAML item definition file and collect item keys from the
-     * {@code items:} section that have a {@code display_name} or
-     * {@code resource} entry. Ignores config files (_{config,config}.yml).
-     */
-    private void collectItemKeys(File file, Map<String, Set<String>> nsToIds, String ns) {
-        String name = file.getName();
-        if (!name.endsWith(".yml") && !name.endsWith(".yaml")) return;
-        if (name.startsWith("_") || name.equals("config.yml") || name.equals("config.yaml")) return;
-        try {
-            YamlConfiguration yaml = new YamlConfiguration();
-            yaml.load(file);
-            ConfigurationSection items = yaml.getConfigurationSection("items");
-            if (items == null) return;
-            for (String key : items.getKeys(false)) {
-                ConfigurationSection entry = items.getConfigurationSection(key);
-                if (entry != null && (entry.contains("display_name") || entry.contains("resource"))) {
-                    nsToIds.computeIfAbsent(ns, k -> new HashSet<>()).add(key);
-                }
-            }
-        } catch (Exception e) {
-            // not a valid item file, skip
-        }
-    }
-
-    /**
-     * Read the {code namespace} from a _config.yml or config.yml in the folder.
-     * IA puts a {@code info.namespace} key in the folder's _config.yml.
-     */
-    private String readNamespaceFromConfig(File folder) {
-        if (folder == null || !folder.isDirectory()) return folderNamespaceFallback(folder);
-        for (String name : new String[]{"_config.yml", "config.yml", "_config.yaml", "config.yaml"}) {
-            File cfgFile = new File(folder, name);
-            if (!cfgFile.isFile()) continue;
-            try {
-                YamlConfiguration yaml = new YamlConfiguration();
-                yaml.load(cfgFile);
-                String ns = yaml.getString("info.namespace");
-                if (ns != null && !ns.isBlank()) return ns.trim();
-            } catch (Exception e) {
-            }
-        }
-        return folderNamespaceFallback(folder);
-    }
-
-    private String folderNamespaceFallback(File folder) {
-        return folder == null ? "itemsadder" : folder.getName();
-    }
-
-
 
     @Override public String getNamespace() { return NAMESPACE; }
     @Override public String getDisplayName() { return "ItemsAdder"; }
@@ -345,11 +164,15 @@ public class ItemsAdderProvider implements ItemProvider, BrowseableProvider {
 
     @Override
     public List<String> listIds() {
-        try {
-            return listIdsFn.apply(null);
-        } catch (Exception e) {
-            return List.of();
+        if (!registry.isReady()) {
+            if (debug) Bukkit.getLogger().info("[UItem] IA listIds: registry cache not ready yet");
         }
+        List<String> ids = new ArrayList<>();
+        for (ItemEntry entry : registry.entries()) {
+            if (!entry.hidden()) ids.add(entry.namespacedId());
+        }
+        if (debug) Bukkit.getLogger().info("[UItem] IA listIds: " + ids.size() + " items");
+        return ids;
     }
 
     @Override

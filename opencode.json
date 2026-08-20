@@ -38,8 +38,8 @@
         "baseURL": "https://agentrouter.org/v1"
       },
       "models": {
-        "glm-5.2": {
-          "name": "glm-5.2"
+        "claude-opus-5": {
+          "name": "claude-opus-5"
         }
       }
     }           

@@ -55,6 +55,9 @@
 /workspaces/Ultimate-Item/src/main/java/com/uitem/listener/UItemSkillListener.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/listener/UItemStatListener.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/provider/BrowseableProvider.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/provider/ExternalItemRegistry.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/provider/IaRegistryService.java
+/workspaces/Ultimate-Item/src/main/java/com/uitem/provider/ItemEntry.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/provider/ItemProvider.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/provider/ItemsAdderProvider.java
 /workspaces/Ultimate-Item/src/main/java/com/uitem/provider/OraxenProvider.java
