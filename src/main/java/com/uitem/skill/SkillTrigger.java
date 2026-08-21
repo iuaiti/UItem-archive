@@ -77,7 +77,16 @@ public enum SkillTrigger {
                 case "ON_EQUIP", "EQUIPPED", "WEAR" -> EQUIP;
                 case "ON_UNEQUIP", "UNEQUIPPED" -> UNEQUIP;
                 case "TICK", "REPEAT", "AURA" -> PERIODIC;
-                default -> RIGHT_CLICK;
+                default -> {
+                    // Silently defaulting turns a YAML typo into a right-click skill that
+                    // looks broken with no explanation. Log it once, loudly, and name the
+                    // valid values so the admin can fix the config.
+                    org.bukkit.Bukkit.getLogger().warning(
+                            "[UItem] Unknown skill trigger '" + s + "' — falling back to RIGHT_CLICK. Valid: "
+                                    + java.util.Arrays.stream(values()).map(Enum::name)
+                                            .collect(java.util.stream.Collectors.joining(", ")));
+                    yield RIGHT_CLICK;
+                }
             };
         }
     }

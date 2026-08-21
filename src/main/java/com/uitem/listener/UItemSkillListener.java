@@ -7,6 +7,7 @@ import com.uitem.api.events.UItemEquipEvent;
 import com.uitem.api.events.UItemInteractEvent;
 import com.uitem.skill.SkillExecutor;
 import com.uitem.skill.SkillTrigger;
+import com.uitem.util.DamageGuard;
 import com.uitem.util.SchedulerUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
@@ -18,17 +19,15 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityShootBowEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
-import org.bukkit.entity.Trident;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
-import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Listener chuyên biệt cho hệ thống Skill & Passive native của UItem.
@@ -36,25 +35,28 @@ import java.util.*;
  * Ưu điểm so với ExecutableItems:
  * - Toàn bộ logic Java rõ ràng, không script phức tạp.
  * - Cooldown lưu PDC + memory → rất ổn định sau restart.
- * - Folia-safe qua SchedulerUtil.
+ * - Folia-safe qua SchedulerUtil (global timer fan-out sang entity scheduler).
  * - Dễ mở rộng action/condition.
  */
 public class UItemSkillListener implements Listener {
 
+    /** Nhịp của periodic ticker (tick). 5 tick ≈ 0.25s, đủ mượt cho aura/regen. */
+    public static final long PERIODIC_TICK_RATE = 5L;
+
     private final UItemPlugin plugin;
     private final SkillExecutor executor;
 
-    // Track item đang cầm để WHILE_HOLDING
-    private final Map<UUID, String> lastHeldUItem = new HashMap<>();
+    // Track item đang cầm để WHILE_HOLDING.
+    // ConcurrentHashMap: trên Folia các region tick song song, mỗi player nằm ở
+    // region riêng nên map này bị đọc/ghi từ nhiều thread.
+    private final Map<UUID, String> lastHeldUItem = new ConcurrentHashMap<>();
 
-    private final Map<UUID, Long> lastSneakAt = new HashMap<>();
+    private final Map<UUID, Long> lastSneakAt = new ConcurrentHashMap<>();
     private static final long DOUBLE_SNEAK_WINDOW_MS = 450L;
 
-    // Reentrancy guard: ngăn DAMAGE action gọi target.damage() → EntityDamageByEntityEvent → vòng lặp vô hạn
-    private boolean inDamageProcessing = false;
-
-    // Periodic ticker (chạy mỗi 5 tick ~0.25s, đủ mượt cho hầu hết aura/regen)
-    private BukkitTask periodicTask;
+    // Cờ tắt ticker khi plugin disable. volatile vì được set từ main thread
+    // nhưng đọc từ thread của region.
+    private volatile boolean shutdown = false;
 
     public UItemSkillListener(UItemPlugin plugin, SkillExecutor executor) {
         this.plugin = plugin;
@@ -62,27 +64,34 @@ public class UItemSkillListener implements Listener {
         startPeriodicTask();
     }
 
+    /**
+     * Ticker cho PERIODIC / WHILE_HOLDING / WHILE_WEARING.
+     *
+     * <p>Folia-safe: global timer chỉ liệt kê player rồi đẩy từng người sang
+     * entity scheduler của chính họ, nên mọi truy cập inventory/world đều chạy
+     * đúng region thread. Trên Paper/Spigot SchedulerUtil rơi về BukkitScheduler
+     * nên hành vi không đổi.
+     */
     private void startPeriodicTask() {
-        if (periodicTask != null) periodicTask.cancel();
-
-        periodicTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+        SchedulerUtil.runGlobalTimer(plugin, 20L, PERIODIC_TICK_RATE, () -> {
+            if (shutdown) return;
             for (Player p : Bukkit.getOnlinePlayers()) {
-                try {
-                    tickPlayerPeriodic(p);
-                } catch (Exception e) {
-                    // Không để 1 player làm crash toàn bộ ticker — log lỗi để debug
-                    plugin.getLogger().warning("[Skill] Periodic tick error for " + p.getName() + ": " + e.getMessage());
-                    e.printStackTrace();
-                }
+                SchedulerUtil.runForEntity(plugin, p, () -> {
+                    if (shutdown || !p.isOnline()) return;
+                    try {
+                        tickPlayerPeriodic(p);
+                    } catch (Exception e) {
+                        // Không để 1 player làm crash toàn bộ ticker — log lỗi để debug
+                        plugin.getLogger().warning("[Skill] Periodic tick error for "
+                                + p.getName() + ": " + e.getMessage());
+                    }
+                });
             }
-        }, 20L, 5L); // delay 1s, sau đó mỗi 5 tick
+        });
     }
 
     public void shutdown() {
-        if (periodicTask != null) {
-            periodicTask.cancel();
-            periodicTask = null;
-        }
+        this.shutdown = true;
     }
 
     private void tickPlayerPeriodic(Player player) {
@@ -151,14 +160,21 @@ public class UItemSkillListener implements Listener {
         UItemData data = getUItemData(item);
         if (data == null || data.getSkills() == null) return;
 
-        // Check if this is a throw (has velocity) vs normal drop
-        boolean isThrow = event.getItemDrop().getVelocity().lengthSquared() > 0.1;
-        SkillTrigger trigger = isThrow ? SkillTrigger.THROW : SkillTrigger.DROP;
+        // DROP vs THROW is decided by sneak state, not by the dropped item's velocity.
+        // Vanilla gives every Q-drop a velocity of roughly 0.3, so the old
+        // "lengthSquared() > 0.1" test landed either side of the threshold depending
+        // on the player's pitch — the same keypress produced DROP or THROW at random.
+        // Sneak is deterministic and mirrors the SNEAK/DOUBLE_SNEAK pair below:
+        //   Q          -> DROP
+        //   Shift + Q  -> THROW
+        SkillTrigger trigger = player.isSneaking() ? SkillTrigger.THROW : SkillTrigger.DROP;
 
         boolean executed = executor.executeSkills(player, data.getId(), data.getSkills(), trigger, null);
-        // Never cancel THROW: cancelling would prevent the item from actually leaving the player's
-        // hand, so the skill would "finish" and consume its cooldown while the throw never happens.
-        if (executed && trigger == SkillTrigger.DROP && shouldCancelAny(data, trigger)) {
+
+        // Never cancel for THROW: cancelling would prevent the item from actually leaving the
+        // player's hand, so the skill would "finish" and consume its cooldown while the throw
+        // never happens. DROP may cancel (e.g. a soulbound item that refuses to be dropped).
+        if (executed && trigger == SkillTrigger.DROP && shouldCancel(data, trigger)) {
             event.setCancelled(true);
         }
     }
@@ -190,25 +206,11 @@ public class UItemSkillListener implements Listener {
 
         // For trident throws (and potentially other projectile weapons), look at held items.
         // Prefer main hand, then off hand. We trigger SHOOT on the UItem weapon used to launch.
-        ItemStack weapon = player.getInventory().getItemInMainHand();
-        UItemData data = getUItemData(weapon);
-
+        // (No extra TRIDENT-specific pass: both hands are already resolved here, so a
+        // material check afterwards could only re-read an ItemStack that just returned null.)
+        UItemData data = getUItemData(player.getInventory().getItemInMainHand());
         if (data == null) {
-            // Fallback to offhand (rare for trident/bow but possible)
-            weapon = player.getInventory().getItemInOffHand();
-            data = getUItemData(weapon);
-        }
-
-        // If the projectile is a trident, also try to match a TRIDENT in hand even if not (yet) resolved as UItem above
-        if (data == null && event.getEntity() instanceof Trident) {
-            if (weapon != null && weapon.getType() == Material.TRIDENT) {
-                data = getUItemData(weapon);
-            } else {
-                ItemStack off = player.getInventory().getItemInOffHand();
-                if (off != null && off.getType() == Material.TRIDENT) {
-                    data = getUItemData(off);
-                }
-            }
+            data = getUItemData(player.getInventory().getItemInOffHand());
         }
 
         if (data == null || data.getSkills() == null || data.getSkills().isEmpty()) return;
@@ -224,7 +226,7 @@ public class UItemSkillListener implements Listener {
         UItemData data = getUItemData(main);
         if (data != null && data.getSkills() != null) {
             boolean executed = executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.SWAP_HAND, null);
-            if (executed && shouldCancelAny(data, SkillTrigger.SWAP_HAND)) {
+            if (executed && shouldCancel(data, SkillTrigger.SWAP_HAND)) {
                 event.setCancelled(true);
             }
         }
@@ -248,8 +250,8 @@ public class UItemSkillListener implements Listener {
             executedDoubleSneak = executor.executeSkills(player, data.getId(), data.getSkills(), SkillTrigger.DOUBLE_SNEAK, null);
         }
 
-        if ((executedSneak && shouldCancelAny(data, SkillTrigger.SNEAK))
-                || (executedDoubleSneak && shouldCancelAny(data, SkillTrigger.DOUBLE_SNEAK))) {
+        if ((executedSneak && shouldCancel(data, SkillTrigger.SNEAK))
+                || (executedDoubleSneak && shouldCancel(data, SkillTrigger.DOUBLE_SNEAK))) {
             event.setCancelled(true);
         }
     }
@@ -258,12 +260,15 @@ public class UItemSkillListener implements Listener {
     // Combat
     // =========================================================
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    // HIGHEST, not MONITOR: this handler mutates state (skill actions deal damage,
+    // teleport, break blocks...). MONITOR is contractually read-only and is where
+    // logging plugins observe the final outcome.
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onDamage(EntityDamageByEntityEvent event) {
         // Reentrancy guard: DAMAGE action gọi target.damage() sinh ra EntityDamageByEntityEvent mới,
-        // nếu không guard sẽ gây đệ quy vô hạn (HIT → DAMAGE → HIT → DAMAGE → ...)
-        if (inDamageProcessing) return;
-        inDamageProcessing = true;
+        // nếu không guard sẽ gây đệ quy vô hạn (HIT → DAMAGE → HIT → DAMAGE → ...).
+        // Guard theo damager nên hit của player khác trong cùng tick không bị bỏ.
+        if (!DamageGuard.enter(event.getDamager())) return;
         try {
             // HIT: damager dùng UItem
             if (event.getDamager() instanceof Player damager) {
@@ -293,11 +298,11 @@ public class UItemSkillListener implements Listener {
                 }
             }
         } finally {
-            inDamageProcessing = false;
+            DamageGuard.exit(event.getDamager());
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event) {
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
@@ -313,7 +318,7 @@ public class UItemSkillListener implements Listener {
     // Equip
     // =========================================================
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEquip(UItemEquipEvent event) {
         Player p = event.getPlayer();
         UItemData data = event.getItemData();
@@ -350,6 +355,9 @@ public class UItemSkillListener implements Listener {
         lastHeldUItem.remove(event.getPlayer().getUniqueId());
         lastSneakAt.remove(event.getPlayer().getUniqueId());
         executor.getCooldowns().onPlayerQuit(event.getPlayer());
+        if (plugin.getStatManager() != null) {
+            plugin.getStatManager().invalidate(event.getPlayer());
+        }
     }
 
     // =========================================================
@@ -366,13 +374,11 @@ public class UItemSkillListener implements Listener {
         return UItemAPI.get().getUItemId(item).orElse(null);
     }
 
+    /**
+     * True when at least one skill bound to {@code trigger} asked for the
+     * originating event to be cancelled.
+     */
     private boolean shouldCancel(UItemData data, SkillTrigger trigger) {
-        if (data.getSkills() == null) return false;
-        return data.getSkills().stream()
-                .anyMatch(s -> s.getTrigger() == trigger && s.isCancelEvent());
-    }
-
-    private boolean shouldCancelAny(UItemData data, SkillTrigger trigger) {
         if (data.getSkills() == null) return false;
         return data.getSkills().stream()
                 .anyMatch(s -> s.getTrigger() == trigger && s.isCancelEvent());

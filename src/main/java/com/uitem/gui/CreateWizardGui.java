@@ -63,7 +63,23 @@ public class CreateWizardGui extends AbstractGui {
             else startStep1();
         });
         setItem(45, createBackButton(), ev -> goBack());
-        if (existing != null) startStep2(); // auto-start for an existing item
+    }
+
+    /**
+     * When editing an existing item's source, skip the splash screen.
+     *
+     * <p>Done here rather than at the end of {@link #setup()}: setup() runs from
+     * inside {@code open()} <em>before</em> this GUI's own
+     * {@code player.openInventory()}, so opening the child there meant the parent
+     * immediately reopened over it and the wizard appeared not to advance.
+     */
+    @Override
+    public void open() {
+        if (existing != null) {
+            startStep2();
+            return;
+        }
+        super.open();
     }
 
     // -- Step 1: Category -----------------------------------------------
@@ -76,33 +92,53 @@ public class CreateWizardGui extends AbstractGui {
 
     // -- Step 2: Provider ------------------------------------------------
     private void startStep2() {
-        new ProviderPickerGui(plugin, player, this::onProviderPicked, this::onPickFromHand).openAsChildOf(this);
+        ProviderPickerGui gui = new ProviderPickerGui(plugin, player, this::onProviderPicked, this::onPickFromHand);
+        if (existing != null) {
+            // "Change source" mode has no splash screen, so Back must skip this
+            // wizard and return to whatever opened it (the item editor). Pointing
+            // at this.reopen() would immediately re-enter startStep2() and the
+            // Back button would appear to do nothing.
+            Runnable up = getBackAction();
+            if (up != null) gui.setBackAction(up);
+            gui.open();
+        } else {
+            gui.openAsChildOf(this);
+        }
     }
 
     private void onProviderPicked(ItemProvider p) {
         state.provider = p;
         if ("vanilla".equals(p.getNamespace())) {
             // Vanilla uses the dedicated Material list picker.
-            new MaterialPickerGui(plugin, player, this::onTargetPicked).openAsChildOf(this);
+            openTargetPicker(new MaterialPickerGui(plugin, player, this::onTargetPicked));
         } else if (p instanceof BrowseableProvider bp) {
-            new BrowseableItemPickerGui(plugin, player, bp, this::onTargetPicked).openAsChildOf(this);
+            openTargetPicker(new BrowseableItemPickerGui(plugin, player, bp, this::onTargetPicked));
         } else {
             player.sendMessage(TextUtil.error("This provider does not support browsing - please use 'Item in hand'."));
-            new ProviderPickerGui(plugin, player, this::onProviderPicked, this::onPickFromHand).openAsChildOf(this);
+            startStep2();
         }
+    }
+
+    /**
+     * Open a step-3 target picker whose Back button returns to the step-2 provider
+     * list, not to this wizard's splash screen.
+     */
+    private void openTargetPicker(AbstractGui picker) {
+        picker.setBackAction(this::startStep2);
+        picker.open();
     }
 
     private void onPickFromHand() {
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (hand == null || hand.getType().isAir()) {
             player.sendMessage(TextUtil.error("You are not holding any item!"));
-            new ProviderPickerGui(plugin, player, this::onProviderPicked, this::onPickFromHand).openAsChildOf(this);
+            startStep2();
             return;
         }
         String source = plugin.getProviderManager().detectSource(hand);
         if (source == null) {
             player.sendMessage(TextUtil.error("Could not detect which plugin created this item."));
-            new ProviderPickerGui(plugin, player, this::onProviderPicked, this::onPickFromHand).openAsChildOf(this);
+            startStep2();
             return;
         }
         player.sendMessage(TextUtil.success("Detected: <white>" + source));
@@ -118,10 +154,7 @@ public class CreateWizardGui extends AbstractGui {
             plugin.getItemManager().registerItem(existing);
             plugin.getStorageManager().saveItem(plugin.getItemManager(), existing);
             player.sendMessage(TextUtil.success("Changed source of '" + existing.getId() + "' to " + source));
-            Runnable savedBack = getBackAction();
-            ItemEditorGui gui = new ItemEditorGui(plugin, player, existing);
-            if (savedBack != null) gui.setBackAction(savedBack);
-            gui.open();
+            openEditor(existing);
             return;
         }
         // Generate a default ID from source, create the item, and open the full editor directly.
@@ -138,8 +171,20 @@ public class CreateWizardGui extends AbstractGui {
         plugin.getItemManager().registerItem(data);
         plugin.getStorageManager().saveItem(plugin.getItemManager(), data);
         player.sendMessage(TextUtil.success("Created UItem '" + data.getId() + "'! Now configure it in the editor."));
+        openEditor(data);
+    }
+
+    /**
+     * Hand off to the item editor, forwarding this wizard's own parent link.
+     *
+     * <p>The wizard itself is finished at this point, so the editor must inherit
+     * the wizard's parent (usually the item list). Without forwarding, the editor
+     * becomes a root GUI and its Back button closes the inventory — which is what
+     * made the GUI chain "break" after picking an item.
+     */
+    private void openEditor(UItemData target) {
+        ItemEditorGui gui = new ItemEditorGui(plugin, player, target);
         Runnable savedBack = getBackAction();
-        ItemEditorGui gui = new ItemEditorGui(plugin, player, data);
         if (savedBack != null) gui.setBackAction(savedBack);
         gui.open();
     }

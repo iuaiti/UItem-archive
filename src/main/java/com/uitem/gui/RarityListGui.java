@@ -99,7 +99,9 @@ public class RarityListGui extends AbstractGui {
                 String name = input.trim().toUpperCase();
                 if (name.isEmpty() || RarityConfig.getAll().containsKey(name)) {
                     player.sendMessage(TextUtil.error("Name invalid or already exists!"));
-                    new RarityListGui(plugin, player, returnPage, page).open();
+                    // reopen() this instance rather than building a new root GUI,
+                    // which would lose the back link to the item editor.
+                    reopen();
                     return;
                 }
                 RarityConfig.setRarity(name, "<white>", "", List.of());

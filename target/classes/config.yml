@@ -14,9 +14,9 @@ auto-save: true
 # Allow MiniMessage in display name and lore
 minimessage-support: true
 
-# Storage behavior for items and recipes
+# Storage behavior for items
 storage:
-  # If true: GUI maintains consolidated item.yml / recipe.yml
+  # If true: GUI maintains a consolidated items/item.yml
   # If false (recommended): Only individual files (items/<id>.yml) are used.
   use-consolidated-files: false
 

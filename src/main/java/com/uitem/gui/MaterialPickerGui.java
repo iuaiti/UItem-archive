@@ -130,16 +130,19 @@ public class MaterialPickerGui extends AbstractGui {
                 "<gold><bold>Search</bold>",
                 List.of(filter != null ? "<gray>Filtering: <white>" + filter : "<gray>Click to search materials by name")),
                 ev -> {
-                    Runnable savedBack = getBackAction();
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                    player.closeInventory();
+                    // Re-filter THIS instance instead of building a replacement GUI.
+                    // The old code created a new MaterialPickerGui and hand-copied the
+                    // back link; anything it forgot (and the parent's own state) was lost,
+                    // so picking an item after a search dropped the player out of the
+                    // wizard entirely.
                     plugin.getChatInputManager().requestInput(player,
                             "<yellow>Enter material name to search (Enter to clear filter):",
                             input -> {
-                                String f = input.trim().isEmpty() ? null : input.trim();
-                                MaterialPickerGui gui = new MaterialPickerGui(plugin, player, callback, 0, f, category);
-                                if (savedBack != null) gui.setBackAction(savedBack);
-                                gui.open();
+                                filter = input.trim().isEmpty() ? null : input.trim();
+                                page = 0;
+                                materials = loadMaterials();
+                                reopen();
                             });
                 });
 

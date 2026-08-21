@@ -173,10 +173,8 @@ public class BulkGiveGui extends AbstractGui {
                     plugin.getChatInputManager().requestInput(player,
                             "<yellow>Enter player name to give to (or 'cancel' to abort):",
                             input -> {
-                                if (input.equalsIgnoreCase("cancel") || input.equalsIgnoreCase("huy")) {
-                                    reopen();
-                                    return;
-                                }
+                                // No 'cancel' check needed: ChatInputManager handles the
+                                // cancel words and reopens this GUI before we get here.
                                 Player target = Bukkit.getPlayerExact(input.trim());
                                 if (target == null) {
                                     player.sendMessage(TextUtil.error("Player '" + input + "' is not online!"));

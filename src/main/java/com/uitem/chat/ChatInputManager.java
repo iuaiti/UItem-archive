@@ -23,6 +23,10 @@ import java.util.function.Consumer;
  */
 public class ChatInputManager implements Listener {
 
+    /** Words that abort a prompt. Accepts the Vietnamese "hủy" with or without diacritics. */
+    private static final java.util.Set<String> CANCEL_WORDS =
+            java.util.Set.of("cancel", "huy", "hủy", "thoat", "thoát");
+
     private final UItemPlugin plugin;
     private final Map<UUID, ChatInputRequest> pendingInputs;
 
@@ -48,17 +52,33 @@ public class ChatInputManager implements Listener {
      * @param player   the player who must enter input
      * @param prompt   the instruction message
      * @param callback the callback receiving the entered text (runs on the main thread)
-     * @param onCancel runs when the user types 'cancel' (usually reopens the GUI)
+     * @param onCancel runs when the user aborts; when null, the GUI that was open
+     *                 at prompt time is reopened automatically
      */
     public void requestInput(Player player, String prompt, Consumer<String> callback, Runnable onCancel) {
-        // Default cancel action: reopen whatever UItem GUI was open when the
-        // prompt started, so 'cancel' always takes the player back instead of
-        // leaving them staring at chat.
+        // Resolve the GUI to return to BEFORE closing the inventory.
+        //
+        // Two sources, in order:
+        //   1. the currently open inventory's holder
+        //   2. AbstractGui.lastOpenedFor(player)
+        //
+        // (2) is what makes cancel reliable: many call sites call
+        // player.closeInventory() themselves before requestInput(), and chained
+        // prompts (prompt -> prompt) run with no inventory open at all. In both
+        // cases (1) is already null, which is why 'cancel' used to just print
+        // "Cancelled." and leave the player stuck in chat.
         Runnable cancelAction = onCancel;
         if (cancelAction == null) {
+            com.uitem.gui.AbstractGui gui = null;
             var holder = player.getOpenInventory().getTopInventory().getHolder();
-            if (holder instanceof com.uitem.gui.AbstractGui gui) {
-                cancelAction = gui::reopen;
+            if (holder instanceof com.uitem.gui.AbstractGui open) {
+                gui = open;
+            } else {
+                gui = com.uitem.gui.AbstractGui.lastOpenedFor(player);
+            }
+            if (gui != null) {
+                final com.uitem.gui.AbstractGui target = gui;
+                cancelAction = target::reopen;
             }
         }
         pendingInputs.put(player.getUniqueId(), new ChatInputRequest(callback, cancelAction));
@@ -101,7 +121,7 @@ public class ChatInputManager implements Listener {
             if (!player.isOnline()) {
                 return;
             }
-            if (input.equalsIgnoreCase("cancel")) {
+            if (CANCEL_WORDS.contains(input.trim().toLowerCase(java.util.Locale.ROOT))) {
                 player.sendMessage(TextUtil.info("Cancelled."));
                 if (request.onCancel() != null) {
                     request.onCancel().run();
@@ -115,6 +135,7 @@ public class ChatInputManager implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         pendingInputs.remove(event.getPlayer().getUniqueId());
+        com.uitem.gui.AbstractGui.forget(event.getPlayer());
         // Clean up SearchManager query for this player (null-safe)
         var inst = com.uitem.UItemPlugin.getInstance();
         if (inst != null) {

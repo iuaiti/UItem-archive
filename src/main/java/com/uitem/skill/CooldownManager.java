@@ -30,10 +30,17 @@ public final class CooldownManager {
     }
 
     private NamespacedKey getPdcKey(String itemId, String skillId) {
-        // Limit key length (PDC key max ~256)
-        String shortKey = "cd_" + safe(itemId) + "_" + safe(skillId);
-        if (shortKey.length() > 80) shortKey = shortKey.substring(0, 80);
-        return new NamespacedKey(pluginKeyBase.getNamespace(), shortKey);
+        // PDC keys are length-limited (~256), and NamespacedKey only accepts
+        // [a-z0-9_.-]. Blindly truncating meant two skills on the same item whose
+        // ids shared a long prefix collapsed onto one key and shared a cooldown,
+        // so hash the full identity instead and keep a readable prefix.
+        String full = "cd_" + safe(itemId) + "_" + safe(skillId);
+        if (full.length() <= 96) {
+            return new NamespacedKey(pluginKeyBase.getNamespace(), full);
+        }
+        String hash = Integer.toHexString(full.hashCode());
+        return new NamespacedKey(pluginKeyBase.getNamespace(),
+                full.substring(0, 96 - 1 - hash.length()) + "_" + hash);
     }
 
     private String safe(String s) {
@@ -103,12 +110,27 @@ public final class CooldownManager {
      * Mark the skill as just used (start cooldown).
      */
     public void markUsed(Player player, String itemId, String skillId) {
+        markUsed(player, itemId, skillId, true);
+    }
+
+    /**
+     * Mark the skill as just used, optionally skipping the PDC write.
+     *
+     * @param persist {@code false} for periodic/aura ticks. Those re-fire every
+     *                second or faster, so persisting each beat means a PDC write
+     *                (and a player-data mutation) several times per second per
+     *                player for no benefit: an aura that "resets" on relog is
+     *                indistinguishable from one that didn't.
+     */
+    public void markUsed(Player player, String itemId, String skillId, boolean persist) {
         if (player == null) return;
         long now = System.currentTimeMillis();
 
         Map<String, Long> playerMap = lastUsed.computeIfAbsent(player.getUniqueId(), k -> new ConcurrentHashMap<>());
         String key = makeKey(itemId, skillId);
         playerMap.put(key, now);
+
+        if (!persist) return;
 
         // Save to PDC for persistence
         try {

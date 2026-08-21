@@ -18,7 +18,8 @@ import java.util.List;
 public class RarityEditorGui extends AbstractGui {
 
     private final String rarityName;
-    private final RarityConfig.RarityEntry entry;
+    /** Not final: reloaded from config after every edit so the GUI shows fresh values. */
+    private RarityConfig.RarityEntry entry;
     private final RarityListGui parentList;
 
     public RarityEditorGui(UItemPlugin plugin, Player player, String rarityName, RarityConfig.RarityEntry entry, RarityListGui parentList) {
@@ -26,6 +27,21 @@ public class RarityEditorGui extends AbstractGui {
         this.rarityName = rarityName;
         this.entry = entry != null ? entry : new RarityConfig.RarityEntry(rarityName, "<white>", "", List.of());
         this.parentList = parentList;
+    }
+
+    /**
+     * Pull the saved entry back out of config and show this editor again.
+     *
+     * <p>Called after each chat-driven edit. Previously these edits jumped
+     * straight back to the rarity <em>list</em>, so changing colour, prefix and
+     * lore meant re-entering the editor three times; and because {@code entry}
+     * was captured at construction, the editor still displayed the pre-edit
+     * values if you did come back.
+     */
+    private void saveAndReopen() {
+        RarityConfig.RarityEntry fresh = RarityConfig.get(rarityName);
+        if (fresh != null) this.entry = fresh;
+        reopen();
     }
 
     @Override
@@ -63,11 +79,7 @@ public class RarityEditorGui extends AbstractGui {
                     input -> {
                         RarityConfig.setRarity(rarityName, input.trim(), entry.prefix(), entry.lore());
                         RarityConfig.saveRarities();
-                        if (parentList != null) {
-                            parentList.reopen();
-                        } else {
-                            refresh();
-                        }
+                        saveAndReopen();
                     });
         });
 
@@ -85,11 +97,7 @@ public class RarityEditorGui extends AbstractGui {
                     input -> {
                         RarityConfig.setRarity(rarityName, entry.color(), input.trim(), entry.lore());
                         RarityConfig.saveRarities();
-                        if (parentList != null) {
-                            parentList.reopen();
-                        } else {
-                            refresh();
-                        }
+                        saveAndReopen();
                     });
         });
 
@@ -114,11 +122,7 @@ public class RarityEditorGui extends AbstractGui {
                         }
                         RarityConfig.setRarity(rarityName, entry.color(), entry.prefix(), newLore);
                         RarityConfig.saveRarities();
-                        if (parentList != null) {
-                            parentList.reopen();
-                        } else {
-                            refresh();
-                        }
+                        saveAndReopen();
                     });
         });
 
@@ -151,10 +155,6 @@ public class RarityEditorGui extends AbstractGui {
         RarityConfig.setRarity(rarityName, color, prefix, lore);
         RarityConfig.saveRarities();
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.5f);
-        if (parentList != null) {
-            parentList.reopen();
-        } else {
-            refresh();
-        }
+        saveAndReopen();
     }
 }

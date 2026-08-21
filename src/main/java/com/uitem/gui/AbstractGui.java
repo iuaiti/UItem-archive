@@ -15,9 +15,24 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public abstract class AbstractGui implements InventoryHolder {
+
+    /**
+     * The last UItem GUI each player opened.
+     *
+     * <p>Needed because chat prompts close the inventory: by the time a prompt is
+     * cancelled there is no open inventory left to read the holder from, so
+     * {@code getOpenInventory().getTopInventory().getHolder()} returns null and
+     * "cancel" used to dead-end in chat. This map survives the close, so cancel
+     * can always put the player back where they were.
+     *
+     * <p>Cleared on quit by {@link #forget(Player)}.
+     */
+    private static final Map<UUID, AbstractGui> lastOpened = new ConcurrentHashMap<>();
 
     protected final UItemPlugin plugin;
     protected final Player player;
@@ -34,6 +49,16 @@ public abstract class AbstractGui implements InventoryHolder {
                 TextUtil.parse(title));
     }
 
+    /** The GUI this player last had open, or null. Used for chat-prompt cancel. */
+    public static AbstractGui lastOpenedFor(Player player) {
+        return player != null ? lastOpened.get(player.getUniqueId()) : null;
+    }
+
+    /** Drop the remembered GUI for a player (call on quit). */
+    public static void forget(Player player) {
+        if (player != null) lastOpened.remove(player.getUniqueId());
+    }
+
     @Override
     public Inventory getInventory() {
         return inventory;
@@ -41,6 +66,7 @@ public abstract class AbstractGui implements InventoryHolder {
 
     public void open() {
         setup();
+        lastOpened.put(player.getUniqueId(), this);
         player.openInventory(inventory);
     }
 
@@ -77,6 +103,7 @@ public abstract class AbstractGui implements InventoryHolder {
         clickHandlers.clear();
         inventory.clear();
         setup();
+        lastOpened.put(player.getUniqueId(), this);
         player.openInventory(inventory);
     }
 
@@ -103,16 +130,25 @@ public abstract class AbstractGui implements InventoryHolder {
         return backAction != null;
     }
 
-    protected Runnable getBackAction() {
+    /**
+     * The parent-reopening action, or null when this GUI is a root.
+     *
+     * <p>Public so sibling GUIs can forward the parent link when they replace
+     * themselves with a fresh instance (rename, re-filter, ...) — without this
+     * the new instance becomes a root and its Back button closes the inventory
+     * instead of returning to the parent.
+     */
+    public Runnable getBackAction() {
         return backAction;
     }
 
     public void goBack() {
         player.playSound(player.getLocation(), org.bukkit.Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
         if (backAction != null) {
-            Runnable action = backAction;
-            backAction = null;
-            action.run();
+            // Do NOT null backAction here. This instance can be reopened later
+            // (a child GUI calling parent.reopen(), or a chat prompt returning),
+            // and clearing the link turned its Back button into "close inventory".
+            backAction.run();
         } else {
             player.closeInventory();
         }

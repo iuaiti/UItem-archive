@@ -2,7 +2,6 @@ package com.uitem.command;
 
 import com.uitem.UItemData;
 import com.uitem.UItemPlugin;
-import com.uitem.gui.CraftingHomeGui;
 import com.uitem.gui.ItemListGui;
 import com.uitem.util.Messages;
 import com.uitem.util.TextUtil;
@@ -26,7 +25,7 @@ import java.util.Locale;
 public class UItemCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> ROOT_SUBCOMMANDS = List.of(
-            "give", "editor", "reload", "list", "craft", "check", "help"
+            "give", "editor", "reload", "list", "check", "help"
     );
 
     private final UItemPlugin plugin;
@@ -48,7 +47,6 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
             case "editor", "edit", "gui" -> handleEditor(sender);
             case "reload" -> handleReload(sender);
             case "list" -> handleList(sender);
-            case "craft", "crafting" -> handleCraft(sender);
             case "check" -> handleCheck(sender);
             case "help" -> sendHelp(sender);
             default -> sender.sendMessage(TextUtil.error("Invalid command. Use /" + label + " help"));
@@ -151,7 +149,6 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         // disk first, overwriting any manual edits made directly to the item config files.
         // Disk is the source of truth on reload - just re-read it.
         plugin.getStorageManager().loadAll(plugin.getItemManager());
-        plugin.getRecipeManager().loadRecipes();
         plugin.getProviderManager().detect();
         sender.sendMessage(TextUtil.success(Messages.reloaded(plugin.getItemManager().getAllItems().size())));
     }
@@ -180,18 +177,6 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(TextUtil.error(Messages.notUItem()));
             }
         }
-    }
-
-    private void handleCraft(CommandSender sender) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(TextUtil.error(Messages.playersOnly()));
-            return;
-        }
-        if (!player.hasPermission("uitem.craft")) {
-            sender.sendMessage(TextUtil.error(Messages.noPermission()));
-            return;
-        }
-        new CraftingHomeGui(plugin, player).open();
     }
 
     private void handleList(CommandSender sender) {
@@ -229,8 +214,6 @@ public class UItemCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(miniMessage.deserialize("  <gold>/uitem editor <dark_gray>— <gray>Open the editor GUI"));
         sender.sendMessage(miniMessage.deserialize("  <gold>/uitem list <dark_gray>— <gray>List items"));
         sender.sendMessage(miniMessage.deserialize("  <gold>/uitem check <dark_gray>— <gray>Check/identify the held item"));
-        sender.sendMessage(miniMessage.deserialize("  <gold>/uitem craft <dark_gray>— <gray>Open custom crafting home"));
-        sender.sendMessage(miniMessage.deserialize("  <gold>/crafting <dark_gray>— <gray>Open custom crafting home"));
         sender.sendMessage(miniMessage.deserialize("  <gold>/uitem reload <dark_gray>— <gray>Reload plugin"));
         sender.sendMessage(miniMessage.deserialize("  <gold>/ui <dark_gray>— <gray>Short alias for /uitem"));
         sender.sendMessage(Component.text(""));

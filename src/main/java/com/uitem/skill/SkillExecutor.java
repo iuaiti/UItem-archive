@@ -84,6 +84,21 @@ public final class SkillExecutor {
         return cooldowns;
     }
 
+    /**
+     * The cooldown actually enforced for {@code skill}, after applying the
+     * player's {@link com.uitem.stat.Stat#COOLDOWN_REDUCTION} (capped at 90%).
+     *
+     * <p>Public so the HUD ({@link SkillActionBar}) counts down the same number
+     * the gate in {@link #executeSkills} uses — otherwise a player with CDR gear
+     * sees a timer that runs past the moment the skill is usable again.
+     */
+    public double getEffectiveCooldown(Player player, Skill skill) {
+        if (skill.getCooldown() <= 0) return 0;
+        double cdr = clampDouble(
+                plugin.getStatManager().getStat(player, com.uitem.stat.Stat.COOLDOWN_REDUCTION), 0, 90);
+        return skill.getCooldown() * (1 - cdr / 100.0);
+    }
+
     // =========================================================
     // Main entry: execute the list of skills matching the trigger
     // =========================================================
@@ -108,8 +123,7 @@ public final class SkillExecutor {
 
             if (!checkChance(skill)) continue;
             if (!checkConditions(player, skill, target)) continue;
-            double cdr = Math.max(0, Math.min(90, plugin.getStatManager().getStat(player, com.uitem.stat.Stat.COOLDOWN_REDUCTION)));
-            double effectiveCooldown = skill.getCooldown() * (1 - cdr / 100.0);
+            double effectiveCooldown = getEffectiveCooldown(player, skill);
             if (!cooldowns.isReady(player, itemId, skill.getId(), effectiveCooldown)) continue;
             if (!checkAndConsumeMana(player, skill, trigger.isActive())) continue;
 
@@ -313,6 +327,17 @@ public final class SkillExecutor {
                 double offZ = clampDouble(action.getDoubleParam("offset-z", action.getDoubleParam("offset", 0.3)), 0, PARTICLE_MAX_OFFSET);
                 double speed = clampDouble(action.getDoubleParam("speed", 0.01), 0, PARTICLE_MAX_SPEED);
                 int interval = clampInt(action.getIntParam("interval", 0), 0, PARTICLE_MAX_INTERVAL);
+
+                // Params, disambiguated:
+                //   count    = particles emitted per spawn
+                //   interval = ticks between spawns (0 = one single burst)
+                //   repeat   = how many spawns when interval > 0
+                // Legacy configs had no 'repeat' and used 'count' as the repeat
+                // count while emitting 1 particle per beat, so that exact shape is
+                // still honoured when 'repeat' is absent.
+                boolean hasRepeat = action.getParam("repeat") != null;
+                int repeat = clampInt(action.getIntParam("repeat", count), 1, PARTICLE_MAX_COUNT);
+                int perSpawn = hasRepeat ? count : 1;
                 try {
                     Particle particle = Particle.valueOf(p.toUpperCase(Locale.ROOT));
                     if (particle.getDataType() != Void.class) {
@@ -325,10 +350,10 @@ public final class SkillExecutor {
                     if (interval > 0) {
                         int[] spawned = {0};
                         SchedulerUtil.runTimerAtLocation(plugin, particleLoc, interval, interval, () -> {
-                            if (spawned[0]++ >= count || !player.isOnline()) {
+                            if (spawned[0]++ >= repeat || !player.isOnline()) {
                                 return false;
                             }
-                            world.spawnParticle(particle, particleLoc, 1, offX, offY, offZ, speed);
+                            world.spawnParticle(particle, particleLoc, perSpawn, offX, offY, offZ, speed);
                             return true;
                         });
                     } else {
@@ -514,8 +539,8 @@ public final class SkillExecutor {
             // ==================== NEW ACTIONS ====================
 
             case BLOCK_BREAK -> {
-                int range = action.getIntParam("range", 5);
-                int radius = action.getIntParam("radius", 0);
+                int range = clampInt(action.getIntParam("range", 5), 1, 10);
+                int radius = clampInt(action.getIntParam("radius", 0), 0, 4);
                 Block targetBlock = player.getTargetBlockExact(range);
 
                 // Safety: abort early for air or protected blocks (storage, spawner, bedrock...)
@@ -531,10 +556,10 @@ public final class SkillExecutor {
 
                 if (radius <= 0) {
                     // Single block (original behavior)
-                    targetBlock.breakNaturally(tool);
+                    breakBlockGuarded(targetBlock, player, tool);
                 } else {
                     // Area mode: only the surface plane (3x3, 5x5...) perpendicular to the mined face.
-                    // Never a 3x3x3 cube. Per-block breakNaturally(tool) so Fortune/Silk Touch work,
+                    // Never a 3x3x3 cube. Per-block break so Fortune/Silk Touch work,
                     // and anti-xray sees only the necessary individual block updates.
                     BlockFace face = null;
                     try {
@@ -570,7 +595,7 @@ public final class SkillExecutor {
                     }
 
                     for (Block b : toBreak) {
-                        b.breakNaturally(tool);
+                        breakBlockGuarded(b, player, tool);
                     }
                 }
 
@@ -579,10 +604,15 @@ public final class SkillExecutor {
             }
 
             case EXPLOSION -> {
-                float power = (float) action.getDoubleParam("power", 3.0);
+                float power = (float) clampDouble(action.getDoubleParam("power", 3.0), 0.1, 10.0);
                 boolean fire = action.getBooleanParam("fire", false);
+                boolean breakBlocks = action.getBooleanParam("break-blocks", true);
                 Location explosionLoc = (target != null && target.isValid()) ? target.getLocation() : loc;
-                world.createExplosion(explosionLoc, power, fire, true);
+                // Pass the player as the explosion source so the resulting EntityExplodeEvent
+                // is attributable: WorldGuard/GriefPrevention/CoreProtect can then veto or log it.
+                // The no-source overload fires an untracked world explosion that bypasses every
+                // protection plugin.
+                world.createExplosion(explosionLoc, power, fire, breakBlocks, player);
                 return true;
             }
 
@@ -688,40 +718,37 @@ public final class SkillExecutor {
             }
 
             case BEAM_DAMAGE -> {
-                double range = Math.min(action.getDoubleParam("range", 30), 100);
+                double range = clampDouble(action.getDoubleParam("range", 30), 1, 100);
                 double amt = action.getDoubleParam("amount", 6.0);
                 String particleName = action.getStringParam("particle", "ELECTRIC_SPARK");
 
                 Location eyeLoc = player.getEyeLocation();
                 Vector dir = eyeLoc.getDirection();
 
-                // Ray trace for entities
-                Entity hit = null;
-                double hitDistance = range;
-                for (double d = 0; d <= range; d += 0.5) {
-                    Location point = eyeLoc.clone().add(dir.clone().multiply(d));
-                    Particle particle;
-                    try {
-                        particle = Particle.valueOf(particleName.toUpperCase(Locale.ROOT));
-                    } catch (IllegalArgumentException e) {
-                        particle = Particle.ELECTRIC_SPARK;
+                // Single ray trace instead of stepping 0.5 blocks and calling
+                // getNearbyEntities() at every step (that was up to 200 chunk
+                // entity lookups + 200 particle packets for one activation).
+                var hit = world.rayTraceEntities(eyeLoc, dir, range, 0.5,
+                        e -> e != player && e instanceof LivingEntity le && le.isValid());
+                double beamLength = (hit != null)
+                        ? hit.getHitPosition().distance(eyeLoc.toVector())
+                        : range;
+
+                // Draw the beam once, resolving the particle a single time.
+                Particle particle;
+                try {
+                    particle = Particle.valueOf(particleName.toUpperCase(Locale.ROOT));
+                } catch (IllegalArgumentException e) {
+                    particle = Particle.ELECTRIC_SPARK;
+                }
+                if (particle.getDataType() == Void.class) {
+                    for (double d = 0; d <= beamLength; d += 0.5) {
+                        world.spawnParticle(particle, eyeLoc.clone().add(dir.clone().multiply(d)),
+                                1, 0, 0, 0, 0);
                     }
-                    if (particle.getDataType() == Void.class) {
-                        world.spawnParticle(particle, point, 1, 0, 0, 0, 0);
-                    }
-                    // Check for entities at this point
-                    for (Entity e : world.getNearbyEntities(point, 1.0, 1.0, 1.0)) {
-                        if (e.equals(player)) continue;
-                        if (e instanceof LivingEntity le && le.isValid()) {
-                            hit = le;
-                            hitDistance = d;
-                            break;
-                        }
-                    }
-                    if (hit != null) break;
                 }
 
-                if (hit instanceof LivingEntity le) {
+                if (hit != null && hit.getHitEntity() instanceof LivingEntity le) {
                     le.damage(amt, player);
                 }
                 return true;
@@ -749,8 +776,11 @@ public final class SkillExecutor {
         if (target != null) {
             out = out.replace("%target%", target instanceof Player p ? p.getName() : target.getType().name());
             out = out.replace("%target_health%", String.format("%.1f", target.getHealth()));
-            out = out.replace("%target%", "target");
-            out = out.replace("%target_health%", "?");
+        } else {
+            // No target for this trigger (e.g. RIGHT_CLICK) — strip the placeholders
+            // so players never see a raw "%target%" in chat.
+            out = out.replace("%target%", "-");
+            out = out.replace("%target_health%", "-");
         }
         return out;
     }
@@ -761,20 +791,34 @@ public final class SkillExecutor {
 
     /**
      * Run PERIODIC / WHILE_* skills for a player.
-     * Called periodically by SkillListener.
+     * Called on every ticker beat by {@link com.uitem.listener.UItemSkillListener}.
+     *
+     * <p>Pacing uses {@code period-ticks} (the skill's own interval), falling back
+     * to {@code cooldown} when the skill declares one. Previously only
+     * {@code cooldown} was consulted, so any aura with {@code cooldown: 0} ran at
+     * the raw ticker rate (4x/second) and {@code period-ticks} — including every
+     * preset built by {@link PotionAuraManager} — had no effect at all.
      */
     public void tickPeriodicSkills(Player player, String itemId, List<Skill> skills, SkillTrigger triggerType) {
         if (skills == null) return;
         for (Skill skill : skills) {
             if (skill == null || skill.getTrigger() != triggerType) continue;
-            if (!cooldowns.isReady(player, itemId, skill.getId(), skill.getCooldown())) continue;
-            // For periodic we use cooldown field as "minimum interval"
+
+            // Interval in seconds: an explicit cooldown wins (admins use it as
+            // "minimum interval"), otherwise period-ticks converted to seconds.
+            double intervalSeconds = skill.getCooldown() > 0
+                    ? skill.getCooldown()
+                    : skill.getPeriodTicks() / 20.0;
+
+            if (!cooldowns.isReady(player, itemId, skill.getId(), intervalSeconds)) continue;
             if (!checkChance(skill)) continue;
             if (!checkConditions(player, skill, null)) continue;
 
             boolean ok = executeSkillActions(player, itemId, skill, null);
             if (ok) {
-                cooldowns.markUsed(player, itemId, skill.getId());
+                // persist=false: aura beats are worthless across a relog and would
+                // otherwise hammer the player's PDC several times a second.
+                cooldowns.markUsed(player, itemId, skill.getId(), false);
             }
         }
     }
@@ -797,5 +841,35 @@ public final class SkillExecutor {
         // All shulker box variants (SHULKER_BOX + 16 colored)
         if (name.endsWith("_SHULKER_BOX") || name.equals("SHULKER_BOX")) return true;
         return false;
+    }
+
+    /**
+     * Break a block on behalf of {@code player}, respecting land protection.
+     *
+     * <p>{@link Block#breakNaturally(ItemStack)} alone does NOT fire
+     * {@link org.bukkit.event.block.BlockBreakEvent}, so WorldGuard,
+     * GriefPrevention, Towny, CoreProtect and friends never see the break —
+     * a BLOCK_BREAK skill would happily mine straight through spawn and
+     * other players' claims, and nothing would be logged or rollback-able.
+     *
+     * <p>Firing the event ourselves and honouring a cancel makes the skill
+     * behave like a normal pickaxe swing for every protection plugin.
+     *
+     * @return true when the block was actually broken
+     */
+    private boolean breakBlockGuarded(Block block, Player player, ItemStack tool) {
+        if (block == null || block.getType().isAir()) return false;
+
+        org.bukkit.event.block.BlockBreakEvent event =
+                new org.bukkit.event.block.BlockBreakEvent(block, player);
+        Bukkit.getPluginManager().callEvent(event);
+        if (event.isCancelled()) return false;
+
+        if (event.isDropItems()) {
+            block.breakNaturally(tool);
+        } else {
+            block.setType(Material.AIR, true);
+        }
+        return true;
     }
 }

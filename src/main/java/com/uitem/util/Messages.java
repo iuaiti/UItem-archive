@@ -189,13 +189,6 @@ public final class Messages {
     public static String guiIaHint() { return t("gui-ia-hint", "<gray>Use item from ItemsAdder as base"); }
     public static String guiIaPrompt() { return t("gui-ia-prompt", "<yellow>Enter ItemsAdder namespaced ID <gray>(or 'none' to remove):"); }
 
-    // ==================== GUI: Recipe ====================
-    public static String guiRecipeField() { return t("gui-recipe-field", "<gold><bold>Crafting Recipe</bold>"); }
-    public static String guiRecipeHas() { return t("gui-recipe-has", "<green>Has recipe"); }
-    public static String guiRecipeNone() { return t("gui-recipe-none", "<red>No recipe"); }
-    public static String guiRecipeClick() { return t("gui-recipe-click", "<yellow>Click to edit recipe"); }
-    public static String guiRecipeHint() { return t("gui-recipe-hint", "<gray>Set shaped/shapeless crafting recipe"); }
-
     // ==================== GUI: Save / Delete Buttons ====================
     public static String guiSaveButton() { return t("gui-save-button", "<green><bold>💾 SAVE</bold>"); }
     public static String guiSaveDesc() { return t("gui-save-desc", "<gray>Save all changes to file"); }
@@ -263,52 +256,6 @@ public final class Messages {
     public static String flagEditorOn() { return t("flag-editor-on", "<green>\u2714 ON"); }
     public static String flagEditorOff() { return t("flag-editor-off", "<red>\u2718 OFF"); }
     public static String flagEditorToggle() { return t("flag-editor-toggle", "<yellow>Click to toggle"); }
-
-    // ==================== Recipe Editor ====================
-    public static String recipeEditorTitle(String id) { return t("recipe-editor-title", "<gold>Recipe: <white>{id}", "{id}", id); }
-    public static String recipeEditorGuide() { return t("recipe-editor-guide", "<gold><bold>Guide</bold>"); }
-    public static String recipeEditorGuide1() { return t("recipe-editor-guide1", "<gray>Place ingredients in the left slots"); }
-    public static String recipeEditorGuide2() { return t("recipe-editor-guide2", "<gray>Result is this item"); }
-    public static String recipeEditorGuide3() { return t("recipe-editor-guide3", "<green>Shaped: <gray>save with shape pattern"); }
-    public static String recipeEditorGuide4() { return t("recipe-editor-guide4", "<aqua>Shapeless: <gray>save without shape pattern"); }
-    public static String recipeEditorSaveShaped() { return t("recipe-editor-save-shaped", "<green><bold>Save Shaped</bold>"); }
-    public static String recipeEditorSaveShapedDesc() { return t("recipe-editor-save-shaped-desc", "<gray>Save shaped recipe (3x3)"); }
-    public static String recipeEditorSaveShapeless() { return t("recipe-editor-save-shapeless", "<aqua><bold>Save Shapeless</bold>"); }
-    public static String recipeEditorSaveShapelessDesc() { return t("recipe-editor-save-shapeless-desc", "<gray>Save shapeless recipe"); }
-    public static String recipeEditorDelete() { return t("recipe-editor-delete", "<red><bold>Delete Recipe</bold>"); }
-    public static String recipeEditorDeleteDesc() { return t("recipe-editor-delete-desc", "<gray>Delete current recipe"); }
-    public static String recipeEditorHasRecipe() { return t("recipe-editor-has-recipe", "<green><bold>Has recipe</bold>"); }
-    public static String recipeEditorTypeShaped() { return t("recipe-editor-type-shaped", "Shaped"); }
-    public static String recipeEditorTypeShapeless() { return t("recipe-editor-type-shapeless", "Shapeless"); }
-    public static String recipeEditorAmount(int amount) { return t("recipe-editor-amount", "Amount: {amount}", "{amount}", String.valueOf(amount)); }
-    public static String recipeEditorEmptySlots() { return t("recipe-editor-empty-slots", "Please place ingredients in the crafting slots!"); }
-    public static String recipeEditorSaved(boolean shaped, String id) {
-        String type = shaped ? "shaped" : "shapeless";
-        return t("recipe-editor-saved", "Saved recipe {type} for '{id}'!")
-                .replace("{type}", type)
-                .replace("{id}", id);
-    }
-    public static String recipeEditorDeleted(String id) { return t("recipe-editor-deleted", "Deleted recipe for '{id}'!", "{id}", id); }
-
-    // ==================== Recipe List ====================
-    public static String recipeListTitle() { return t("recipe-list-title", "<gradient:#ff6b6b:#ffd93d>Recipe List</gradient>"); }
-    public static String recipeListHeader() { return t("recipe-list-header", "<gradient:#ff6b6b:#ffd93d><bold>Recipe List</bold></gradient>"); }
-    public static String recipeListClick() { return t("recipe-list-click", "<gray>Click a recipe to view details"); }
-    public static String recipeListCraft() { return t("recipe-list-craft", "<green><bold>Craft</bold>"); }
-    public static String recipeListCraftDesc() { return t("recipe-list-craft-desc", "<gray>Open crafting table"); }
-    public static String recipeListDeletedItem() { return t("recipe-list-deleted-item", "<gray>Item deleted"); }
-
-    // ==================== Recipe Detail ====================
-    public static String recipeDetailTitle(String id) { return t("recipe-detail-title", "<gold>Recipe: <white>{id}", "{id}", id); }
-    public static String recipeDetailNotFound() { return t("recipe-detail-not-found", "<red>Not found"); }
-
-    // ==================== Crafting GUI ====================
-    public static String craftAmount1() { return t("craft-amount-1", "<gray>Craft 1 item"); }
-    public static String craftAmount8() { return t("craft-amount-8", "<gray>Craft 8 items"); }
-    public static String craftAmount64() { return t("craft-amount-64", "<gray>Craft 64 items"); }
-    public static String craftAmountMax() { return t("craft-amount-max", "<gray>Craft as many as possible"); }
-    public static String craftSelected() { return t("craft-selected", "<green>\u2714 Selected"); }
-    public static String craftClickToSelect() { return t("craft-click-to-select", "<yellow>Click to select"); }
 
     // ==================== Chat Input ====================
     public static String chatCancel() { return t("chat-cancel", "cancel"); }
@@ -454,9 +401,6 @@ public final class Messages {
     public static String helpEditor() { return t("help-editor", "  <gold>/uitem editor <dark_gray>\u2014 <gray>Open editor GUI"); }
     public static String helpList() { return t("help-list", "  <gold>/uitem list <dark_gray>\u2014 <gray>List items"); }
     public static String helpCheck() { return t("help-check", "  <gold>/uitem check <dark_gray>\u2014 <gray>Check if held item is a valid UItem"); }
-    public static String helpCraft() { return t("help-craft", "  <gold>/uitem craft <dark_gray>\u2014 <gray>Open UItem crafting table"); }
-    public static String helpCraftingCmd() { return t("help-crafting-cmd", "  <gold>/crafting <dark_gray>\u2014 <gray>List all crafting recipes"); }
-    public static String helpCraftingTable() { return t("help-crafting-table", "  <gold>/crafting craft <dark_gray>\u2014 <gray>Open UItem crafting table"); }
     public static String helpReload() { return t("help-reload", "  <gold>/uitem reload <dark_gray>\u2014 <gray>Reload plugin"); }
     public static String helpHelp() { return t("help-help", "  <gold>/uitem help <dark_gray>\u2014 <gray>Show help"); }
     public static String helpUi() { return t("help-ui", "  <gold>/ui <dark_gray>\u2014 <gray>Short alias for /uitem"); }

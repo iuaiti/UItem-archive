@@ -423,6 +423,8 @@ public class SkillEditorGui extends AbstractGui {
                 action.setParam("offset-y", 0.3);
                 action.setParam("offset-z", 0.3);
                 action.setParam("speed", 0.01);
+                // interval 0 = single burst of 'count' particles.
+                // Use the Particle Picker to configure a repeating trail.
                 action.setParam("interval", 0);
             }
             case BLIND, GLOW, LEVITATE, FREEZE -> {

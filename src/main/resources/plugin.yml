@@ -9,13 +9,9 @@ softdepend: [Oraxen, ItemsAdder, AuraSkills, EcoSkills]
 commands:
   uitem:
     description: UItem main command
-    usage: /uitem|ui <give|editor|reload|list|craft|check>
+    usage: /uitem|ui <give|editor|reload|list|check>
     aliases: [ui]
     permission: uitem.admin
-  crafting:
-    description: Open the UItem crafting home, recipe list, or crafting table
-    aliases: [craft, recipe, recipes]
-    usage: /crafting [home|list|view <id>|craft]
 permissions:
   uitem.admin:
     description: Full access to UItem
@@ -24,7 +20,6 @@ permissions:
       uitem.give: true
       uitem.editor: true
       uitem.reload: true
-      uitem.craft: true
       uitem.search: true
       uitem.id: true
       uitem.bulkgive: true
@@ -37,11 +32,6 @@ permissions:
   uitem.reload:
     description: Allow reloading plugin
     default: op
-  uitem.craft:
-    description: Allow opening UItem crafting table and recipe list
-    default: op
-    children:
-      uitem.crafting: true
   uitem.search:
     description: Allow using item search GUI
     default: op

@@ -455,19 +455,8 @@ public class ItemEditorGui extends AbstractGui {
             new SkillListGui(plugin, player, data).openAsChildOf(this);
         });
 
-        // Recipe (slot 27)
-        boolean hasRecipe = plugin.getRecipeManager().hasRecipe(data.getId());
-        setItem(27, createItem(
-                hasRecipe ? Material.CRAFTING_TABLE : Material.FURNACE,
-                "<gold><bold>Crafting Recipe</bold>",
-                List.of(
-                        hasRecipe ? "<green>Recipe exists" : "<red>No recipe yet",
-                        "",
-                        "<yellow>Click to edit the recipe"
-                )), event -> {
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-            new RecipeEditorGui(plugin, player, data).openAsChildOfEditor(this);
-        });
+        // Slot 27 is free — the built-in recipe editor was removed; crafting will be
+        // provided by the external UCraft plugin via a hook.
 
         // Effects (slot 28)
         int effCount = data.getEffects() != null ? data.getEffects().size() : 0;
@@ -563,7 +552,15 @@ public class ItemEditorGui extends AbstractGui {
                         "<red>⚠ Click to delete"
                 )), event -> {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 0.5f);
-            new ConfirmDeleteGui(plugin, player, data, 0).openAsChildOf(this);
+            // afterDelete: jump past this editor to the item list. Returning here
+            // would leave an editor open for a deleted item, and its Save button
+            // would recreate it.
+            new ConfirmDeleteGui(plugin, player, data, 0,
+                    () -> {
+                        Runnable up = getBackAction();
+                        if (up != null) up.run();
+                        else new ItemListGui(plugin, player).openAsRoot();
+                    }).openAsChildOf(this);
         });
     }
 

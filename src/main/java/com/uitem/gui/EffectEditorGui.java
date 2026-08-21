@@ -222,7 +222,9 @@ public class EffectEditorGui extends AbstractGui {
                     double v = Double.parseDouble(input.trim());
                     pending.setValue(Math.max(0, v));
                 } catch (Exception ignored) {}
-                refresh();
+                // reopen(), not refresh(): the prompt closed the inventory, so a
+                // repaint alone would leave the player sitting in chat.
+                reopen();
             });
         });
 

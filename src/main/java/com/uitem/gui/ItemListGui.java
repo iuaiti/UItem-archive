@@ -72,7 +72,10 @@ public class ItemListGui extends AbstractGui {
                             SearchManager sm = plugin.getSearchManager();
                             if (input.equalsIgnoreCase("clear")) sm.clearQuery(player);
                             else sm.setQuery(player, input);
-                            new ItemListGui(plugin, player, page).open();
+                            // reopen() this instance: a fresh ItemListGui would be a root
+                            // GUI with no back link and would discard the current page.
+                            page = 0;
+                            reopen();
                         });
             });
         }

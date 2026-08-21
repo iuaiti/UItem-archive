@@ -216,6 +216,29 @@ public class ParticlePickerGui extends AbstractGui {
                     } catch (NumberFormatException e) {
                         player.sendMessage(TextUtil.info("Using default interval: 0 (all at once)"));
                     }
+                    // 'count' means particles per spawn and 'repeat' means how many
+                    // spawns — only meaningful when the effect is spread over time.
+                    if (action.getIntParam("interval", 0) > 0) {
+                        promptRepeat(action);
+                    } else {
+                        finishParticle(action);
+                    }
+                });
+    }
+
+    private void promptRepeat(SkillAction action) {
+        plugin.getChatInputManager().requestInput(player,
+                "<yellow>Enter how many times to spawn (repeat, 1-"
+                        + SkillExecutor.PARTICLE_MAX_COUNT + ", example: 20):",
+                input -> {
+                    try {
+                        int repeat = Integer.parseInt(input.trim());
+                        action.setParam("repeat",
+                                Math.max(1, Math.min(SkillExecutor.PARTICLE_MAX_COUNT, repeat)));
+                    } catch (NumberFormatException e) {
+                        player.sendMessage(TextUtil.info("Using default repeat: 10"));
+                        action.setParam("repeat", 10);
+                    }
                     finishParticle(action);
                 });
     }
@@ -230,9 +253,12 @@ public class ParticlePickerGui extends AbstractGui {
         plugin.getStorageManager().saveItemDebounced(plugin.getItemManager(), itemData);
 
         String name = action.getStringParam("particle", "FLAME").toLowerCase(Locale.ROOT).replace("_", " ");
-        player.sendMessage(TextUtil.success("<green>✓ Added particle: " + name
-                + " (count=" + action.getIntParam("count", 10)
-                + ", interval=" + action.getIntParam("interval", 0) + "t)"));
+        int interval = action.getIntParam("interval", 0);
+        String summary = "count=" + action.getIntParam("count", 10);
+        if (interval > 0) {
+            summary += ", repeat=" + action.getIntParam("repeat", 10) + " every " + interval + "t";
+        }
+        player.sendMessage(TextUtil.success("<green>✓ Added particle: " + name + " (" + summary + ")"));
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 0.6f, 1.2f);
 
         goBack();

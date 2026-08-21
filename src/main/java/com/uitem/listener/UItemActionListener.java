@@ -6,6 +6,7 @@ import com.uitem.api.UItemAPI;
 import com.uitem.api.events.UItemEquipEvent;
 import com.uitem.api.events.UItemInteractEvent;
 import com.uitem.api.events.UItemPickupEvent;
+import com.uitem.util.DamageGuard;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
@@ -281,43 +282,53 @@ public class UItemActionListener implements Listener {
     // Types: REFLECT, EXTRA_DAMAGE
     // ============================================================
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    // HIGHEST, not MONITOR: this handler applies damage. MONITOR is contractually
+    // read-only — it's where logging/anticheat plugins observe the final result.
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamage(EntityDamageByEntityEvent event) {
-        // HIT trigger: player attacking with UItem in hand
-        if (event.getDamager() instanceof Player damager) {
-            ItemStack weapon = damager.getInventory().getItemInMainHand();
-            UItemData data = getUItemData(weapon);
-            if (data != null) {
-                // Self effects
-                applyItemEffects(data, damager, "HIT", event);
+        // Re-entrancy guard: REFLECT / EXTRA_DAMAGE below deal damage, which fires a
+        // fresh EntityDamageByEntityEvent and would re-enter this handler. Keyed by
+        // damager so unrelated fights in the same tick are unaffected.
+        if (!DamageGuard.enter(event.getDamager())) return;
+        try {
+            // HIT trigger: player attacking with UItem in hand
+            if (event.getDamager() instanceof Player damager) {
+                ItemStack weapon = damager.getInventory().getItemInMainHand();
+                UItemData data = getUItemData(weapon);
+                if (data != null) {
+                    // Self effects
+                    applyItemEffects(data, damager, "HIT", event);
 
-                // Target effects (if apply-to-target set for the effect)
-                if (event.getEntity() instanceof LivingEntity victim) {
-                    applyItemEffects(data, victim, "HIT", event, true);
+                    // Target effects (if apply-to-target set for the effect)
+                    if (event.getEntity() instanceof LivingEntity victim) {
+                        applyItemEffects(data, victim, "HIT", event, true);
+                    }
                 }
             }
-        }
 
-        // DAMAGE trigger: player taking damage while holding/wearing UItem with effect
-        if (event.getEntity() instanceof Player victim) {
-            // Check held item
-            ItemStack held = victim.getInventory().getItemInMainHand();
-            UItemData heldData = getUItemData(held);
-            if (heldData != null) {
-                applyItemEffects(heldData, victim, "DAMAGE", event);
-            }
-            // Check armor pieces (for armor with damage reflect etc.)
-            for (ItemStack armor : victim.getInventory().getArmorContents()) {
-                if (armor == null || armor.getType().isAir()) continue;
-                UItemData armorData = getUItemData(armor);
-                if (armorData != null) {
-                    applyItemEffects(armorData, victim, "DAMAGE", event);
+            // DAMAGE trigger: player taking damage while holding/wearing UItem with effect
+            if (event.getEntity() instanceof Player victim) {
+                // Check held item
+                ItemStack held = victim.getInventory().getItemInMainHand();
+                UItemData heldData = getUItemData(held);
+                if (heldData != null) {
+                    applyItemEffects(heldData, victim, "DAMAGE", event);
+                }
+                // Check armor pieces (for armor with damage reflect etc.)
+                for (ItemStack armor : victim.getInventory().getArmorContents()) {
+                    if (armor == null || armor.getType().isAir()) continue;
+                    UItemData armorData = getUItemData(armor);
+                    if (armorData != null) {
+                        applyItemEffects(armorData, victim, "DAMAGE", event);
+                    }
                 }
             }
+        } finally {
+            DamageGuard.exit(event.getDamager());
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onUItemEquip(UItemEquipEvent event) {
         if (!event.isEquipping()) return;
         Player p = event.getPlayer();
@@ -400,19 +411,24 @@ public class UItemActionListener implements Listener {
             String t = eff.getType();
             if (t == null) continue;
 
+            // Both branches go through damage(amount, source) rather than
+            // setHealth(health - amount). setHealth() bypasses armour, Resistance,
+            // EntityDamageEvent, totems and death attribution — a kill that way has
+            // no killer, so there is no death message, no drop credit, and no
+            // anticheat/logging visibility.
             if ("REFLECT".equals(t) && dmgEvent != null && !forTarget) {
                 // Reflect usually from the victim's perspective
                 double pct = eff.getValue() > 0 ? eff.getValue() : 20.0;
                 double reflectDmg = dmgEvent.getDamage() * (pct / 100.0);
-                if (dmgEvent.getDamager() instanceof org.bukkit.entity.LivingEntity attacker) {
-                    double newHealth = Math.max(0, attacker.getHealth() - reflectDmg);
-                    attacker.setHealth(newHealth);
+                if (reflectDmg > 0 && dmgEvent.getDamager() instanceof LivingEntity attacker
+                        && attacker.isValid()) {
+                    attacker.damage(reflectDmg, entity);
                 }
             } else if ("EXTRA_DAMAGE".equals(t) && dmgEvent != null && !forTarget) {
                 double extra = eff.getValue() > 0 ? eff.getValue() : 3.0;
-                if (dmgEvent.getEntity() instanceof org.bukkit.entity.LivingEntity target) {
-                    double newHealth = Math.max(0, target.getHealth() - extra);
-                    target.setHealth(newHealth);
+                if (extra > 0 && dmgEvent.getEntity() instanceof LivingEntity target
+                        && target.isValid()) {
+                    target.damage(extra, entity);
                 }
             }
         }

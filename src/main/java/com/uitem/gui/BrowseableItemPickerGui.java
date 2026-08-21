@@ -77,16 +77,16 @@ public class BrowseableItemPickerGui extends AbstractGui {
                 "<gold><bold>Search</bold>",
                 List.of(filter != null ? "<gray>Filtering: <white>" + filter : "<gray>Click to search by id")),
                 ev -> {
-                    Runnable savedBack = getBackAction();
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.5f, 1.0f);
-                    player.closeInventory();
+                    // Re-filter THIS instance rather than constructing a replacement GUI
+                    // and hand-copying the back link — see MaterialPickerGui for why.
                     plugin.getChatInputManager().requestInput(player,
                             "<yellow>Enter a keyword (Enter to clear filter):",
                             input -> {
-                                String f = input.trim().isEmpty() ? null : input.trim();
-                                BrowseableItemPickerGui gui = new BrowseableItemPickerGui(plugin, player, provider, callback, 0, f);
-                                if (savedBack != null) gui.setBackAction(savedBack);
-                                gui.open();
+                                filter = input.trim().isEmpty() ? null : input.trim();
+                                page = 0;
+                                ids = loadIds();
+                                reopen();
                             });
                 });
 

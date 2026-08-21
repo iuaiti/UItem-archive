@@ -25,9 +25,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * Applies every virtual combat/utility stat computed by {@link StatManager}
  * to the actual game — crit, defense, penetration, true damage, lifesteal,
  * dodge, regen (health/mana), mining/loot bonuses, projectiles and XP bonus.
- * Combat runs at HIGH priority — before the MONITOR-priority skill/effect
- * listeners (which read final health via setHealth() rather than event
- * damage) — so the damage they react to already reflects stats.
+ *
+ * <p>Combat runs at HIGH priority, i.e. before the HIGHEST-priority skill and
+ * item-effect listeners, so the damage those react to already reflects stats.
  */
 public class UItemStatListener implements Listener {
 
@@ -65,8 +65,12 @@ public class UItemStatListener implements Listener {
 
         double manaRegen = statManager.getStat(player, Stat.MANA_REGEN);
         if (manaRegen > 0) {
-            SkillsHook hook = plugin.getSkillsHookManager().getActive();
-            if (hook.hasManaSupport()) {
+            // getActive() returns null when no skills plugin is hooked — the old
+            // unchecked hook.hasManaSupport() below NPE'd once per second per player
+            // with MANA_REGEN gear on any server without AuraSkills/EcoSkills.
+            SkillsHook hook = plugin.getSkillsHookManager() != null
+                    ? plugin.getSkillsHookManager().getActive() : null;
+            if (hook != null && hook.hasManaSupport()) {
                 double current = hook.getMana(player);
                 double max = hook.getMaxMana(player);
                 if (current >= 0 && max >= 0 && current < max) {

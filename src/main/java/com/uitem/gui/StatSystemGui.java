@@ -224,10 +224,8 @@ public class StatSystemGui extends AbstractGui {
                     "<gray>Example: generic_attack_damage 15 ADD_NUMBER HAND\n" +
                     "<gray>Type 'cancel' to abort:",
                     input -> {
-                        if (input.equalsIgnoreCase("cancel") || input.equalsIgnoreCase("huy")) {
-                            reopen();
-                            return;
-                        }
+                        // No 'cancel' check needed: ChatInputManager intercepts the
+                        // cancel words and reopens this GUI before the callback runs.
                         String[] parts = input.trim().split("\\s+");
                         if (parts.length < 4) {
                             player.sendMessage(TextUtil.error("Format: attribute amount operation slot"));

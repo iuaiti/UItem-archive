@@ -14,8 +14,13 @@ import java.util.function.Consumer;
 
 /**
  * Wizard step 4: final setup for the UItem (source already obtained at step 3).
- * The draft UItemData is an instance field — chat-input callbacks call {@link #refresh()} to retain state.
+ *
+ * <p>The draft UItemData is an instance field, and chat-input callbacks call
+ * {@link #reopen()} — not {@code refresh()} — so the inventory is actually shown
+ * again. {@code refresh()} only repaints the (currently closed) inventory, which
+ * left the player in chat after every edit.
  */
+
 public class SetupItemStepGui extends AbstractGui {
 
     private final CreateWizardGui.WizardState state;
@@ -59,21 +64,20 @@ public class SetupItemStepGui extends AbstractGui {
                         "<yellow>Click to change ID",
                         "<gray>(letters, digits, underscores only)"
                 )), ev -> {
-            player.closeInventory();
             plugin.getChatInputManager().requestInput(player,
                     "<yellow>Enter ID for the UItem <gray>(letters, digits, _ only):",
                     input -> {
                         String id = input.toLowerCase().replaceAll("[^a-z0-9_]", "_");
                         if (id.isEmpty()) {
                             player.sendMessage(TextUtil.error("Invalid ID!"));
-                            refresh(); return;
+                            reopen(); return;
                         }
                         if (plugin.getItemManager().hasItem(id)) {
                             player.sendMessage(TextUtil.error("Item '" + id + "' already exists!"));
-                            refresh(); return;
+                            reopen(); return;
                         }
                         applyId(id);
-                        refresh();
+                        reopen();
                     });
         });
 
@@ -85,10 +89,9 @@ public class SetupItemStepGui extends AbstractGui {
                         "",
                         "<yellow>Click to change (supports MiniMessage)"
                 )), ev -> {
-            player.closeInventory();
             plugin.getChatInputManager().requestInput(player,
                     "<yellow>Enter display name (MiniMessage):",
-                    input -> { draft.setDisplayName(input); refresh(); });
+                    input -> { draft.setDisplayName(input); reopen(); });
         });
 
         // Rarity (slot 12)
@@ -101,7 +104,6 @@ public class SetupItemStepGui extends AbstractGui {
                         "<yellow>Click to choose",
                         "<gray>Known: " + String.join(", ", RarityConfig.getKeys())
                 )), ev -> {
-            player.closeInventory();
             StringBuilder msg = new StringBuilder("<gold> rarities:");
             for (String r : RarityConfig.getKeys()) {
                 msg.append("\n").append(RarityConfig.getRarityColor(r)).append("▸ ").append(r);
@@ -115,7 +117,7 @@ public class SetupItemStepGui extends AbstractGui {
                     if (RarityConfig.getKeys().contains(up)) draft.setRarity(up);
                     else player.sendMessage(TextUtil.error("Rarity '" + up + "' not defined"));
                 }
-                refresh();
+                reopen();
             });
         });
 
@@ -128,8 +130,8 @@ public class SetupItemStepGui extends AbstractGui {
                         "<yellow>Click to choose"
                 )), ev -> new SubCategoryPickerGui(plugin, player, draft.getCategory(), draft.getSubCategory(), picked -> {
             draft.setSubCategory(picked);
-            refresh();
-        }).open());
+            reopen();
+        }).openAsChildOf(this));
 
         // Cooldown (slot 15)
         setItem(15, createItem(Material.CLOCK,
@@ -139,13 +141,12 @@ public class SetupItemStepGui extends AbstractGui {
                         "",
                         "<yellow>Click to set (seconds, -1 = off)"
                 )), ev -> {
-            player.closeInventory();
             plugin.getChatInputManager().requestInput(player,
                     "<yellow>Enter cooldown (seconds, -1 = off):",
                     input -> {
                         try { draft.setCooldown(Double.parseDouble(input.trim())); }
                         catch (NumberFormatException e) { player.sendMessage(TextUtil.error("Invalid number!")); }
-                        refresh();
+                        reopen();
                     });
         });
 
@@ -157,13 +158,12 @@ public class SetupItemStepGui extends AbstractGui {
                         "",
                         "<yellow>Click to set (none = remove)"
                 )), ev -> {
-            player.closeInventory();
             plugin.getChatInputManager().requestInput(player,
                     "<yellow>Enter permission (none = remove):",
                     input -> {
                         if (input.equalsIgnoreCase("none")) draft.setPermission(null);
                         else draft.setPermission(input.trim());
-                        refresh();
+                        reopen();
                     });
         });
 
@@ -175,13 +175,12 @@ public class SetupItemStepGui extends AbstractGui {
                         "",
                         "<yellow>Click to set (1-64)"
                 )), ev -> {
-            player.closeInventory();
             plugin.getChatInputManager().requestInput(player,
                     "<yellow>Enter stack size (1-64):",
                     input -> {
                         try { draft.setStackSize(Integer.parseInt(input.trim())); }
                         catch (NumberFormatException e) { player.sendMessage(TextUtil.error("Invalid number!")); }
-                        refresh();
+                        reopen();
                     });
         });
 
@@ -193,13 +192,12 @@ public class SetupItemStepGui extends AbstractGui {
                         "",
                         "<yellow>Click to set (0 = off)"
                 )), ev -> {
-            player.closeInventory();
             plugin.getChatInputManager().requestInput(player,
                     "<yellow>Enter minimum level (0 = off):",
                     input -> {
                         try { draft.setRequiredLevel(Integer.parseInt(input.trim())); }
                         catch (NumberFormatException e) { player.sendMessage(TextUtil.error("Invalid number!")); }
-                        refresh();
+                        reopen();
                     });
         });
 

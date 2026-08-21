@@ -17,11 +17,24 @@ public class ConfirmDeleteGui extends AbstractGui {
 
     private final UItemData data;
     private final int returnPage;
+    /** Where to go once the item is actually gone. May be null. */
+    private final Runnable afterDelete;
 
     public ConfirmDeleteGui(UItemPlugin plugin, Player player, UItemData data, int returnPage) {
+        this(plugin, player, data, returnPage, null);
+    }
+
+    /**
+     * @param afterDelete where to go after a successful delete. Pass this when the
+     *                    parent GUI edits the very item being deleted (the item
+     *                    editor): returning to it would show an editor for an item
+     *                    that no longer exists and silently re-save it.
+     */
+    public ConfirmDeleteGui(UItemPlugin plugin, Player player, UItemData data, int returnPage, Runnable afterDelete) {
         super(plugin, player, 27, Messages.confirmDeleteTitle());
         this.data = data;
         this.returnPage = returnPage;
+        this.afterDelete = afterDelete;
     }
 
     @Override
@@ -63,7 +76,11 @@ public class ConfirmDeleteGui extends AbstractGui {
             player.sendMessage(com.uitem.util.TextUtil.success(
                     Messages.deletedItem(data.getId())));
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 0.5f, 1.0f);
-            goBackOrList();
+            if (afterDelete != null) {
+                afterDelete.run();
+            } else {
+                goBackOrList();
+            }
         });
 
         // Cancel button (red) - returns to the previous GUI
